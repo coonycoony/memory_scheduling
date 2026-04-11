@@ -209,6 +209,18 @@
         }
 
         const notices = await response.json();
+		if (!Array.isArray(notices) || notices.length === 0) {
+          status.textContent = `${university} 공지사항이 없습니다.`;
+          noticeList.innerHTML = `
+            <div class="empty">
+              검색 결과가 없습니다.<br />
+              학교명 또는 백엔드 데이터를 확인해주세요.
+            </div>
+          `;
+          return;
+        }
+
+        status.textContent = `${university} 공지 ${notices.length}건을 찾았습니다.`;
       } catch (error) {
         console.error(error);
       }
