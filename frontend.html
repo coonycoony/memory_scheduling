@@ -221,9 +221,40 @@
         }
 
         status.textContent = `${university} 공지 ${notices.length}건을 찾았습니다.`;
+        renderNotices(notices);
       } catch (error) {
         console.error(error);
+        status.textContent = "공지사항을 불러오지 못했습니다.";
+        noticeList.innerHTML = `
+          <div class="empty">
+            서버 연결에 실패했습니다.<br />
+            백엔드 실행 여부와 API 주소를 확인해주세요.
+          </div>
+        `;
       }
+    }
+
+    function renderNotices(notices) {
+      const noticeList = document.getElementById("noticeList");
+
+      noticeList.innerHTML = notices.map(notice => `
+        <div class="notice-card">
+          <div class="notice-top">
+            <span class="badge">${notice.category || "기타"}</span>
+            <span>${notice.university || ""}</span>
+          </div>
+          <div class="title">
+            <a href="${notice.url || "#"}" target="_blank" rel="noopener noreferrer">
+              ${notice.title || "제목 없음"}
+            </a>
+          </div>
+          <div class="meta">
+            <span>원본 분류: ${notice.source_category || "없음"}</span>
+            <span>부서: ${notice.department || "없음"}</span>
+            <span>작성일: ${notice.date || "없음"}</span>
+          </div>
+        </div>
+      `).join("");
     }
   </script>
 </body>
