@@ -82,6 +82,71 @@
     display: grid;
     gap: 16px;
   }
+
+  .notice-card {
+    background: white;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    transition: transform 0.15s ease;
+  }
+
+  .notice-card:hover {
+    transform: translateY(-2px);
+  }
+
+  .notice-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #e8f0ff;
+    color: #1d4ed8;
+    font-size: 13px;
+    font-weight: bold;
+  }
+
+  .title {
+    font-size: 19px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+
+  .title a {
+    text-decoration: none;
+    color: #111827;
+  }
+
+  .title a:hover {
+    text-decoration: underline;
+    color: #2563eb;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    color: #666;
+    font-size: 14px;
+  }
+
+  .empty {
+    background: white;
+    padding: 24px;
+    border-radius: 16px;
+    text-align: center;
+    color: #666;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  }
   </style>
 </head>
 <body>
