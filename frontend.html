@@ -186,6 +186,33 @@
 
   <script>
     const API_BASE_URL = "http://127.0.0.1:8000";
+
+    async function searchNotices() {
+      const university = document.getElementById("universityInput").value.trim();
+      const status = document.getElementById("status");
+      const noticeList = document.getElementById("noticeList");
+
+      if (!university) {
+        status.textContent = "학교명을 입력해주세요.";
+        noticeList.innerHTML = "";
+        return;
+      }
+
+      status.textContent = "공지사항을 불러오는 중입니다...";
+      noticeList.innerHTML = "";
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/notices?university=${encodeURIComponent(university)}`);
+
+        if (!response.ok) {
+          throw new Error("서버 응답 오류");
+        }
+
+        const notices = await response.json();
+      } catch (error) {
+        console.error(error);
+      }
+    }
   </script>
 </body>
 </html>
