@@ -36,12 +36,28 @@ class SearchRequest(BaseModel):
 
 # 공지 제목으로 구별하는 클래스
 # if "내용" in text or "내용" in text: 구조로 세부 수정 가능
-
+# 현재 분류기준은 충북대 전체 공지 분류 기준임
+# https://www.cbnu.ac.kr/www/selectBbsNttList.do?bbsNo=8&key=813
 def classify_notice(title: str) -> str:
+    """
+    공지 제목의 키워드를 기준으로 카테고리를 분류한다.
+    """
     text = title.strip().lower()
 
     if "일반" in text:
         return "일반"
+    elif "학사" in text or "장학" in text:
+        return "학사/장학"
+    elif "입학" in text or "등록" in text:
+        return "입학/등록"
+    elif "채용" in text or "인사" in text:
+        return "채용/인사"
+    elif "행사" in text or "세미나" in text:
+        return "행사/세미나"
+    elif "모집" in text or "공고" in text:
+        return "등록"
+    else:
+        return "기타"
 
 
 # 학교별 공지 목록 URL 저장
