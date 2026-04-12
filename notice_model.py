@@ -34,6 +34,16 @@ class SearchRequest(BaseModel):
     university: str
 
 
+# 공지 제목으로 구별하는 클래스
+# if "내용" in text or "내용" in text: 구조로 세부 수정 가능
+
+def classify_notice(title: str) -> str:
+    text = title.strip().lower()
+
+    if "일반" in text:
+        return "일반"
+
+
 # 학교별 공지 목록 URL 저장
 # 학교가 늘어나면 boards 안에 게시판을 추가
 UNIVERSITY_SOURCES = {
@@ -60,4 +70,6 @@ UNIVERSITY_SOURCES = {
     #        공지링크 추가시 NoticeBoard를 계속 추가
     #     ]
     # ),
+
+
 }
