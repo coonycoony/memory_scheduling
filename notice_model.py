@@ -34,14 +34,11 @@ class SearchRequest(BaseModel):
     university: str
 
 
-# 공지 제목으로 구별하는 클래스
+# 공지 제목으로 구별하는 함수
 # if "내용" in text or "내용" in text: 구조로 세부 수정 가능
 # 현재 분류기준은 충북대 전체 공지 분류 기준임
 # https://www.cbnu.ac.kr/www/selectBbsNttList.do?bbsNo=8&key=813
 def classify_notice(title: str) -> str:
-    """
-    공지 제목의 키워드를 기준으로 카테고리를 분류한다.
-    """
     text = title.strip().lower()
 
     if "일반" in text:
@@ -58,6 +55,21 @@ def classify_notice(title: str) -> str:
         return "등록"
     else:
         return "기타"
+
+
+# 크롤링으로 얻은 데이터를 Notice 객체 형태로 변환
+# 세부 내용 추가 필요
+def make_notice(
+    university: str,
+    title: str,
+    url: str,
+) -> Notice:
+    return Notice(
+        university=university,
+        title=title,
+        url=url,
+        category="기타",
+    )
 
 
 # 학교별 공지 목록 URL 저장
