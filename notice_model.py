@@ -121,8 +121,16 @@ def fetch_board_html(list_url: str) -> str:
 
 
 def parse_notice_rows(html: str, university: str, board: NoticeBoard) -> List[Notice]:
-    return []
+    soup = BeautifulSoup(html, "html.parser")
+    results: List[Notice] = []
 
+    rows = soup.select("table tbody tr")
+
+    for row in rows:
+        cells = row.find_all("td")
+        if not cells:
+            continue
+    return results
 
 def crawl_notice_board(university: str, board: NoticeBoard) -> List[Notice]:
     html = fetch_board_html(board.list_url)
