@@ -113,3 +113,32 @@ UNIVERSITY_SOURCES = {
 
 
 }
+
+
+# 크롤링 함수 뼈대
+def fetch_board_html(list_url: str) -> str:
+    return ""
+
+
+def parse_notice_rows(html: str, university: str, board: NoticeBoard) -> List[Notice]:
+    return []
+
+
+def crawl_notice_board(university: str, board: NoticeBoard) -> List[Notice]:
+    html = fetch_board_html(board.list_url)
+    notices = parse_notice_rows(html, university, board)
+    return notices
+
+
+def load_notices_by_university(university: str) -> List[Notice]:
+    source = UNIVERSITY_SOURCES.get(university)
+    if source is None:
+        return []
+
+    results: List[Notice] = []
+
+    for board in source.boards:
+        board_notices = crawl_notice_board(source.name, board)
+        results.extend(board_notices)
+
+    return results
