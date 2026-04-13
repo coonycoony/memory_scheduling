@@ -104,7 +104,7 @@ UNIVERSITY_SOURCES = {
     #             list_url="url"
     #         ),
     #         NoticeBoard(
-    #             board_name="공지종류 ex) 컴퓨터공학과 공지"
+    #             board_name="공지종류 ex) 컴퓨터공학과 공지",
     #             list_url="url"
     #         ),
     #        공지링크 추가시 NoticeBoard를 계속 추가
@@ -115,9 +115,25 @@ UNIVERSITY_SOURCES = {
 }
 
 
-# 크롤링 함수 뼈대
+# 크롤링 함수
 def fetch_board_html(list_url: str) -> str:
-    return ""
+    response = requests.get(
+        list_url,
+        headers={
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/123.0.0.0 Safari/537.36"
+            )
+        },
+        timeout=10,
+    )
+    response.raise_for_status()
+
+    if response.apparent_encoding:
+        response.encoding = response.apparent_encoding
+
+    return response.text
 
 
 def parse_notice_rows(html: str, university: str, board: NoticeBoard) -> List[Notice]:
@@ -130,6 +146,29 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard) -> List[No
         cells = row.find_all("td")
         if not cells:
             continue
+
+        link_tag = row.find("a", href=True)
+        if link_tag is None:
+            continue
+
+        title = link_tag.get_text(" ", strip=True)
+        if not title:
+            continue
+
+        raw_href = link_tag["href"].strip()
+        if not raw_href:
+            continue
+
+        url = urljoin(board.list_url, raw_href)
+
+        notice = make_notice(
+            university=university,
+            title=title,
+            url=url,
+            board_name=board.board_name,
+        )
+        results.append(notice)
+
     return results
 
 def crawl_notice_board(university: str, board: NoticeBoard) -> List[Notice]:
