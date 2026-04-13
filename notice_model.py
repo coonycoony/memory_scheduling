@@ -61,17 +61,26 @@ def classify_notice(title: str) -> str:
 
 
 # 크롤링으로 얻은 데이터를 Notice 객체 형태로 변환
-# 세부 내용 추가 필요
 def make_notice(
     university: str,
     title: str,
     url: str,
+    board_name: Optional[str] = None,
+    source_category: Optional[str] = None,
+    department: Optional[str] = None,
+    date: Optional[str] = None,
 ) -> Notice:
+    clean_title = title.strip()
+
     return Notice(
         university=university,
-        title=title,
+        title=clean_title,
         url=url,
-        category="기타",
+        category=source_category if source_category else classify_notice(clean_title),
+        board_name=board_name,
+        source_category=source_category,
+        department=department,
+        date=date,
     )
 
 
