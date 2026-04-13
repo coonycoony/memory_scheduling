@@ -1,6 +1,9 @@
-from pydantic import BaseModel
 from typing import List, Optional
+from urllib.parse import urljoin
 
+import requests
+from bs4 import BeautifulSoup
+from pydantic import BaseModel
 
 # 학교 내에서 공지사항 게시판 정보
 class NoticeBoard(BaseModel):
@@ -52,7 +55,7 @@ def classify_notice(title: str) -> str:
     elif "행사" in text or "세미나" in text:
         return "행사/세미나"
     elif "모집" in text or "공고" in text:
-        return "등록"
+        return "모집/공고"
     else:
         return "기타"
 
