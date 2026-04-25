@@ -11,6 +11,8 @@ from pydantic import BaseModel
 class NoticeBoard(BaseModel):
     board_name: str      # 공지 종류 ex) 대학교 전체공지
     list_url: str        # 해당 공지사항 목록 페이지 URL
+    page_param: str = "pageIndex"
+    max_pages: int = 50
 
 
 # 학교 정보 구조
@@ -142,6 +144,13 @@ def _extract_date_from_row(row) -> Optional[date]:
             return parsed
     return None
 
+def _build_page_url(base_url: str, page_param: str, page: int) -> str:
+    parsed = urlparse(base_url)
+    params = parse_qs(parsed.query, keep_blank_values=True)
+    params[page_param] = [str(page)]
+    new_query = urlencode({k: v[0] for k, v in params.items()})
+    return urlunparse(parsed._replace(query=new_query))
+
 def fetch_board_html(list_url: str) -> str:
     response = requests.get(
         list_url,
@@ -162,9 +171,10 @@ def fetch_board_html(list_url: str) -> str:
     return response.text
 
 
-def parse_notice_rows(html: str, university: str, board: NoticeBoard) -> List[Notice]:
+def parse_notice_rows(html: str, university: str, board: NoticeBoard, until_date: Optional[date] = None):
     soup = BeautifulSoup(html, "html.parser")
     results: List[Notice] = []
+    should_stop = False
 
     rows = soup.select("table tbody tr")
 
@@ -188,6 +198,10 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard) -> List[No
         url = urljoin(board.list_url, raw_href)
         notice_date = _extract_date_from_row(row)
 
+        if until_date and notice_date and notice_date < until_date:
+            should_stop = True
+            break
+
         notice = make_notice(
             university=university,
             title=title,
@@ -197,12 +211,26 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard) -> List[No
         )
         results.append(notice)
 
-    return results
+    return results, should_stop
 
-def crawl_notice_board(university: str, board: NoticeBoard) -> List[Notice]:
-    html = fetch_board_html(board.list_url)
-    notices = parse_notice_rows(html, university, board)
-    return notices
+def crawl_notice_board(university: str, board: NoticeBoard, until_date: Optional[date] = None) -> List[Notice]:
+    all_notices: List[Notice] = []
+    seen_urls: set = set()
+
+    for page in range(1, board.max_pages + 1):
+        page_url = _build_page_url(board.list_url, board.page_param, page)
+        html = fetch_board_html(page_url)
+        notices, should_stop = parse_notice_rows(html, university, board, until_date)
+
+        for notice in notices:
+            if notice.url not in seen_urls:
+                seen_urls.add(notice.url)
+                all_notices.append(notice)
+
+        if should_stop or not notices:
+            break
+
+    return all_notices
 
 
 def load_notices(request: SearchRequest) -> List[Notice]:
@@ -213,10 +241,8 @@ def load_notices(request: SearchRequest) -> List[Notice]:
     results: List[Notice] = []
 
     for board in source.boards:
-        board_notices = crawl_notice_board(source.name, board)
+        board_notices = crawl_notice_board(source.name, board, request.until_date)
         results.extend(board_notices)
 
-    until = request.until_date
-    results = [n for n in results if not n.date or date.fromisoformat(n.date) >= until]
     results.sort(key=lambda n: n.date or "", reverse=True)
     return results
