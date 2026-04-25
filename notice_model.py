@@ -33,9 +33,10 @@ class Notice(BaseModel):
 
 # 검색 입력 구조
 # 나중에 사용자가 학교명을 입력하면 이 구조로 전달 가능
+# SearchRequest 교체
 class SearchRequest(BaseModel):
     university: str
-
+    until: str  # "YYYY-MM-DD" 형식
 
 # 공지 제목으로 구별하는 함수
 # if "내용" in text or "내용" in text: 구조로 세부 수정 가능
@@ -117,23 +118,7 @@ UNIVERSITY_SOURCES = {
 
 # 크롤링 함수
 def fetch_board_html(list_url: str) -> str:
-    response = requests.get(
-        list_url,
-        headers={
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/123.0.0.0 Safari/537.36"
-            )
-        },
-        timeout=10,
-    )
-    response.raise_for_status()
-
-    if response.apparent_encoding:
-        response.encoding = response.apparent_encoding
-
-    return response.text
+    return ""
 
 
 def parse_notice_rows(html: str, university: str, board: NoticeBoard) -> List[Notice]:
@@ -177,8 +162,8 @@ def crawl_notice_board(university: str, board: NoticeBoard) -> List[Notice]:
     return notices
 
 
-def load_notices_by_university(university: str) -> List[Notice]:
-    source = UNIVERSITY_SOURCES.get(university)
+def load_notices(request: SearchRequest) -> List[Notice]:
+    source = UNIVERSITY_SOURCES.get(request.university)
     if source is None:
         return []
 
