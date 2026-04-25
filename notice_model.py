@@ -1,5 +1,7 @@
 from typing import List, Optional
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlencode, urlparse, parse_qs, urlunparse
+from datetime import date
+import re
 
 import requests
 from bs4 import BeautifulSoup
@@ -33,10 +35,14 @@ class Notice(BaseModel):
 
 # 검색 입력 구조
 # 나중에 사용자가 학교명을 입력하면 이 구조로 전달 가능
-# SearchRequest 교체
 class SearchRequest(BaseModel):
     university: str
-    until: str  # "YYYY-MM-DD" 형식
+    until: str  # "YYYY-MM-DD" 형식, 해당 날짜 이후 공지만 수집
+
+    @property
+    def until_date(self) -> date:
+        return date.fromisoformat(self.until)
+
 
 # 공지 제목으로 구별하는 함수
 # if "내용" in text or "내용" in text: 구조로 세부 수정 가능
@@ -111,14 +117,49 @@ UNIVERSITY_SOURCES = {
     #        공지링크 추가시 NoticeBoard를 계속 추가
     #     ]
     # ),
-
-
 }
 
 
 # 크롤링 함수
+_DATE_PATTERN = re.compile(r"(\d{2,4})[.\-/](\d{1,2})[.\-/](\d{1,2})")
+
+def _parse_date(raw: str) -> Optional[date]:
+    m = _DATE_PATTERN.search(raw.strip())
+    if not m:
+        return None
+    y, mo, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
+    if y < 100:
+        y += 2000
+    try:
+        return date(y, mo, d)
+    except ValueError:
+        return None
+
+def _extract_date_from_row(row) -> Optional[date]:
+    for td in row.find_all("td"):
+        parsed = _parse_date(td.get_text(strip=True))
+        if parsed:
+            return parsed
+    return None
+
 def fetch_board_html(list_url: str) -> str:
-    return ""
+    response = requests.get(
+        list_url,
+        headers={
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/123.0.0.0 Safari/537.36"
+            )
+        },
+        timeout=10,
+    )
+    response.raise_for_status()
+
+    if response.apparent_encoding:
+        response.encoding = response.apparent_encoding
+
+    return response.text
 
 
 def parse_notice_rows(html: str, university: str, board: NoticeBoard) -> List[Notice]:
@@ -145,12 +186,14 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard) -> List[No
             continue
 
         url = urljoin(board.list_url, raw_href)
+        notice_date = _extract_date_from_row(row)
 
         notice = make_notice(
             university=university,
             title=title,
             url=url,
             board_name=board.board_name,
+            date=notice_date.isoformat() if notice_date else None,
         )
         results.append(notice)
 
@@ -173,4 +216,7 @@ def load_notices(request: SearchRequest) -> List[Notice]:
         board_notices = crawl_notice_board(source.name, board)
         results.extend(board_notices)
 
+    until = request.until_date
+    results = [n for n in results if not n.date or date.fromisoformat(n.date) >= until]
+    results.sort(key=lambda n: n.date or "", reverse=True)
     return results
