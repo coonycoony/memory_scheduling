@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>대학교 공지사항 검색</title>
+<style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #f5f7fb;
+      color: #222;
+      padding: 40px 20px;
+    }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  .header h1 {
+    font-size: 32px;
+    margin-bottom: 10px;
+  }
+
+  .header p {
+    color: #666;
+    font-size: 16px;
+  }
+
+  .search-box {
+    background: white;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .search-box input {
+    flex: 1;
+    min-width: 220px;
+    padding: 14px;
+    border: 1px solid #d0d7e2;
+    border-radius: 10px;
+    font-size: 16px;
+  }
+
+  .search-box button {
+    padding: 14px 20px;
+    border: none;
+    background: #2563eb;
+    color: white;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  .search-box button:hover {
+    background: #1d4ed8;
+  }
+
+  .status {
+    margin-bottom: 16px;
+    color: #444;
+    font-size: 15px;
+  }
+
+  .notice-list {
+    display: grid;
+    gap: 16px;
+  }
+
+  .notice-card {
+    background: white;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    transition: transform 0.15s ease;
+  }
+
+  .notice-card:hover {
+    transform: translateY(-2px);
+  }
+
+  .notice-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #e8f0ff;
+    color: #1d4ed8;
+    font-size: 13px;
+    font-weight: bold;
+  }
+
+  .title {
+    font-size: 19px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+
+  .title a {
+    text-decoration: none;
+    color: #111827;
+  }
+
+  .title a:hover {
+    text-decoration: underline;
+    color: #2563eb;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    color: #666;
+    font-size: 14px;
+  }
+
+  .empty {
+    background: white;
+    padding: 24px;
+    border-radius: 16px;
+    text-align: center;
+    color: #666;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  @media (max-width: 640px) {
+    .header h1 {
+      font-size: 26px;
+    }
+
+    .search-box {
+      flex-direction: column;
+    }
+
+    .search-box button {
+      width: 100%;
+    }
+  }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>대학교 공지사항 검색</h1>
+      <p>학교명을 입력하면 공지를 불러오고 카테고리별로 확인할 수 있습니다.</p>
+    </div>
+
+    <div class="search-box">
+      <input
+        type="text"
+        id="universityInput"
+        placeholder="예: 충북대학교"
+        value="충북대학교"
+      />
+      <button onclick="searchNotices()">검색</button>
+    </div>
+
+    <div class="status" id="status">학교명을 입력하고 검색하세요.</div>
+    <div class="notice-list" id="noticeList"></div>
+  </div>
+
+  <script>
+    const API_BASE_URL = "http://127.0.0.1:8000";
+
+    async function searchNotices() {
+      const university = document.getElementById("universityInput").value.trim();
+      const status = document.getElementById("status");
+      const noticeList = document.getElementById("noticeList");
+
+      if (!university) {
+        status.textContent = "학교명을 입력해주세요.";
+        noticeList.innerHTML = "";
+        return;
+      }
+
+      status.textContent = "공지사항을 불러오는 중입니다...";
+      noticeList.innerHTML = "";
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/notices?university=${encodeURIComponent(university)}`);
+
+        if (!response.ok) {
+          throw new Error("서버 응답 오류");
+        }
+
+        const notices = await response.json();
+		if (!Array.isArray(notices) || notices.length === 0) {
+          status.textContent = `${university} 공지사항이 없습니다.`;
+          noticeList.innerHTML = `
+            <div class="empty">
+              검색 결과가 없습니다.<br />
+              학교명 또는 백엔드 데이터를 확인해주세요.
+            </div>
+          `;
+          return;
+        }
+
+        status.textContent = `${university} 공지 ${notices.length}건을 찾았습니다.`;
+        renderNotices(notices);
+      } catch (error) {
+        console.error(error);
+        status.textContent = "공지사항을 불러오지 못했습니다.";
+        noticeList.innerHTML = `
+          <div class="empty">
+            서버 연결에 실패했습니다.<br />
+            백엔드 실행 여부와 API 주소를 확인해주세요.
+          </div>
+        `;
+      }
+    }
+
+    function renderNotices(notices) {
+      const noticeList = document.getElementById("noticeList");
+
+      noticeList.innerHTML = notices.map(notice => `
+        <div class="notice-card">
+          <div class="notice-top">
+            <span class="badge">${notice.category || "기타"}</span>
+            <span>${notice.university || ""}</span>
+          </div>
+          <div class="title">
+            <a href="${notice.url || "#"}" target="_blank" rel="noopener noreferrer">
+              ${notice.title || "제목 없음"}
+            </a>
+          </div>
+          <div class="meta">
+            <span>원본 분류: ${notice.source_category || "없음"}</span>
+            <span>부서: ${notice.department || "없음"}</span>
+            <span>작성일: ${notice.date || "없음"}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function escapeAttribute(value) {
+      return String(value).replace(/\"/g, "&quot;");
+    }
+  </script>
+</body>
+</html>
