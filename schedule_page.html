@@ -17,10 +17,44 @@
       background: #f5f7fb;
       color: #222;
     }
+
+    .schedule-container {
+      max-width: 100%;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 340px minmax(0, 1fr);
+      gap: 15px;
+      align-items: start;
+    }
+
+    @media (max-width: 600px) {
+      .schedule-container { grid-template-columns: 1fr; }
+    }
+
+    .left-panel {
+      display: grid;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .right-panel { 
+      min-width: 0;
+    }
+
     </style>
 </head>
 
 <body>
+    <div class="schedule-container">
+      <div class="left-panel">
+      </div>
+      <div class="right-panel">
+      </div>
+    </div>
 
 </body>
 </html>
