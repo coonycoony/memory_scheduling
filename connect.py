@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import date, timedelta
+from notice_model import load_notices, SearchRequest
 
 app = FastAPI()
 
@@ -19,4 +20,9 @@ def get_notices(university: str):
     thirty_days_ago = date.today() - timedelta(days=30)
     until_str = thirty_days_ago.isoformat()
 
-    return {"message": "API 연결 테스트 성공", "until": until_str}
+    request_data = SearchRequest(
+            university=university,
+            until=until_str
+        )
+    results = load_notices(request_date)
+    return results
