@@ -134,6 +134,11 @@
                 <option value="etc">기타</option>
               </select>
             </div>
+
+            <div class="form-group">
+              <label class="form-label" for="eventTitle">제목</label>
+              <input type="text" id="eventTitle" placeholder="예: 국가장학금 2차 신청" required />
+            </div>
           </form>  //eventForm_end
 
         </div>  //card_end
@@ -149,7 +154,8 @@
 
     const els = {
       eventForm: $("eventForm"),
-      eventType: $("eventType")
+      eventType: $("eventType"),
+      eventTitle: $("eventTitle")
     };
 
     function renderEventList() {
