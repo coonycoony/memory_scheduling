@@ -288,6 +288,14 @@
     };
 
     function renderEventList() {
+      const list = events[selectedDate] || [];
+      els.eventList.innerHTML = "";
+
+      if (!list.length) {
+        els.eventList.innerHTML = '<div class="empty-text">이 날짜에는 저장된 스케줄이 없습니다.</div>';
+        return;
+      }
+
       list.forEach((ev, index) => {
         const item = document.createElement("div");
         item.className = "event-item";
@@ -302,6 +310,19 @@
             ${ev.memo ? `<div class="event-memo">${ev.memo}</div>` : ""}
           </div>
         `;
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "btn-secondary";
+        deleteBtn.type = "button";
+        deleteBtn.textContent = "삭제";
+        deleteBtn.addEventListener("click", () => {
+          events[selectedDate].splice(index, 1);
+          if (!events[selectedDate].length) delete events[selectedDate];
+          renderEventList();
+        });
+
+        item.appendChild(deleteBtn);
+        els.eventList.appendChild(item);
       });
     }
   </script>
