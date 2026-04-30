@@ -111,6 +111,114 @@
       border-color: #2563eb;
       box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);
     }
+
+    .button-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: #fff;
+      font-size: 14px;
+      padding: 9px 12px;
+      font-weight: 600;
+    }
+
+    .btn-primary:hover {
+      background: #1d4ed8;
+    }
+
+    .btn-secondary {
+      background: #f3f4f6;
+      color: #374151;
+      font-size: 13px;
+      padding: 8px 10px;
+    }
+
+    .btn-secondary:hover {
+      background: #e5e7eb;
+    }
+
+    .event-list {
+      margin-top: 14px;
+      max-height: 260px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .event-item {
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      margin-bottom: 6px;
+      font-size: 13px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }   
+
+    .event-main {
+      flex: 1;
+    }
+
+    .event-type-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      margin-bottom: 4px;
+    }
+
+    .event-type-pill.scholarship {
+      background: #fff7ed;
+      color: #c2410c;
+    }
+
+    .event-type-pill.etc {
+      background: #ecfdf3;
+      color: #15803d;
+    }
+
+    .event-title {
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .event-time {
+      font-size: 11px;
+      color: #6b7280;
+      margin-bottom: 2px;
+    }   
+
+    .event-memo {
+      font-size: 12px;
+      color: #4b5563;
+    }
+
+    .empty-text {
+      font-size: 13px;
+      color: #9ca3af;
+      text-align: center;
+      padding: 16px 4px;
+    }
     </style>
 </head>
 
@@ -149,8 +257,13 @@
               <label class="form-label" for="eventMemo">메모 (선택)</label>
               <textarea id="eventMemo" placeholder="관련 링크, 금액, 해야 할 일을 적어두세요."></textarea>
             </div>
-          </form>  //eventForm_end
 
+            <div class="button-row">
+              <button type="submit" class="btn-primary">이 날짜에 스케줄 추가</button>
+              <button type="button" class="btn-secondary" id="deleteAllBtn">이 날짜 전체 삭제</button>
+            </div>
+          </form>  //eventForm_end
+          <div class="event-list" id="eventList"></div>
         </div>  //card_end
       </div>  //left_end
 
@@ -159,6 +272,7 @@
     </div>  //container_end
 
   <script>
+    let selectedDate;
     const events = {};
     const $ = (id) => document.getElementById(id);
 
@@ -167,7 +281,10 @@
       eventType: $("eventType"),
       eventTitle: $("eventTitle"),
       eventTime: $("eventTime"),
-      eventMemo: $("eventMemo")
+      eventMemo: $("eventMemo"),
+      deleteAllBtn: $("deleteAllBtn"),
+      eventList: $("eventList"),
+      selectedDateBox: document.querySelector(".selected-date")
     };
 
     function renderEventList() {
