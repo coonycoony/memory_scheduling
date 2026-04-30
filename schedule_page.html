@@ -139,6 +139,11 @@
               <label class="form-label" for="eventTitle">제목</label>
               <input type="text" id="eventTitle" placeholder="예: 국가장학금 2차 신청" required />
             </div>
+
+            <div class="form-group">
+              <label class="form-label" for="eventTime">시간 (선택)</label>
+              <input type="time" id="eventTime" />
+            </div>
           </form>  //eventForm_end
 
         </div>  //card_end
@@ -155,7 +160,8 @@
     const els = {
       eventForm: $("eventForm"),
       eventType: $("eventType"),
-      eventTitle: $("eventTitle")
+      eventTitle: $("eventTitle"),
+      eventTime: $("eventTime")
     };
 
     function renderEventList() {
