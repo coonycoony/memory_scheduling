@@ -325,6 +325,32 @@
         els.eventList.appendChild(item);
       });
     }
+
+    els.eventForm.addEventListener("submit", (e) => { 
+      e.preventDefault();
+
+      const type = els.eventType.value;
+      const title = els.eventTitle.value.trim();
+      const time = els.eventTime.value;
+      const memo = els.eventMemo.value.trim();
+
+      if (!title) return;
+
+      (events[selectedDate] ||= []).push({ type, title, time, memo });
+
+      els.eventTitle.value = "";
+      els.eventTime.value = "";
+      els.eventMemo.value = "";
+
+      renderEventList();
+    });
+
+    els.deleteAllBtn.addEventListener("click", () => { 
+      if (!events[selectedDate]?.length) return;
+      if (!confirm("이 날짜의 스케줄을 모두 삭제할까요?")) return;
+      delete events[selectedDate];
+      renderEventList();
+    });
   </script>
 </body>
 </html> 
