@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang = "ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>공지/장학 스케줄러</title>
+    <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+        <form id="eventForm"><<<</body>
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      padding: 40px 20px;
+      background: #f5f7fb;
+      color: #222;
+    }
+
+    .schedule-container {
+      max-width: 100%;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 340px minmax(0, 1fr);
+      gap: 15px;
+      align-items: start;
+    }
+
+    @media (max-width: 600px) {
+      .schedule-container { grid-template-columns: 1fr; }
+    }
+
+    .left-panel {
+      display: grid;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .right-panel { 
+      min-width: 0;
+    }
+
+    .card { 
+      background: #fff;
+      border: 5px double #e5e7eb;
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .header {
+      font-size: 15px;
+      margin: 0;
+      align-items: center;
+    }
+
+    .section-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .selected-date {
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 12px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    .form-group { 
+      margin-bottom: 10px; 
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    select,
+    input[type="text"],
+    input[type="time"],
+    textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 13px;
+      background: #fff;
+    }
+
+    textarea {
+      min-height: 58px;
+      resize: vertical;
+    }
+
+    select:focus,
+    input:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);
+    }
+
+    .button-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: #fff;
+      font-size: 14px;
+      padding: 9px 12px;
+      font-weight: 600;
+    }
+
+    .btn-primary:hover {
+      background: #1d4ed8;
+    }
+
+    .btn-secondary {
+      background: #f3f4f6;
+      color: #374151;
+      font-size: 13px;
+      padding: 8px 10px;
+    }
+
+    .btn-secondary:hover {
+      background: #e5e7eb;
+    }
+
+    .event-list {
+      margin-top: 14px;
+      max-height: 260px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .event-item {
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      margin-bottom: 6px;
+      font-size: 13px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }   
+
+    .event-main {
+      flex: 1;
+    }
+
+    .event-type-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      margin-bottom: 4px;
+    }
+
+    .event-type-pill.scholarship {
+      background: #fff7ed;
+      color: #c2410c;
+    }
+
+    .event-type-pill.etc {
+      background: #ecfdf3;
+      color: #15803d;
+    }
+
+    .event-title {
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .event-time {
+      font-size: 11px;
+      color: #6b7280;
+      margin-bottom: 2px;
+    }   
+
+    .event-memo {
+      font-size: 12px;
+      color: #4b5563;
+    }
+
+    .empty-text {
+      font-size: 13px;
+      color: #9ca3af;
+      text-align: center;
+      padding: 16px 4px;
+    }
+    </style>
+</head>
+
+<body>
+    <div class="schedule-container">
+      <div class="left-panel">
+        <div class="card header">
+          <h1>공지 · 장학 스케줄러</h1>
+        </div>
+
+        <div class="card">
+          <div class="section-title">선택한 날짜</div>
+          <div class="badge">날짜를 눌러 공지/장학/기타 스케줄을 추가할 수 있어요</div>
+
+          <form id="eventForm">
+            <div class="form-group">
+              <label class="form-label" for="eventType">종류</label>
+              <select id="eventType" required>
+                <option value="notice">공지</option>
+                <option value="scholarship">장학</option>
+                <option value="etc">기타</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="eventTitle">제목</label>
+              <input type="text" id="eventTitle" placeholder="예: 국가장학금 2차 신청" required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="eventTime">시간 (선택)</label>
+              <input type="time" id="eventTime" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="eventMemo">메모 (선택)</label>
+              <textarea id="eventMemo" placeholder="관련 링크, 금액, 해야 할 일을 적어두세요."></textarea>
+            </div>
+
+            <div class="button-row">
+              <button type="submit" class="btn-primary">이 날짜에 스케줄 추가</button>
+              <button type="button" class="btn-secondary" id="deleteAllBtn">이 날짜 전체 삭제</button>
+            </div>
+          </form>
+          <div class="event-list" id="eventList"></div>
+        </div>
+      </div>  
+
+      <div class="right-panel">
+      </div>
+    </div>  
+
+  <script>
+    let selectedDate;
+    const events = {};
+    const $ = (id) => document.getElementById(id);
+
+    const els = {
+      eventForm: $("eventForm"),
+      eventType: $("eventType"),
+      eventTitle: $("eventTitle"),
+      eventTime: $("eventTime"),
+      eventMemo: $("eventMemo"),
+      deleteAllBtn: $("deleteAllBtn"),
+      eventList: $("eventList"),
+      selectedDateBox: document.querySelector(".selected-date")
+    };
+
+    const getIso = (date) => {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    };
+
+    const todayIso = () => getIso(new Date());
+
+    const formatDateKorean = (dateStr) => {
+      const [y, m, d] = dateStr.split("-");
+      return `${y}년 ${+m}월 ${+d}일`;
+    };
+
+    function renderEventList() {
+      const list = events[selectedDate] || [];
+      els.eventList.innerHTML = "";
+
+      if (!list.length) {
+        els.eventList.innerHTML = '<div class="empty-text">이 날짜에는 저장된 스케줄이 없습니다.</div>';
+        return;
+      }
+
+      list.forEach((ev, index) => {
+        const item = document.createElement("div");
+        item.className = "event-item";
+
+        item.innerHTML = `
+          <div class="event-main">
+            <div class="event-type-pill ${ev.type === "scholarship" ? "scholarship" : ev.type === "etc" ? "etc" : ""}">
+              ${ev.type === "notice" ? "공지" : ev.type === "scholarship" ? "장학" : "기타"}
+            </div>
+            <div class="event-title">${ev.title}</div>
+            <div class="event-time">${ev.time ? `시간: ${ev.time}` : "시간 정보 없음"}</div>
+            ${ev.memo ? `<div class="event-memo">${ev.memo}</div>` : ""}
+          </div>
+        `;
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "btn-secondary";
+        deleteBtn.type = "button";
+        deleteBtn.textContent = "삭제";
+        deleteBtn.addEventListener("click", () => {
+          events[selectedDate].splice(index, 1);
+          if (!events[selectedDate].length) delete events[selectedDate];
+          renderEventList();
+        });
+
+        item.appendChild(deleteBtn);
+        els.eventList.appendChild(item);
+      });
+    }
+
+    els.eventForm.addEventListener("submit", (e) => { 
+      e.preventDefault();
+
+      const type = els.eventType.value;
+      const title = els.eventTitle.value.trim();
+      const time = els.eventTime.value;
+      const memo = els.eventMemo.value.trim();
+
+      if (!title) return;
+
+      (events[selectedDate] ||= []).push({ type, title, time, memo });
+
+      els.eventTitle.value = "";
+      els.eventTime.value = "";
+      els.eventMemo.value = "";
+
+      renderEventList();
+    });
+
+    els.deleteAllBtn.addEventListener("click", () => { 
+      if (!events[selectedDate]?.length) return;
+      if (!confirm("이 날짜의 스케줄을 모두 삭제할까요?")) return;
+      delete events[selectedDate];
+      renderEventList();
+    });
+
+    function updateSelectedDateUI() {  
+      if (els.selectedDateBox) {
+        els.selectedDateBox.textContent = formatDateKorean(selectedDate);
+      }
+      renderEventList();
+    }
+
+    (() => {
+      selectedDate = todayIso();
+      updateSelectedDateUI();
+    })();
+  </script>
+</body>
+</html> 
