@@ -64,6 +64,12 @@
       margin-bottom: 10px;
     }
 
+    .selected-date {
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 12px;
+    }
+
     .badge {
       display: inline-flex;
       align-items: center;
@@ -262,14 +268,14 @@
               <button type="submit" class="btn-primary">이 날짜에 스케줄 추가</button>
               <button type="button" class="btn-secondary" id="deleteAllBtn">이 날짜 전체 삭제</button>
             </div>
-          </form>  //eventForm_end
+          </form>
           <div class="event-list" id="eventList"></div>
-        </div>  //card_end
-      </div>  //left_end
+        </div>
+      </div>  
 
       <div class="right-panel">
-      </div>  //right_end
-    </div>  //container_end
+      </div>
+    </div>  
 
   <script>
     let selectedDate;
@@ -287,6 +293,20 @@
       selectedDateBox: document.querySelector(".selected-date")
     };
 
+    const getIso = (date) => {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    };
+
+    const todayIso = () => getIso(new Date());
+
+    const formatDateKorean = (dateStr) => {
+      const [y, m, d] = dateStr.split("-");
+      return `${y}년 ${+m}월 ${+d}일`;
+    };
+
     function renderEventList() {
       const list = events[selectedDate] || [];
       els.eventList.innerHTML = "";
@@ -300,6 +320,7 @@
         const item = document.createElement("div");
         item.className = "event-item";
 
+        <form id="eventForm"><<<</body>
         item.innerHTML = `
           <div class="event-main">
             <div class="event-type-pill ${ev.type === "scholarship" ? "scholarship" : ev.type === "etc" ? "etc" : ""}">
@@ -351,6 +372,18 @@
       delete events[selectedDate];
       renderEventList();
     });
+
+    function updateSelectedDateUI() {  
+      if (els.selectedDateBox) {
+        els.selectedDateBox.textContent = formatDateKorean(selectedDate);
+      }
+      renderEventList();
+    }
+
+    (() => {
+      selectedDate = todayIso();
+      updateSelectedDateUI();
+    })();
   </script>
 </body>
 </html> 
