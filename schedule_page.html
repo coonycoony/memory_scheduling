@@ -76,6 +76,41 @@
       margin-bottom: 12px;
     }
 
+    .form-group { 
+      margin-bottom: 10px; 
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    select,
+    input[type="text"],
+    input[type="time"],
+    textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 13px;
+      background: #fff;
+    }
+
+    textarea {
+      min-height: 58px;
+      resize: vertical;
+    }
+
+    select:focus,
+    input:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);
+    }
     </style>
 </head>
 
@@ -89,11 +124,51 @@
         <div class="card">
           <div class="section-title">선택한 날짜</div>
           <div class="badge">날짜를 눌러 공지/장학/기타 스케줄을 추가할 수 있어요</div>
-        </div>
+
+          <form id="eventForm">
+            <div class="form-group">
+              <label class="form-label" for="eventType">종류</label>
+              <select id="eventType" required>
+                <option value="notice">공지</option>
+                <option value="scholarship">장학</option>
+                <option value="etc">기타</option>
+              </select>
+            </div>
+          </form>  //eventForm_end
+
+        </div>  //card_end
+      </div>  //left_end
 
       <div class="right-panel">
-      </div>
-    </div>
+      </div>  //right_end
+    </div>  //container_end
 
+  <script>
+    const events = {};
+    const $ = (id) => document.getElementById(id);
+
+    const els = {
+      eventForm: $("eventForm"),
+      eventType: $("eventType")
+    };
+
+    function renderEventList() {
+      list.forEach((ev, index) => {
+        const item = document.createElement("div");
+        item.className = "event-item";
+
+        item.innerHTML = `
+          <div class="event-main">
+            <div class="event-type-pill ${ev.type === "scholarship" ? "scholarship" : ev.type === "etc" ? "etc" : ""}">
+              ${ev.type === "notice" ? "공지" : ev.type === "scholarship" ? "장학" : "기타"}
+            </div>
+            <div class="event-title">${ev.title}</div>
+            <div class="event-time">${ev.time ? `시간: ${ev.time}` : "시간 정보 없음"}</div>
+            ${ev.memo ? `<div class="event-memo">${ev.memo}</div>` : ""}
+          </div>
+        `;
+      });
+    }
+  </script>
 </body>
 </html> 
