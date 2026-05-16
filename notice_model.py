@@ -2,54 +2,48 @@ from typing import List, Optional
 from urllib.parse import urljoin, urlencode, urlparse, parse_qs, urlunparse
 from datetime import date
 import re
+import json
+import logging
+from pathlib import Path
 
 import requests
 from bs4 import BeautifulSoup
 from pydantic import BaseModel
 
-import json
-from pathlib import Path
 
-# 학교 내에서 공지사항 게시판 정보
 class NoticeBoard(BaseModel):
-    board_name: str      # 공지 종류 ex) 대학교 전체공지
-    list_url: str        # 해당 공지사항 목록 페이지 URL
+    board_name: str
+    list_url: str
     page_param: str = "pageIndex"
     max_pages: int = 50
 
 
-# 학교 정보 구조
 class UniversitySource(BaseModel):
-    name: str                           # 학교 이름
-    boards: List[NoticeBoard]           # 학교 내 여러 공지 게시판 목록
-    categories: Optional[List[str]] = None   # 장학금, 봉사, 행사 같은 공지 분류 목록
+    name: str
+    boards: List[NoticeBoard]
+    categories: Optional[List[str]] = None
 
 
-# 공지사항 구조
-# 나중에 HTML이나 백엔드에서 공통으로 사용할 데이터 형태
 class Notice(BaseModel):
-    university: str           # 학교 이름
-    title: str                # 공지 제목
-    url: str                  # 공지 상세 링크
-    category: str             # 제목 기준 자동 분류 결과
-    board_name: Optional[str] = None        # 게시판 이름
-    source_category: Optional[str] = None   # 학교 사이트 원본 카테고리
-    department: Optional[str] = None        # 작성 부서
-    date: Optional[str] = None              # 작성일
+    university: str
+    title: str
+    url: str
+    category: str
+    board_name: Optional[str] = None
+    source_category: Optional[str] = None
+    department: Optional[str] = None
+    date: Optional[str] = None
 
 
-# 검색 입력 구조
-# 나중에 사용자가 학교명을 입력하면 이 구조로 전달 가능
 class SearchRequest(BaseModel):
     university: str
-    until: str  # "YYYY-MM-DD" 형식, 해당 날짜 이후 공지만 수집
+    until: str
 
     @property
     def until_date(self) -> date:
         return date.fromisoformat(self.until)
 
 
-# 공지 제목으로 구별하는 함수
 CATEGORY_KEYWORDS: dict[str, list[str]] = {
     "일반": ["일반"],
     "학사/장학": ["학사", "장학"],
@@ -58,6 +52,7 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
     "행사/세미나": ["행사", "세미나"],
     "모집/공고": ["모집", "공고"],
 }
+
 
 def classify_notice(title: str, board_name: Optional[str] = None) -> str:
     if board_name:
@@ -72,7 +67,7 @@ def classify_notice(title: str, board_name: Optional[str] = None) -> str:
             return category
     return "기타"
 
-# 크롤링으로 얻은 데이터를 Notice 객체 형태로 변환
+
 def make_notice(
     university: str,
     title: str,
@@ -96,8 +91,7 @@ def make_notice(
         date=date,
     )
 
-# 학교별 공지 목록 URL 저장
-# 학교가 늘어나면 boards 안에 게시판을 추가
+
 UNIVERSITY_SOURCES = {
     "충북대학교": UniversitySource(
         name="충북대학교",
@@ -126,8 +120,9 @@ UNIVERSITY_SOURCES = {
     ),
 }
 
+logger = logging.getLogger(__name__)
 
-# 크롤링 함수
+
 _DATE_PATTERN = re.compile(r"(\d{2,4})[.\-/](\d{1,2})[.\-/](\d{1,2})")
 
 def _parse_date(raw: str) -> Optional[date]:
@@ -216,12 +211,14 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard, until_date
 
     return results, should_stop
 
+
 def crawl_notice_board(university: str, board: NoticeBoard, until_date: Optional[date] = None) -> List[Notice]:
     all_notices: List[Notice] = []
     seen_urls: set = set()
 
     for page in range(1, board.max_pages + 1):
         page_url = _build_page_url(board.list_url, board.page_param, page)
+        logger.info("크롤링 시작: %s / %s (page=%d)", university, board.board_name, page)
         html = fetch_board_html(page_url)
         notices, should_stop = parse_notice_rows(html, university, board, until_date)
 
@@ -233,6 +230,7 @@ def crawl_notice_board(university: str, board: NoticeBoard, until_date: Optional
         if should_stop or not notices:
             break
 
+    logger.info("수집 완료: %s / %s 총 %d건", university, board.board_name, len(all_notices))
     return all_notices
 
 
@@ -250,6 +248,7 @@ def load_notices(request: SearchRequest) -> List[Notice]:
     results.sort(key=lambda n: n.date or "", reverse=True)
     return results
 
+
 def filter_by_keyword(
     notices: List[Notice],
     keyword: str,
@@ -258,6 +257,7 @@ def filter_by_keyword(
     kw = keyword.strip().lower()
     pool = notices if university is None else [n for n in notices if n.university == university]
     return [n for n in pool if kw in n.title.lower()]
+
 
 def summarize_by_category(
     notices: List[Notice],
@@ -270,10 +270,12 @@ def summarize_by_category(
         summary = dict(sorted(summary.items(), key=lambda x: x[1], reverse=True))
     return summary
 
+
 def save_notices_to_json(notices: List[Notice], path: str = "notices.json") -> None:
     output = Path(path)
     data = [n.model_dump() for n in notices]
     output.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
 
 def load_notices_from_json(path: str = "notices.json") -> List[Notice]:
     output = Path(path)
