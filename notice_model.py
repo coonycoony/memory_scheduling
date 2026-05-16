@@ -246,3 +246,7 @@ def load_notices(request: SearchRequest) -> List[Notice]:
 
     results.sort(key=lambda n: n.date or "", reverse=True)
     return results
+
+    def filter_by_keyword(notices: List[Notice], keyword: str) -> List[Notice]:
+    kw = keyword.strip().lower()
+    return [n for n in notices if kw in n.title.lower()]
