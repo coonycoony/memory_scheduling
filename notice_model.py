@@ -247,6 +247,11 @@ def load_notices(request: SearchRequest) -> List[Notice]:
     results.sort(key=lambda n: n.date or "", reverse=True)
     return results
 
-    def filter_by_keyword(notices: List[Notice], keyword: str) -> List[Notice]:
+def filter_by_keyword(
+    notices: List[Notice],
+    keyword: str,
+    university: Optional[str] = None,
+) -> List[Notice]:
     kw = keyword.strip().lower()
-    return [n for n in notices if kw in n.title.lower()]
+    pool = notices if university is None else [n for n in notices if n.university == university]
+    return [n for n in pool if kw in n.title.lower()]
