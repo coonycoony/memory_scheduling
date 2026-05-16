@@ -101,24 +101,26 @@ UNIVERSITY_SOURCES = {
         boards=[
             NoticeBoard(
                 board_name="대학교 전체공지",
-                list_url="https://www.cbnu.ac.kr/www/selectBbsNttList.do?bbsNo=8&key=813"
+                list_url="https://www.cbnu.ac.kr/www/selectBbsNttList.do?bbsNo=8&key=813",
+                page_param="pageIndex",
             ),
         ]
     ),
-    # "대학교명": UniversitySource(
-    #     name="대학교명",
-    #     boards=[
-    #         NoticeBoard(
-    #             board_name="공지종류 ex) 대학교 전체공지",
-    #             list_url="url"
-    #         ),
-    #         NoticeBoard(
-    #             board_name="공지종류 ex) 컴퓨터공학과 공지",
-    #             list_url="url"
-    #         ),
-    #        공지링크 추가시 NoticeBoard를 계속 추가
-    #     ]
-    # ),
+    "충남대학교": UniversitySource(
+        name="충남대학교",
+        boards=[
+            NoticeBoard(
+                board_name="대학교 전체공지",
+                list_url="https://plus.cnu.ac.kr/_prog/_board/?code=sub07_0702&site_dvs_cd=kr&menu_dvs_cd=0702",
+                page_param="GotoPage",
+            ),
+            NoticeBoard(
+                board_name="장학공지",
+                list_url="https://plus.cnu.ac.kr/_prog/_board/?code=sub07_0713&site_dvs_cd=kr&menu_dvs_cd=0713",
+                page_param="GotoPage",
+            ),
+        ]
+    ),
 }
 
 
