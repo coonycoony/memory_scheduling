@@ -56,13 +56,18 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
     "모집/공고": ["모집", "공고"],
 }
 
-def classify_notice(title: str) -> str:
+def classify_notice(title: str, board_name: Optional[str] = None) -> str:
+    if board_name:
+        board_lower = board_name.lower()
+        if "장학" in board_lower:
+            return "학사/장학"
+        if "채용" in board_lower or "인사" in board_lower:
+            return "채용/인사"
     text = title.strip().lower()
     for category, keywords in CATEGORY_KEYWORDS.items():
         if any(kw in text for kw in keywords):
             return category
     return "기타"
-
 
 # 크롤링으로 얻은 데이터를 Notice 객체 형태로 변환
 def make_notice(
