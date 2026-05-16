@@ -154,22 +154,20 @@ def _build_page_url(base_url: str, page_param: str, page: int) -> str:
     return urlunparse(parsed._replace(query=new_query))
 
 def fetch_board_html(list_url: str) -> str:
-    response = requests.get(
-        list_url,
-        headers={
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/123.0.0.0 Safari/537.36"
-            )
-        },
-        timeout=10,
-    )
+    session = requests.Session()
+    session.headers.update({
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/123.0.0.0 Safari/537.36"
+        ),
+        "Accept-Language": "ko-KR,ko;q=0.9",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    })
+    response = session.get(list_url, timeout=20)
     response.raise_for_status()
-
     if response.apparent_encoding:
         response.encoding = response.apparent_encoding
-
     return response.text
 
 
