@@ -256,8 +256,13 @@ def filter_by_keyword(
     pool = notices if university is None else [n for n in notices if n.university == university]
     return [n for n in pool if kw in n.title.lower()]
 
-def summarize_by_category(notices: List[Notice]) -> dict[str, int]:
+def summarize_by_category(
+    notices: List[Notice],
+    sort_by_count: bool = False,
+) -> dict[str, int]:
     summary: dict[str, int] = {}
     for notice in notices:
         summary[notice.category] = summary.get(notice.category, 0) + 1
+    if sort_by_count:
+        summary = dict(sorted(summary.items(), key=lambda x: x[1], reverse=True))
     return summary
