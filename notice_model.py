@@ -47,9 +47,15 @@ class SearchRequest(BaseModel):
 
 
 # 공지 제목으로 구별하는 함수
-# if "내용" in text or "내용" in text: 구조로 세부 수정 가능
-# 현재 분류기준은 충북대 전체 공지 분류 기준임
-# https://www.cbnu.ac.kr/www/selectBbsNttList.do?bbsNo=8&key=813
+CATEGORY_KEYWORDS: dict[str, list[str]] = {
+    "일반": ["일반"],
+    "학사/장학": ["학사", "장학"],
+    "입학/등록": ["입학", "등록"],
+    "채용/인사": ["채용", "인사"],
+    "행사/세미나": ["행사", "세미나"],
+    "모집/공고": ["모집", "공고"],
+}
+
 def classify_notice(title: str) -> str:
     text = title.strip().lower()
 
@@ -58,7 +64,7 @@ def classify_notice(title: str) -> str:
     elif "학사" in text or "장학" in text:
         return "학사/장학"
     elif "입학" in text or "등록" in text:
-        return "입학/등록"
+        return "입학/등i록"
     elif "채용" in text or "인사" in text:
         return "채용/인사"
     elif "행사" in text or "세미나" in text:
