@@ -7,6 +7,9 @@ import requests
 from bs4 import BeautifulSoup
 from pydantic import BaseModel
 
+import json
+from pathlib import Path
+
 # 학교 내에서 공지사항 게시판 정보
 class NoticeBoard(BaseModel):
     board_name: str      # 공지 종류 ex) 대학교 전체공지
@@ -266,3 +269,8 @@ def summarize_by_category(
     if sort_by_count:
         summary = dict(sorted(summary.items(), key=lambda x: x[1], reverse=True))
     return summary
+
+def save_notices_to_json(notices: List[Notice], path: str = "notices.json") -> None:
+    output = Path(path)
+    data = [n.model_dump() for n in notices]
+    output.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
