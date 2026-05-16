@@ -274,3 +274,8 @@ def save_notices_to_json(notices: List[Notice], path: str = "notices.json") -> N
     output = Path(path)
     data = [n.model_dump() for n in notices]
     output.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+def load_notices_from_json(path: str = "notices.json") -> List[Notice]:
+    output = Path(path)
+    raw = json.loads(output.read_text(encoding="utf-8"))
+    return [Notice(**item) for item in raw]
