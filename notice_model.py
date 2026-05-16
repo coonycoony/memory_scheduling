@@ -80,18 +80,18 @@ def make_notice(
     date: Optional[str] = None,
 ) -> Notice:
     clean_title = title.strip()
+    clean_department = department.strip() if department else None
 
     return Notice(
         university=university,
         title=clean_title,
         url=url,
-        category=source_category if source_category else classify_notice(clean_title),
+        category=source_category if source_category else classify_notice(clean_title, board_name),
         board_name=board_name,
         source_category=source_category,
-        department=department,
+        department=clean_department,
         date=date,
     )
-
 
 # 학교별 공지 목록 URL 저장
 # 학교가 늘어나면 boards 안에 게시판을 추가
