@@ -219,7 +219,11 @@ def crawl_notice_board(university: str, board: NoticeBoard, until_date: Optional
     for page in range(1, board.max_pages + 1):
         page_url = _build_page_url(board.list_url, board.page_param, page)
         logger.info("크롤링 시작: %s / %s (page=%d)", university, board.board_name, page)
-        html = fetch_board_html(page_url)
+        try:
+            html = fetch_board_html(page_url)
+        except requests.RequestException as e:
+            logger.warning("페이지 요청 실패 page=%d url=%s err=%s", page, page_url, e)
+            break
         notices, should_stop = parse_notice_rows(html, university, board, until_date)
 
         for notice in notices:
