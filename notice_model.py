@@ -299,6 +299,17 @@ def filter_by_keyword(
     return [n for n in pool if kw in n.title.lower()]
 
 
+def filter_by_category(
+    notices: List[Notice],
+    category: str,
+    university: Optional[str] = None,
+) -> List[Notice]:
+    if not is_valid_category(category):
+        raise ValueError(f"허용되지 않는 카테고리: {category}")
+    pool = notices if university is None else [n for n in notices if n.university == university]
+    return [n for n in pool if n.category == category]
+
+
 def summarize_by_category(
     notices: List[Notice],
     sort_by_count: bool = False,
