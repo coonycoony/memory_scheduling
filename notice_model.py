@@ -66,6 +66,10 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
     "안전": ["코로나", "감염", "안전", "재난", "비상", "방역", "격리"],
 }
 
+VALID_CATEGORIES: set[str] = set(CATEGORY_KEYWORDS.keys()) | {"기타"}
+
+def is_valid_category(category: str) -> bool:
+    return category in VALID_CATEGORIES
 
 def classify_notice(title: str, board_name: Optional[str] = None) -> str:
     if board_name:
