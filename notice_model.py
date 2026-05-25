@@ -183,7 +183,9 @@ def fetch_board_html(list_url: str) -> str:
     return response.text
 
 
-def parse_notice_rows(html: str, university: str, board: NoticeBoard, until_date: Optional[date] = None):
+def parse_notice_rows(html: str, university: str, board: NoticeBoard,
+                      until_date: Optional[date] = None,
+                      since_date: Optional[date] = None):
     soup = BeautifulSoup(html, "html.parser")
     results: List[Notice] = []
     should_stop = False
@@ -210,6 +212,8 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard, until_date
         url = urljoin(board.list_url, raw_href)
         notice_date = _extract_date_from_row(row)
 
+        if since_date and notice_date and notice_date < since_date:
+            continue
         if until_date and notice_date and notice_date < until_date:
             should_stop = True
             break
