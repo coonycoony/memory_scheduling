@@ -39,10 +39,15 @@ class SearchRequest(BaseModel):
     university: str
     since: Optional[str] = None
     until: str
+    max_pages: Optional[int] = None
 
     @property
     def since_date(self) -> Optional[date]:
         return date.fromisoformat(self.since) if self.since else None
+
+    @property
+    def until_date(self) -> date:
+        return date.fromisoformat(self.until)
 
 
 CATEGORY_KEYWORDS: dict[str, list[str]] = {
