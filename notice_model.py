@@ -230,11 +230,15 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
     return results, should_stop
 
 
-def crawl_notice_board(university: str, board: NoticeBoard, until_date: Optional[date] = None) -> List[Notice]:
+def crawl_notice_board(university: str, board: NoticeBoard,
+                       until_date: Optional[date] = None,
+                       since_date: Optional[date] = None,
+                       max_pages: Optional[int] = None) -> List[Notice]:
     all_notices: List[Notice] = []
     seen_urls: set = set()
+    limit = max_pages if max_pages is not None else board.max_pages
 
-    for page in range(1, board.max_pages + 1):
+    for page in range(1, limit + 1):
         page_url = _build_page_url(board.list_url, board.page_param, page)
         logger.info("크롤링 시작: %s / %s (page=%d)", university, board.board_name, page)
         try:
@@ -242,7 +246,7 @@ def crawl_notice_board(university: str, board: NoticeBoard, until_date: Optional
         except requests.RequestException as e:
             logger.warning("페이지 요청 실패 page=%d url=%s err=%s", page, page_url, e)
             break
-        notices, should_stop = parse_notice_rows(html, university, board, until_date)
+        notices, should_stop = parse_notice_rows(html, university, board, until_date, since_date)
 
         for notice in notices:
             if notice.url not in seen_urls:
