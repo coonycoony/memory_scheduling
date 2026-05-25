@@ -268,7 +268,12 @@ def load_notices(request: SearchRequest) -> List[Notice]:
     results: List[Notice] = []
 
     for board in source.boards:
-        board_notices = crawl_notice_board(source.name, board, request.until_date)
+        board_notices = crawl_notice_board(
+            source.name, board,
+            until_date=request.until_date,
+            since_date=request.since_date,
+            max_pages=request.max_pages,
+        )
         results.extend(board_notices)
 
     results.sort(key=lambda n: n.date or "", reverse=True)
