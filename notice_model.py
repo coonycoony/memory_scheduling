@@ -310,6 +310,27 @@ def filter_by_category(
     return [n for n in pool if n.category == category]
 
 
+def filter_by_date_range(
+    notices: List[Notice],
+    since: Optional[date] = None,
+    until: Optional[date] = None,
+    include_undated: bool = True,
+) -> List[Notice]:
+    result = []
+    for n in notices:
+        if not n.date:
+            if include_undated:
+                result.append(n)
+            continue
+        d = date.fromisoformat(n.date)
+        if since and d < since:
+            continue
+        if until and d > until:
+            continue
+        result.append(n)
+    return result
+
+
 def summarize_by_category(
     notices: List[Notice],
     sort_by_count: bool = False,
