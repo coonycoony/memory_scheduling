@@ -37,19 +37,20 @@ class Notice(BaseModel):
 
 class SearchRequest(BaseModel):
     university: str
+    since: Optional[str] = None
     until: str
 
     @property
-    def until_date(self) -> date:
-        return date.fromisoformat(self.until)
+    def since_date(self) -> Optional[date]:
+        return date.fromisoformat(self.since) if self.since else None
 
 
 CATEGORY_KEYWORDS: dict[str, list[str]] = {
-    "장학":      ["장학", "국가장학", "성적우수", "근로장학", "장학금", "scholarship"],
-    "학사":      ["학사", "수강", "졸업", "성적", "휴학", "복학", "학점",
-                  , "재수강", "수료", "논문", "강의", "교육과정"],
-    "입학/등록": ["입학", "등록", "전형", "합격", "신입생", "편입", "원서"],
-    "취업/채용":   ["채용", "인턴", "취업", "구인", "커리어",
+    "장학":       ["장학", "국가장학", "성적우수", "근로장학", "장학금", "scholarship"],
+    "학사":       ["학사", "수강", "졸업", "성적", "휴학", "복학", "학점",
+                  "재수강", "수료", "논문", "강의", "교육과정"],
+    "입학/등록":  ["입학", "등록", "전형", "합격", "신입생", "편입", "원서"],
+    "취업/채용":  ["채용", "인턴", "취업", "구인", "커리어",
                    "채용설명회", "job", "리크루팅", "현장실습"],
     "공모전/대회": ["공모전", "대회", "경진", "콘테스트", "해커톤",
                    "공모", "시상", "수상"],
