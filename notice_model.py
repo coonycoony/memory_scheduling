@@ -97,12 +97,17 @@ def make_notice(
 ) -> Notice:
     clean_title = title.strip()
     clean_department = department.strip() if department else None
+    raw_category = source_category if source_category else classify_notice(clean_title, board_name)
+
+    if not is_valid_category(raw_category):
+        logger.warning("알 수 없는 카테고리 '%s', 기타로 대체", raw_category)
+        raw_category = "기타"
 
     return Notice(
         university=university,
         title=clean_title,
         url=url,
-        category=source_category if source_category else classify_notice(clean_title, board_name),
+        category=raw_category,
         board_name=board_name,
         source_category=source_category,
         department=clean_department,
