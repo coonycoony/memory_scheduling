@@ -285,6 +285,11 @@ def load_notices(request: SearchRequest) -> List[Notice]:
         )
         results.extend(board_notices)
 
+    results = filter_by_date_range(
+        results,
+        since=request.since_date,
+        until=request.until_date,
+    )
     results.sort(key=lambda n: n.date or "", reverse=True)
     return results
 
