@@ -16,7 +16,7 @@ class NoticeBoard(BaseModel):
     list_url: str
     page_param: str = "pageIndex"
     max_pages: int = 50
-
+    board_category: str = "기타" #게시판의 고유 카테고리(ex:장학,학사)
 
 class UniversitySource(BaseModel):
     name: str
@@ -37,6 +37,7 @@ class Notice(BaseModel):
 
 class SearchRequest(BaseModel):
     university: str
+    category:Optional[str] = None
     since: Optional[str] = None
     until: str
     max_pages: Optional[int] = None
@@ -123,6 +124,7 @@ UNIVERSITY_SOURCES = {
                 board_name="대학교 전체공지",
                 list_url="https://www.cbnu.ac.kr/www/selectBbsNttList.do?bbsNo=8&key=813",
                 page_param="pageIndex",
+                board_category="일반" 
             ),
         ]
     ),
@@ -133,11 +135,13 @@ UNIVERSITY_SOURCES = {
                 board_name="대학교 전체공지",
                 list_url="https://plus.cnu.ac.kr/_prog/_board/?code=sub07_0702&site_dvs_cd=kr&menu_dvs_cd=0702",
                 page_param="GotoPage",
+                board_category="일반"
             ),
             NoticeBoard(
                 board_name="장학공지",
                 list_url="https://plus.cnu.ac.kr/_prog/_board/?code=sub07_0713&site_dvs_cd=kr&menu_dvs_cd=0713",
                 page_param="GotoPage",
+                board_category="장학"
             ),
         ]
     ),
@@ -222,16 +226,17 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
         notice_date = _extract_date_from_row(row)
 
         if since_date and notice_date and notice_date < since_date:
-            continue
-        if until_date and notice_date and notice_date < until_date:
             should_stop = True
             break
+        if until_date and notice_date and notice_date > until_date:
+            continue
 
         notice = make_notice(
             university=university,
             title=title,
             url=url,
             board_name=board.board_name,
+            source_category=board.board_category,
             date=notice_date.isoformat() if notice_date else None,
         )
         results.append(notice)
@@ -277,6 +282,8 @@ def load_notices(request: SearchRequest) -> List[Notice]:
     results: List[Notice] = []
 
     for board in source.boards:
+        if request.category and request.category != board.board_category:
+            continue
         board_notices = crawl_notice_board(
             source.name, board,
             until_date=request.until_date,

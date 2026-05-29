@@ -24,5 +24,5 @@ def get_notices(university: str):
             university=university,
             until=until_str
         )
-    results = load_notices(request_date)
+    results = load_notices(request_data)
     return results
