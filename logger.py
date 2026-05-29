@@ -1,5 +1,7 @@
 import logging
 import sys
+import os
+
 def get_logger(name: str = "api_logger") -> logging.Logger:
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
@@ -12,6 +14,9 @@ def get_logger(name: str = "api_logger") -> logging.Logger:
     stream_handler = logging.StreamHandler(sys.stdout)
     stream_handler.setFormatter(formatter)
     logger.addHandler(stream_handler)
+    log_dir = "logs"
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir, exist_ok=True)
 
 	return logger
 app_logger = get_logger()
