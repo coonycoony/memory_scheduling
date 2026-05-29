@@ -32,7 +32,9 @@
     }
 
     @media (max-width: 600px) {
-      .schedule-container { grid-template-columns: 1fr; }
+      .schedule-container {
+        grid-template-columns: 1fr;
+      }
     }
 
     .left-panel {
@@ -337,12 +339,13 @@
 
           <form id="eventForm">
             <div class="form-group">
-              <label class="form-label" for="eventType">종류</label>
-              <select id="eventType" required>
-                <option value="notice">공지</option>
-                <option value="scholarship">장학</option>
-                <option value="etc">기타</option>
-              </select>
+              <label class="form-label" for="mainCategory">종류</label>
+              <select id="mainCategory" required></select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="subCategory">세부항목</label>
+              <select id="subCategory" required></select>
             </div>
 
             <div class="form-group">
