@@ -226,6 +226,101 @@
       text-align: center;
       padding: 16px 4px;
     }
+
+    .calendar-card {
+      padding: 16px;
+    }
+
+    .calendar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .calendar-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .calendar-weekdays,
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+
+    .calendar-weekdays {
+      margin-bottom: 8px;
+    }
+
+    .calendar-weekdays div {
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #6b7280;
+      padding: 6px 0;
+    }
+
+    .calendar-day {
+      min-height: 76px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #fff;
+      padding: 8px 6px;
+      text-align: left;
+      cursor: pointer;
+      position: relative;
+      transition: 0.2s;
+    }
+
+    .calendar-day:hover {
+      background: #f8fafc;
+      border-color: #93c5fd;
+    }
+
+    .calendar-day.muted {
+      background: #f9fafb;
+      color: #9ca3af;
+    }
+
+    .calendar-day.selected {
+      border: 2px solid #2563eb;
+      background: #eff6ff;
+    }
+
+    .calendar-day.today {
+      box-shadow: inset 0 0 0 1px #10b981;
+    }
+
+    .calendar-day-number {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .calendar-day-dots {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .calendar-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #2563eb;
+    }
+
+    .calendar-dot.scholarship {
+      background: #ea580c;
+    }
+
+    .calendar-dot.etc {
+      background: #16a34a;
+    }
     </style>
 </head>
 
@@ -238,6 +333,7 @@
 
         <div class="card">
           <div class="section-title">선택한 날짜</div>
+          <div class="selected-date"></div>
           <div class="badge">날짜를 눌러 공지/장학/기타 스케줄을 추가할 수 있어요</div>
 
           <form id="eventForm">
@@ -270,16 +366,37 @@
               <button type="button" class="btn-secondary" id="deleteAllBtn">이 날짜 전체 삭제</button>
             </div>
           </form>
+
           <div class="event-list" id="eventList"></div>
         </div>
       </div>  
 
       <div class="right-panel">
+        <div class="card calendar-card">
+          <div class="calendar-header">
+            <button type="button" class="btn-secondary" id="prevMonthBtn">◀</button>
+            <div class="calendar-title" id="calendarTitle"></div>
+            <button type="button" class="btn-secondary" id="nextMonthBtn">▶</button>
+          </div>
+
+          <div class="calendar-weekdays">
+            <div>일</div>
+            <div>월</div>
+            <div>화</div>
+            <div>수</div>
+            <div>목</div>
+            <div>금</div>
+            <div>토</div>
+          </div>
+
+          <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
       </div>
     </div>  
 
   <script>
     let selectedDate;
+    let currentMonth = new Date();
     const events = {};
     const $ = (id) => document.getElementById(id);
 
@@ -291,7 +408,11 @@
       eventMemo: $("eventMemo"),
       deleteAllBtn: $("deleteAllBtn"),
       eventList: $("eventList"),
-      selectedDateBox: document.querySelector(".selected-date")
+      selectedDateBox: document.querySelector(".selected-date"),
+      calendarGrid: $("calendarGrid"),
+      calendarTitle: $("calendarTitle"),
+      prevMonthBtn: $("prevMonthBtn"),
+      nextMonthBtn: $("nextMonthBtn")
     };
 
     const getIso = (date) => {
@@ -306,6 +427,10 @@
     const formatDateKorean = (dateStr) => {
       const [y, m, d] = dateStr.split("-");
       return `${y}년 ${+m}월 ${+d}일`;
+    };
+
+    const formatMonthKorean = (date) => {
+      return `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
     };
 
     function renderEventList() {
@@ -340,6 +465,7 @@
           events[selectedDate].splice(index, 1);
           if (!events[selectedDate].length) delete events[selectedDate];
           renderEventList();
+          renderCalendar();
         });
 
         item.appendChild(deleteBtn);
@@ -364,6 +490,7 @@
       els.eventMemo.value = "";
 
       renderEventList();
+      renderCalendar();
     });
 
     els.deleteAllBtn.addEventListener("click", () => { 
@@ -371,6 +498,79 @@
       if (!confirm("이 날짜의 스케줄을 모두 삭제할까요?")) return;
       delete events[selectedDate];
       renderEventList();
+      renderCalendar();
+    });
+    
+     function createDayCell(date, muted) {
+      const iso = getIso(date);
+      const dayEvents = events[iso] || [];
+
+      const cell = document.createElement("div");
+      cell.className = "calendar-day";
+      if (muted) cell.classList.add("muted");
+      if (iso === selectedDate) cell.classList.add("selected");
+      if (iso === todayIso()) cell.classList.add("today");
+
+      const dots = dayEvents
+        .slice(0, 3)
+        .map(ev => `<span class="calendar-dot ${ev.type}"></span>`)
+        .join("");
+
+      cell.innerHTML = `
+        <div class="calendar-day-number">${date.getDate()}</div>
+        <div class="calendar-day-dots">${dots}</div>
+      `;
+
+      cell.addEventListener("click", () => {
+        selectedDate = iso;
+        currentMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+        updateSelectedDateUI();
+        renderCalendar();
+      });
+
+      els.calendarGrid.appendChild(cell);
+    }
+
+    function renderCalendar() {
+      const year = currentMonth.getFullYear();
+      const month = currentMonth.getMonth();
+
+      els.calendarTitle.textContent = formatMonthKorean(currentMonth);
+      els.calendarGrid.innerHTML = "";
+
+      const firstDay = new Date(year, month, 1);
+      const startWeekday = firstDay.getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const prevMonthDays = new Date(year, month, 0).getDate();
+
+      for (let i = 0; i < startWeekday; i++) {
+        const dayNum = prevMonthDays - startWeekday + i + 1;
+        const date = new Date(year, month - 1, dayNum);
+        createDayCell(date, true);
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        createDayCell(date, false);
+      }
+
+      const totalCells = els.calendarGrid.children.length;
+      const remain = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+
+      for (let i = 1; i <= remain; i++) {
+        const date = new Date(year, month + 1, i);
+        createDayCell(date, true);
+      }
+    }
+
+    els.prevMonthBtn.addEventListener("click", () => {
+      currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
+      renderCalendar();
+    });
+
+    els.nextMonthBtn.addEventListener("click", () => {
+      currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
+      renderCalendar();
     });
 
     function updateSelectedDateUI() {  
@@ -382,7 +582,9 @@
 
     (() => {
       selectedDate = todayIso();
+      currentMonth = new Date();
       updateSelectedDateUI();
+      renderCalendar();
     })();
   </script>
 </body>
