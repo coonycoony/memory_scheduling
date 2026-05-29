@@ -10,6 +10,8 @@ import requests
 from bs4 import BeautifulSoup
 from pydantic import BaseModel
 
+from logger import app_logger
+
 
 class NoticeBoard(BaseModel):
     board_name: str
@@ -258,7 +260,9 @@ def crawl_notice_board(university: str, board: NoticeBoard,
         try:
             html = fetch_board_html(page_url)
         except requests.RequestException as e:
-            logger.warning("페이지 요청 실패 page=%d url=%s err=%s", page, page_url, e)
+            app_logger.error("======== 크롤링 네트워크 장애 발생 ========")
+            app_logger.error(f"학교: {university}, URL: {page_url}")
+            app_logger.error(f"상세 에러 내용: {str(e)}")
             break
         notices, should_stop = parse_notice_rows(html, university, board, until_date, since_date)
 
