@@ -41,3 +41,7 @@ def get_notices(university: str, category: Optional[str] = None):
         )
     results = load_notices(request_data)
     return results
+@app.get("/health")
+def health_check():
+    #서버 상태 점검용 Ping API
+    return {"status": "ok", "message": "Server is running smoothly."}
