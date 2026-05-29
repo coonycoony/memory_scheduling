@@ -393,199 +393,326 @@
         </div>
       </div>
     </div>  
-
+  
   <script>
-    let selectedDate;
-    let currentMonth = new Date();
-    const events = {};
-    const $ = (id) => document.getElementById(id);
+  // =========================
+  // 1. 상태(State)
+  // =========================
+  let selectedDate;
+  let currentMonth = new Date();
+  const events = {};
 
-    const els = {
-      eventForm: $("eventForm"),
-      eventType: $("eventType"),
-      eventTitle: $("eventTitle"),
-      eventTime: $("eventTime"),
-      eventMemo: $("eventMemo"),
-      deleteAllBtn: $("deleteAllBtn"),
-      eventList: $("eventList"),
-      selectedDateBox: document.querySelector(".selected-date"),
-      calendarGrid: $("calendarGrid"),
-      calendarTitle: $("calendarTitle"),
-      prevMonthBtn: $("prevMonthBtn"),
-      nextMonthBtn: $("nextMonthBtn")
-    };
+  // =========================
+  // 2. 상수(Constants)
+  // =========================
+  const categoryMap = {
+    "장학": ["장학", "국가장학", "성적우수", "근로장학", "장학금", "scholarship", "기타"],
+    "학사": ["학사", "수강", "졸업", "성적", "휴학", "복학", "학점",
+            "재수강", "수료", "논문", "강의", "교육과정", "기타"],
+    "입학/등록": ["입학", "등록", "전형", "합격", "신입생", "편입", "원서", "기타"],
+    "취업/채용": ["채용", "인턴", "취업", "구인", "커리어",
+                "채용설명회", "job", "리크루팅", "현장실습", "기타"],
+    "공모전/대회": ["공모전", "대회", "경진", "콘테스트", "해커톤",
+                 "공모", "시상", "수상", "기타"],
+    "모집/봉사": ["모집", "봉사", "서포터즈", "튜터", "멘토",
+                "지원자", "선발", "학생대표", "위원", "기타"],
+    "시설/행정": ["시설", "도서관", "열람실", "wifi", "와이파이",
+                "주차", "셔틀", "기숙사", "식당", "휴관", "공사", "기타"],
+    "안전": ["안전", "코로나", "감염", "재난", "비상", "방역", "격리", "기타"],
+    "기타": ["기타"]
+  };
 
-    const getIso = (date) => {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, "0");
-      const d = String(date.getDate()).padStart(2, "0");
-      return `${y}-${m}-${d}`;
-    };
+  // =========================
+  // 3. DOM 유틸 / DOM 참조
+  // =========================
+  const $ = (id) => document.getElementById(id);
 
-    const todayIso = () => getIso(new Date());
+  const els = {
+    eventForm: $("eventForm"),
+    eventList: $("eventList"),
+    deleteAllBtn: $("deleteAllBtn"),
+    mainCategory: $("mainCategory"),
+    subCategory: $("subCategory"),
+    eventTitle: $("eventTitle"),
+    eventTime: $("eventTime"),
+    eventMemo: $("eventMemo"),
+    selectedDateBox: document.querySelector(".selected-date"),
+    calendarGrid: $("calendarGrid"),
+    calendarTitle: $("calendarTitle"),
+    prevMonthBtn: $("prevMonthBtn"),
+    nextMonthBtn: $("nextMonthBtn")
+  };
 
-    const formatDateKorean = (dateStr) => {
-      const [y, m, d] = dateStr.split("-");
-      return `${y}년 ${+m}월 ${+d}일`;
-    };
+  // =========================
+  // 4. 날짜 유틸 함수
+  // =========================
+  const getIso = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
 
-    const formatMonthKorean = (date) => {
-      return `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
-    };
+  const todayIso = () => getIso(new Date());
 
-    function renderEventList() {
-      const list = events[selectedDate] || [];
-      els.eventList.innerHTML = "";
+  const formatDateKorean = (dateStr) => {
+    const [y, m, d] = dateStr.split("-");
+    return `${y}년 ${+m}월 ${+d}일`;
+  };
 
-      if (!list.length) {
-        els.eventList.innerHTML = '<div class="empty-text">이 날짜에는 저장된 스케줄이 없습니다.</div>';
-        return;
-      }
+  const formatMonthKorean = (date) => {
+    return `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
+  };
 
-      list.forEach((ev, index) => {
-        const item = document.createElement("div");
-        item.className = "event-item";
+  // =========================
+  // 5. 카테고리 렌더링
+  // =========================
+  function renderMainCategories() {
+    els.mainCategory.innerHTML = "";
 
-        item.innerHTML = `
-          <div class="event-main">
-            <div class="event-type-pill ${ev.type === "scholarship" ? "scholarship" : ev.type === "etc" ? "etc" : ""}">
-              ${ev.type === "notice" ? "공지" : ev.type === "scholarship" ? "장학" : "기타"}
-            </div>
-            <div class="event-title">${ev.title}</div>
-            <div class="event-time">${ev.time ? `시간: ${ev.time}` : "시간 정보 없음"}</div>
-            ${ev.memo ? `<div class="event-memo">${ev.memo}</div>` : ""}
-          </div>
-        `;
+    Object.keys(categoryMap).forEach((category) => {
+      const option = document.createElement("option");
+      option.value = category;
+      option.textContent = category;
+      els.mainCategory.appendChild(option);
+    });
+  }
 
-        const deleteBtn = document.createElement("button");
-        deleteBtn.className = "btn-secondary";
-        deleteBtn.type = "button";
-        deleteBtn.textContent = "삭제";
-        deleteBtn.addEventListener("click", () => {
-          events[selectedDate].splice(index, 1);
-          if (!events[selectedDate].length) delete events[selectedDate];
-          renderEventList();
-          renderCalendar();
-        });
+  function renderSubCategories(mainCategory) {
+    const subCategories = categoryMap[mainCategory] || [];
+    els.subCategory.innerHTML = "";
 
-        item.appendChild(deleteBtn);
-        els.eventList.appendChild(item);
-      });
+    subCategories.forEach((sub) => {
+      const option = document.createElement("option");
+      option.value = sub;
+      option.textContent = sub;
+      els.subCategory.appendChild(option);
+    });
+  }
+
+  // =========================
+  // 6. 일정 목록 렌더링
+  // =========================
+  function renderEventList() {
+    const list = events[selectedDate] || [];
+    els.eventList.innerHTML = "";
+
+    if (!list.length) {
+      els.eventList.innerHTML = '<div class="empty-text">이 날짜에는 저장된 스케줄이 없습니다.</div>';
+      return;
     }
 
-    els.eventForm.addEventListener("submit", (e) => { 
-      e.preventDefault();
+    list.forEach((ev, index) => {
+      const item = document.createElement("div");
+      item.className = "event-item";
 
-      const type = els.eventType.value;
-      const title = els.eventTitle.value.trim();
-      const time = els.eventTime.value;
-      const memo = els.eventMemo.value.trim();
+      const pillClass =
+        ev.mainCategory === "장학"
+          ? "scholarship"
+          : ev.mainCategory === "시설/행정"
+          ? "etc"
+          : "";
 
-      if (!title) return;
-
-      (events[selectedDate] ||= []).push({ type, title, time, memo });
-
-      els.eventTitle.value = "";
-      els.eventTime.value = "";
-      els.eventMemo.value = "";
-
-      renderEventList();
-      renderCalendar();
-    });
-
-    els.deleteAllBtn.addEventListener("click", () => { 
-      if (!events[selectedDate]?.length) return;
-      if (!confirm("이 날짜의 스케줄을 모두 삭제할까요?")) return;
-      delete events[selectedDate];
-      renderEventList();
-      renderCalendar();
-    });
-    
-     function createDayCell(date, muted) {
-      const iso = getIso(date);
-      const dayEvents = events[iso] || [];
-
-      const cell = document.createElement("div");
-      cell.className = "calendar-day";
-      if (muted) cell.classList.add("muted");
-      if (iso === selectedDate) cell.classList.add("selected");
-      if (iso === todayIso()) cell.classList.add("today");
-
-      const dots = dayEvents
-        .slice(0, 3)
-        .map(ev => `<span class="calendar-dot ${ev.type}"></span>`)
-        .join("");
-
-      cell.innerHTML = `
-        <div class="calendar-day-number">${date.getDate()}</div>
-        <div class="calendar-day-dots">${dots}</div>
+      item.innerHTML = `
+        <div class="event-main">
+          <div class="event-type-pill ${pillClass}">
+            ${ev.mainCategory}
+          </div>
+          <div class="event-title">${ev.title}</div>
+          <div class="event-time">
+            ${ev.subCategory ? `세부항목: ${ev.subCategory}` : ""}
+            ${ev.time ? ` · 시간: ${ev.time}` : ""}
+          </div>
+          ${ev.memo ? `<div class="event-memo">${ev.memo}</div>` : ""}
+        </div>
       `;
 
-      cell.addEventListener("click", () => {
-        selectedDate = iso;
-        currentMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-        updateSelectedDateUI();
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "btn-secondary";
+      deleteBtn.type = "button";
+      deleteBtn.textContent = "삭제";
+
+      deleteBtn.addEventListener("click", () => {
+        events[selectedDate].splice(index, 1);
+
+        if (!events[selectedDate].length) {
+          delete events[selectedDate];
+        }
+
+        renderEventList();
         renderCalendar();
       });
 
-      els.calendarGrid.appendChild(cell);
-    }
-
-    function renderCalendar() {
-      const year = currentMonth.getFullYear();
-      const month = currentMonth.getMonth();
-
-      els.calendarTitle.textContent = formatMonthKorean(currentMonth);
-      els.calendarGrid.innerHTML = "";
-
-      const firstDay = new Date(year, month, 1);
-      const startWeekday = firstDay.getDay();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      const prevMonthDays = new Date(year, month, 0).getDate();
-
-      for (let i = 0; i < startWeekday; i++) {
-        const dayNum = prevMonthDays - startWeekday + i + 1;
-        const date = new Date(year, month - 1, dayNum);
-        createDayCell(date, true);
-      }
-
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(year, month, day);
-        createDayCell(date, false);
-      }
-
-      const totalCells = els.calendarGrid.children.length;
-      const remain = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
-
-      for (let i = 1; i <= remain; i++) {
-        const date = new Date(year, month + 1, i);
-        createDayCell(date, true);
-      }
-    }
-
-    els.prevMonthBtn.addEventListener("click", () => {
-      currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
-      renderCalendar();
+      item.appendChild(deleteBtn);
+      els.eventList.appendChild(item);
     });
+  }
 
-    els.nextMonthBtn.addEventListener("click", () => {
-      currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
-      renderCalendar();
-    });
-
-    function updateSelectedDateUI() {  
-      if (els.selectedDateBox) {
-        els.selectedDateBox.textContent = formatDateKorean(selectedDate);
-      }
-      renderEventList();
+  function updateSelectedDateUI() {
+    if (els.selectedDateBox) {
+      els.selectedDateBox.textContent = formatDateKorean(selectedDate);
     }
 
-    (() => {
-      selectedDate = todayIso();
-      currentMonth = new Date();
+    renderEventList();
+  }
+
+  // =========================
+  // 7. 달력 렌더링
+  // =========================
+  function getDotClass(mainCategory) {
+    if (mainCategory === "장학") return "scholarship";
+    if (mainCategory === "시설/행정") return "etc";
+    return "";
+  }
+
+  function createDayCell(date, muted) {
+    const iso = getIso(date);
+    const dayEvents = events[iso] || [];
+
+    const cell = document.createElement("div");
+    cell.className = "calendar-day";
+
+    if (muted) cell.classList.add("muted");
+    if (iso === selectedDate) cell.classList.add("selected");
+    if (iso === todayIso()) cell.classList.add("today");
+
+    const dots = dayEvents
+      .slice(0, 3)
+      .map((ev) => `<span class="calendar-dot ${getDotClass(ev.mainCategory)}"></span>`)
+      .join("");
+
+    cell.innerHTML = `
+      <div class="calendar-day-number">${date.getDate()}</div>
+      <div class="calendar-day-dots">${dots}</div>
+    `;
+
+    cell.addEventListener("click", () => {
+      selectedDate = iso;
+      currentMonth = new Date(date.getFullYear(), date.getMonth(), 1);
       updateSelectedDateUI();
       renderCalendar();
-    })();
-  </script>
+    });
+
+    els.calendarGrid.appendChild(cell);
+  }
+
+  function renderCalendar() {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+
+    els.calendarTitle.textContent = formatMonthKorean(currentMonth);
+    els.calendarGrid.innerHTML = "";
+
+    const firstDay = new Date(year, month, 1);
+    const startWeekday = firstDay.getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const prevMonthDays = new Date(year, month, 0).getDate();
+
+    for (let i = 0; i < startWeekday; i++) {
+      const dayNum = prevMonthDays - startWeekday + i + 1;
+      const date = new Date(year, month - 1, dayNum);
+      createDayCell(date, true);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      createDayCell(date, false);
+    }
+
+    const totalCells = els.calendarGrid.children.length;
+    const remain = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+
+    for (let i = 1; i <= remain; i++) {
+      const date = new Date(year, month + 1, i);
+      createDayCell(date, true);
+    }
+  }
+
+  // =========================
+  // 8. 이벤트 핸들러
+  // =========================
+  function handleMainCategoryChange() {
+    renderSubCategories(els.mainCategory.value);
+  }
+
+  function handleEventSubmit(e) {
+    e.preventDefault();
+
+    const mainCategory = els.mainCategory.value;
+    const subCategory = els.subCategory.value;
+    const title = els.eventTitle.value.trim();
+    const time = els.eventTime.value;
+    const memo = els.eventMemo.value.trim();
+
+    if (!title) return;
+
+    (events[selectedDate] ||= []).push({
+      mainCategory,
+      subCategory,
+      title,
+      time,
+      memo
+    });
+
+    els.eventTitle.value = "";
+    els.eventTime.value = "";
+    els.eventMemo.value = "";
+
+    renderEventList();
+    renderCalendar();
+  }
+
+  function handleDeleteAll() {
+    if (!events[selectedDate]?.length) return;
+    if (!confirm("이 날짜의 스케줄을 모두 삭제할까요?")) return;
+
+    delete events[selectedDate];
+    renderEventList();
+    renderCalendar();
+  }
+
+  function handlePrevMonth() {
+    currentMonth = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth() - 1,
+      1
+    );
+    renderCalendar();
+  }
+
+  function handleNextMonth() {
+    currentMonth = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth() + 1,
+      1
+    );
+    renderCalendar();
+  }
+
+  // =========================
+  // 9. 이벤트 바인딩
+  // =========================
+  els.mainCategory.addEventListener("change", handleMainCategoryChange);
+  els.eventForm.addEventListener("submit", handleEventSubmit);
+  els.deleteAllBtn.addEventListener("click", handleDeleteAll);
+  els.prevMonthBtn.addEventListener("click", handlePrevMonth);
+  els.nextMonthBtn.addEventListener("click", handleNextMonth);
+
+  // =========================
+  // 10. 초기화
+  // =========================
+  function init() {
+    selectedDate = todayIso();
+    currentMonth = new Date();
+
+    renderMainCategories();
+    renderSubCategories(els.mainCategory.value);
+
+    updateSelectedDateUI();
+    renderCalendar();
+  }
+
+  init();
+</script>
 </body>
 </html> 
