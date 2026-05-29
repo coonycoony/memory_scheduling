@@ -275,6 +275,9 @@ def crawl_notice_board(university: str, board: NoticeBoard,
             break
 
     logger.info("수집 완료: %s / %s 총 %d건", university, board.board_name, len(all_notices))
+    if len(all_notices) == 0:
+        app_logger.warning(f"크롤링 데이터 없음! 대상: {university} ({board.board_name})")
+        app_logger.warning(f"조회 기간: {since_date} ~ {until_date}")
     return all_notices
 
 
