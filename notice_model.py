@@ -10,13 +10,15 @@ import requests
 from bs4 import BeautifulSoup
 from pydantic import BaseModel
 
+from logger import app_logger
+
 
 class NoticeBoard(BaseModel):
     board_name: str
     list_url: str
     page_param: str = "pageIndex"
     max_pages: int = 50
-
+    board_category: str = "기타" #게시판의 고유 카테고리(ex:장학,학사)
 
 class UniversitySource(BaseModel):
     name: str
@@ -37,6 +39,7 @@ class Notice(BaseModel):
 
 class SearchRequest(BaseModel):
     university: str
+    category:Optional[str] = None
     since: Optional[str] = None
     until: str
     max_pages: Optional[int] = None
@@ -66,7 +69,7 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
     "안전": ["코로나", "감염", "안전", "재난", "비상", "방역", "격리"],
 }
 
-VALID_CATEGORIES: set[str] = set(CATEGORY_KEYWORDS.keys()) | {"기타"}
+VALID_CATEGORIES: set[str] = set(CATEGORY_KEYWORDS.keys()) | {"기타", "일반"}
 
 def is_valid_category(category: str) -> bool:
     return category in VALID_CATEGORIES
@@ -123,6 +126,7 @@ UNIVERSITY_SOURCES = {
                 board_name="대학교 전체공지",
                 list_url="https://www.cbnu.ac.kr/www/selectBbsNttList.do?bbsNo=8&key=813",
                 page_param="pageIndex",
+                board_category="일반" 
             ),
         ]
     ),
@@ -133,11 +137,13 @@ UNIVERSITY_SOURCES = {
                 board_name="대학교 전체공지",
                 list_url="https://plus.cnu.ac.kr/_prog/_board/?code=sub07_0702&site_dvs_cd=kr&menu_dvs_cd=0702",
                 page_param="GotoPage",
+                board_category="일반"
             ),
             NoticeBoard(
                 board_name="장학공지",
                 list_url="https://plus.cnu.ac.kr/_prog/_board/?code=sub07_0713&site_dvs_cd=kr&menu_dvs_cd=0713",
                 page_param="GotoPage",
+                board_category="장학"
             ),
         ]
     ),
@@ -199,6 +205,8 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
     results: List[Notice] = []
     should_stop = False
 
+    valid_post_count = 0
+
     rows = soup.select("table tbody tr")
 
     for row in rows:
@@ -221,20 +229,23 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
         url = urljoin(board.list_url, raw_href)
         notice_date = _extract_date_from_row(row)
 
+        if until_date and notice_date and notice_date > until_date:
+            continue
         if since_date and notice_date and notice_date < since_date:
             continue
-        if until_date and notice_date and notice_date < until_date:
-            should_stop = True
-            break
+        valid_post_count += 1
 
         notice = make_notice(
             university=university,
             title=title,
             url=url,
             board_name=board.board_name,
+            source_category=board.board_category,
             date=notice_date.isoformat() if notice_date else None,
         )
         results.append(notice)
+    if valid_post_count == 0 and len(rows) > 0:
+        should_stop = True
 
     return results, should_stop
 
@@ -253,7 +264,9 @@ def crawl_notice_board(university: str, board: NoticeBoard,
         try:
             html = fetch_board_html(page_url)
         except requests.RequestException as e:
-            logger.warning("페이지 요청 실패 page=%d url=%s err=%s", page, page_url, e)
+            app_logger.error("======== 크롤링 네트워크 장애 발생 ========")
+            app_logger.error(f"학교: {university}, URL: {page_url}")
+            app_logger.error(f"상세 에러 내용: {str(e)}")
             break
         notices, should_stop = parse_notice_rows(html, university, board, until_date, since_date)
 
@@ -266,6 +279,9 @@ def crawl_notice_board(university: str, board: NoticeBoard,
             break
 
     logger.info("수집 완료: %s / %s 총 %d건", university, board.board_name, len(all_notices))
+    if len(all_notices) == 0:
+        app_logger.warning(f"크롤링 데이터 없음! 대상: {university} ({board.board_name})")
+        app_logger.warning(f"조회 기간: {since_date} ~ {until_date}")
     return all_notices
 
 
@@ -277,6 +293,8 @@ def load_notices(request: SearchRequest) -> List[Notice]:
     results: List[Notice] = []
 
     for board in source.boards:
+        if request.category and request.category != board.board_category:
+            continue
         board_notices = crawl_notice_board(
             source.name, board,
             until_date=request.until_date,
