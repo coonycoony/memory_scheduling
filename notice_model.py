@@ -69,7 +69,7 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
     "안전": ["코로나", "감염", "안전", "재난", "비상", "방역", "격리"],
 }
 
-VALID_CATEGORIES: set[str] = set(CATEGORY_KEYWORDS.keys()) | {"기타"}
+VALID_CATEGORIES: set[str] = set(CATEGORY_KEYWORDS.keys()) | {"기타", "일반"}
 
 def is_valid_category(category: str) -> bool:
     return category in VALID_CATEGORIES
@@ -205,6 +205,8 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
     results: List[Notice] = []
     should_stop = False
 
+    valid_post_count = 0
+
     rows = soup.select("table tbody tr")
 
     for row in rows:
@@ -227,11 +229,11 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
         url = urljoin(board.list_url, raw_href)
         notice_date = _extract_date_from_row(row)
 
-        if since_date and notice_date and notice_date < since_date:
-            should_stop = True
-            break
         if until_date and notice_date and notice_date > until_date:
             continue
+        if since_date and notice_date and notice_date < since_date:
+            continue
+        vaild_post_count += 1
 
         notice = make_notice(
             university=university,
@@ -242,6 +244,8 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
             date=notice_date.isoformat() if notice_date else None,
         )
         results.append(notice)
+    if valid_post_count == 0 and len(rows) > 0:
+        should_stop = True
 
     return results, should_stop
 
