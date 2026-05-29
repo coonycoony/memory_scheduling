@@ -17,12 +17,13 @@ app.add_middleware(
 @app.get("/notices")
 def get_notices(university: str):
     # 기본 검색 기간: 최근 30일 설정
-    thirty_days_ago = date.today() - timedelta(days=30)
-    until_str = thirty_days_ago.isoformat()
+    thirty_days_ago = (date.today() - timedelta(days=30)).isoformat()
+    today_str = thirty_days_ago.isoformat()
 
     request_data = SearchRequest(
             university=university,
-            until=until_str
+            since=thirty_days_ago,
+            until=today_str
         )
     results = load_notices(request_data)
     return results
