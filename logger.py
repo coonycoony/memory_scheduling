@@ -26,5 +26,5 @@ def get_logger(name: str = "api_logger") -> logging.Logger:
     )
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
-	return logger
+    return logger
 app_logger = get_logger()

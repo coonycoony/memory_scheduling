@@ -233,7 +233,7 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
             continue
         if since_date and notice_date and notice_date < since_date:
             continue
-        vaild_post_count += 1
+        valid_post_count += 1
 
         notice = make_notice(
             university=university,
