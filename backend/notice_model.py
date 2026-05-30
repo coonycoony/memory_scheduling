@@ -177,8 +177,27 @@ UNIVERSITY_SOURCES = {
             ),
         ]
     ),
+    "서울대학교": UniversitySource(
+        name="서울대학교",
+        boards=[
+            NoticeBoard(
+                board_name="학부대학 공지",
+                list_url="https://snuc.snu.ac.kr/%EA%B3%B5%EC%A7%80%EC%82%AC%ED%95%AD/",
+                page_param="pageid",
+            ),
+        ]
+    ),
+    "전남대학교": UniversitySource(
+        name="전남대학교",
+        boards=[
+            NoticeBoard(
+                board_name="대학교 전체공지",
+                list_url="https://www.jnu.ac.kr/WebApp/web/HOM/COM/Board/board.aspx?boardID=5&bbsMode=list&cate=0",
+                page_param="page",
+            ),
+        ]
+    ),
 }
-
 
 _DATE_PATTERN = re.compile(r"(\d{2,4})[.\-/](\d{1,2})[.\-/](\d{1,2})")
 
