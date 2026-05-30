@@ -5,6 +5,7 @@ import re
 import json
 import logging
 import base64
+import time
 from pathlib import Path
 
 import requests
@@ -323,12 +324,19 @@ def crawl_notice_board(university: str, board: NoticeBoard,
     for page in range(1, limit + 1):
         page_url = _build_page_url(board.list_url, board.page_param, page, board.enc_inner_path, board.enc_query_template)
         logger.info("크롤링 시작: %s / %s (page=%d)", university, board.board_name, page)
-        try:
-            html = fetch_board_html(page_url)
-        except requests.RequestException as e:
-            app_logger.error("======== 크롤링 네트워크 장애 발생 ========")
-            app_logger.error(f"학교: {university}, URL: {page_url}")
-            app_logger.error(f"상세 에러 내용: {str(e)}")
+        html = None
+        for attempt in range(1, 4):
+            try:
+                html = fetch_board_html(page_url)
+                break
+            except requests.RequestException as e:
+                app_logger.error(f"======== 크롤링 네트워크 장애 발생 (시도 {attempt}/3) ========")
+                app_logger.error(f"학교: {university}, URL: {page_url}")
+                app_logger.error(f"상세 에러 내용: {str(e)}")
+                if attempt < 3:
+                    time.sleep(2 ** (attempt - 1))
+        if html is None:
+            app_logger.error(f"3회 재시도 모두 실패, 크롤링 중단: {university} / {board.board_name}")
             break
         notices, should_stop = parse_notice_rows(html, university, board, until_date, since_date)
 
