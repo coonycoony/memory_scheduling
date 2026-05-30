@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 import models 
+import logging
 
 def create_notice(db: Session, univ: str, title: str, url: str, cat: str, date: str):
     existing = db.query(models.NoticeModel).filter(models.NoticeModel.url == url).first()
@@ -19,7 +20,11 @@ def get_notices(db: Session, university: str, skip: int = 0, limit: int = 100):
 def bulk_insert_notices(db: Session, notices: list):
     # 배열로 들어온 공지사항들을 한 번에 넣기 위한 뼈대
     inserted_count = 0
-    for n in notices:
-        create_notice(db, n.university, n.title, n.url, n.category, n.date)
-        inserted_count += 1
+    try:
+        for n in notices:
+            create_notice(db, n.university, n.title, n.url, n.category, n.date)
+            inserted_count += 1
+    except Exception as e:
+        db.rollback()
+        logging.error(f"DB 벌크 인서트 중 에러 발생: {e}")
     return inserted_count
