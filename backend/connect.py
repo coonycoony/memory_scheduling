@@ -10,6 +10,11 @@ from logger import app_logger
 from database import engine, Base
 import models
 
+from fastapi import Depends
+from sqlalchemy.orm import Session
+from database import get_db
+import crud
+
 app = FastAPI()
 models.Base.metadata.create_all(bind=engine)
 app.middleware("http")(log_requests_middleware)
@@ -32,7 +37,7 @@ app.add_middleware(
 )
 
 @app.get("/notices")
-def get_notices(university: str, category: Optional[str] = None):
+def get_notices(university: str, category: Optional[str] = None, db: Session = Depends(get_db)):
     # 기본 검색 기간: 최근 30일 설정
     thirty_days_ago = (date.today() - timedelta(days=30)).isoformat()
     today_str = date.today().isoformat()
