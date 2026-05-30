@@ -11,5 +11,5 @@ async def log_requests_middleware(request: Request, call_next):
     response = await call_next(request)
     process_time=(time.time() - start_time) * 1000
     status = response.status_code
-    app_logger.info(f"응답 완료: [{request.method}] {request.url.path} - 상태: {status} (소요시간: {process_time:.2f}ms")
+    app_logger.info(f"응답 완료: [{request.method}] {request.url.path} - 상태: {status} (소요시간: {process_time:.2f}ms)")
     return response
