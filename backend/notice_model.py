@@ -378,3 +378,10 @@ def load_notices_from_json(path: str = "notices.json") -> List[Notice]:
 
 def get_university_list() -> List[str]:
     return list(UNIVERSITY_SOURCES.keys())
+
+
+def get_board_list(university: str) -> List[str]:
+    source = UNIVERSITY_SOURCES.get(university)
+    if source is None:
+        return []
+    return [board.board_name for board in source.boards]
