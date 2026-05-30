@@ -54,6 +54,11 @@ def get_notices(university: str, category: Optional[str] = None, db: Session = D
     if len(db_results) > 20:
         return db_results
     results = load_notices(request_data)
+    if results:
+        inserted_count = crud.bulk_insert_notices(db, results)
+        app_logger.info(f"새로운 공지사항 {inserted_count}건을 DB에 동기화했습니다.")
+    else:
+        app_logger.warning("크롤링된 새 데이터가 없어 DB 동기화를 생략합니다.")
     return results
 @app.get("/health")
 def health_check():
