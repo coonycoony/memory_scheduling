@@ -231,7 +231,6 @@
   <script>
     const API_BASE_URL = "http://127.0.0.1:8000";
     
-    // 상태 관리를 위한 전역 변수 세팅
     let allNotices = [];
     let currentCategory = '전체';
     let hasSearched = false;
@@ -249,7 +248,7 @@
 
       status.textContent = "공지사항을 불러오는 중입니다...";
       noticeList.innerHTML = "";
-      hasSearched = true; // 검색 상태 반영
+      hasSearched = true;
 
       try {
         const response = await fetch(`${API_BASE_URL}/notices?university=${encodeURIComponent(university)}`);
@@ -261,7 +260,7 @@
         const notices = await response.json();
         
         if (!Array.isArray(notices) || notices.length === 0) {
-          allNotices = []; // 데이터 초기화
+          allNotices = [];
           status.textContent = `${university} 공지사항이 없습니다.`;
           noticeList.innerHTML = `
             <div class="empty">
@@ -272,11 +271,9 @@
           return;
         }
 
-        // 전체 데이터를 전역 변수에 저장 (아직 필터링 로직이 없으므로 그대로 렌더링 호출)
         allNotices = notices;
         
-        status.textContent = `${university} 공지 ${notices.length}건을 찾았습니다.`;
-        renderNotices(allNotices);
+        applyFilter(currentCategory);
 
       } catch (error) {
         console.error(error);
@@ -291,7 +288,28 @@
     }
 
     function applyFilter(category) {
-        console.log(category + " 필터 클릭됨");
+      currentCategory = category;
+
+      const buttons = document.querySelectorAll('.filter-btn');
+      buttons.forEach(btn => {
+        if (btn.textContent.trim() === category) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      if (!hasSearched) return;
+
+      const filteredNotices = category === '전체' 
+        ? allNotices 
+        : allNotices.filter(n => (n.category || '기타') === category);
+
+      const status = document.getElementById("status");
+      const university = document.getElementById("universityInput").value.trim();
+      status.textContent = `${university} '${category}' 공지 ${filteredNotices.length}건을 찾았습니다.`;
+
+      renderNotices(filteredNotices);
     }
 
     function renderNotices(notices) {
