@@ -135,6 +135,31 @@ UNIVERSITY_SOURCES = {
                 list_url="https://computer.chungbuk.ac.kr/bbs/bbs.php?db=notice",
                 page_param="page",
             ),
+            NoticeBoard(
+                board_name="전기공학과 공지",
+                list_url="https://ee.chungbuk.ac.kr/sub0502",
+                page_param="page",
+            ),
+            NoticeBoard(
+                board_name="정보통신공학부 학사/장학",
+                list_url="https://inform.chungbuk.ac.kr/cisub5_1",
+                page_param="page",
+            ),
+            NoticeBoard(
+                board_name="정보통신공학부 일반",
+                list_url="https://inform.chungbuk.ac.kr/cisub5_2",
+                page_param="page",
+            ),
+            NoticeBoard(
+                board_name="정보통신공학부 취업",
+                list_url="https://inform.chungbuk.ac.kr/cisub5_3",
+                page_param="page",
+            ),
+            NoticeBoard(
+                board_name="정보통신공학부 뉴스",
+                list_url="https://inform.chungbuk.ac.kr/cisub5_4",
+                page_param="page",
+            ),
         ]
     ),
     "충남대학교": UniversitySource(
