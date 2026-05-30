@@ -235,16 +235,17 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
             continue
         valid_post_count += 1
 
-        notice = make_notice(
-            university=university,
-            title=title,
-            url=url,
-            board_name=board.board_name,
-            source_category=board.board_category,
-            date=notice_date.isoformat() if notice_date else None,
-        )
+    notice = make_notice(
+        university=university,
+        title=title,
+        url=url,
+        board_name=board.board_name,
+        source_category=None,
+        date=notice_date.isoformat() if notice_date else None,
+    )   
         results.append(notice)
-    if valid_post_count == 0 and len(rows) > 0:
+   
+   if valid_post_count == 0 and len(rows) > 0:
         should_stop = True
 
     return results, should_stop
