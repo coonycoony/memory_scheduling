@@ -197,59 +197,49 @@ def fetch_board_html(list_url: str) -> str:
         response.encoding = response.apparent_encoding
     return response.text
 
-
 def parse_notice_rows(html: str, university: str, board: NoticeBoard,
                       until_date: Optional[date] = None,
                       since_date: Optional[date] = None):
     soup = BeautifulSoup(html, "html.parser")
     results: List[Notice] = []
     should_stop = False
-
     valid_post_count = 0
-
     rows = soup.select("table tbody tr")
 
     for row in rows:
         cells = row.find_all("td")
         if not cells:
             continue
-
         link_tag = row.find("a", href=True)
         if link_tag is None:
             continue
-
         title = link_tag.get_text(" ", strip=True)
         if not title:
             continue
-
         raw_href = link_tag["href"].strip()
         if not raw_href:
             continue
-
         url = urljoin(board.list_url, raw_href)
         notice_date = _extract_date_from_row(row)
-
         if until_date and notice_date and notice_date > until_date:
             continue
         if since_date and notice_date and notice_date < since_date:
             continue
         valid_post_count += 1
-
-    notice = make_notice(
-        university=university,
-        title=title,
-        url=url,
-        board_name=board.board_name,
-        source_category=None,
-        date=notice_date.isoformat() if notice_date else None,
-    )   
+        notice = make_notice(
+            university=university,
+            title=title,
+            url=url,
+            board_name=board.board_name,
+            source_category=None,
+            date=notice_date.isoformat() if notice_date else None,
+        )
         results.append(notice)
-   
-   if valid_post_count == 0 and len(rows) > 0:
+
+    if valid_post_count == 0 and len(rows) > 0:
         should_stop = True
 
     return results, should_stop
-
 
 def crawl_notice_board(university: str, board: NoticeBoard,
                        until_date: Optional[date] = None,
