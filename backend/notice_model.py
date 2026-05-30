@@ -210,14 +210,12 @@ UNIVERSITY_SOURCES = {
     "인천대학교": UniversitySource(
         name="인천대학교",
         boards=[
-            NoticeBoard(
-                board_name="대학교 전체공지",
-                list_url="https://www.inu.ac.kr/inu/1534/subview.do",
-                page_param="page",
-                enc_inner_path="/bbs/inu/2006/artcnList.do",
-                enc_query_template="page={page}&srchColumn=&srchWrd=&bbsClSeq=&bbsOpenWrdSeq=&rgsBgndeStr=&rgsEnddeSstr=&isViewMine=false&",
-            ),
-        ]
+            board_name="대학교 전체공지",
+            list_url="https://www.inu.ac.kr/inu/1534/subview.do",
+            page_param="page",
+            enc_inner_path="/bbs/inu/2006/artclList.do",
+            enc_query_template="page={page}&srchColumn=&srchWrd=&bbsClSeq=&bbsOpenWrdSeq=&rgsBgndeStr=&rgsEnddeStr=&isViewMine=false&",
+),       ]
     ),
 }
 
