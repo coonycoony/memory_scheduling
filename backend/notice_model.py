@@ -18,6 +18,8 @@ class NoticeBoard(BaseModel):
     list_url: str
     page_param: str = "pageIndex"
     max_pages: int = 50
+    enc_inner_path: Optional[str] = None
+    enc_query_template: Optional[str] = None
 
 
 class UniversitySource(BaseModel):
@@ -120,7 +122,6 @@ def make_notice(
         date=date,
     )
 
-
 UNIVERSITY_SOURCES = {
     "충북대학교": UniversitySource(
         name="충북대학교",
@@ -194,6 +195,18 @@ UNIVERSITY_SOURCES = {
                 board_name="대학교 전체공지",
                 list_url="https://www.jnu.ac.kr/WebApp/web/HOM/COM/Board/board.aspx?boardID=5&bbsMode=list&cate=0",
                 page_param="page",
+            ),
+        ]
+    ),
+    "인천대학교": UniversitySource(
+        name="인천대학교",
+        boards=[
+            NoticeBoard(
+                board_name="대학교 전체공지",
+                list_url="https://www.inu.ac.kr/inu/1534/subview.do",
+                page_param="page",
+                enc_inner_path="/bbs/inu/2006/artcnList.do",
+                enc_query_template="page={page}&srchColumn=&srchWrd=&bbsClSeq=&bbsOpenWrdSeq=&rgsBgndeStr=&rgsEnddeSstr=&isViewMine=false&",
             ),
         ]
     ),
