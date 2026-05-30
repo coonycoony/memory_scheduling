@@ -13,3 +13,10 @@ def get_notices(db: Session, university: str, skip: int = 0, limit: int = 100):
     return db.query(models.NoticeModel).filter(
             models.NoticeModel.university == university
     ).offset(skip).limit(limit).all()
+def bulk_insert_notices(db: Session, notices: list):
+    # 배열로 들어온 공지사항들을 한 번에 넣기 위한 뼈대
+    inserted_count = 0
+    for n in notices:
+        create_notice(db, n.university, n.title, n.url, n.category, n.date)
+        inserted_count += 1
+    return inserted_count
