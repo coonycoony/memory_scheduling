@@ -7,7 +7,11 @@ from notice_model import load_notices, SearchRequest
 from middleware import log_requests_middleware
 from logger import app_logger
 
+from database import engine, Base
+import models
+
 app = FastAPI()
+models.Base.metadata.create_all(bind=engine)
 app.middleware("http")(log_requests_middleware)
 
 @app.on_event("startup")
