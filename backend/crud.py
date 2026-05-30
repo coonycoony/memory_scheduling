@@ -19,6 +19,9 @@ def get_notices(db: Session, university: str, skip: int = 0, limit: int = 100):
     )
     #날짜 기준 내림차순(최신순) 정렬 강제 적용
     query = query.order_by(models.NoticeModel.date.desc())
+    if category:
+        query = query.filter(models.NoticeModel.category == category)
+    return query.offset(skip).limit(limit).all()
     
 def bulk_insert_notices(db: Session, notices: list):
     # 배열로 들어온 공지사항들을 한 번에 넣기 위한 뼈대
