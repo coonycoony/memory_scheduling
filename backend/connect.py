@@ -48,6 +48,11 @@ def get_notices(university: str, category: Optional[str] = None, db: Session = D
             since=thirty_days_ago,
             until=today_str
         )
+    #DB에서 먼저 꺼내보고 확인
+    db_results = crud.get_notices(db, university=university)
+    #DB에 데이터가 충분히 있으면 크롤링 안하고 리턴
+    if len(db_results) > 20:
+        return db_results
     results = load_notices(request_data)
     return results
 @app.get("/health")
