@@ -1,9 +1,10 @@
 from typing import List, Optional
-from urllib.parse import urljoin, urlencode, urlparse, parse_qs, urlunparse
+from urllib.parse import urljoin, urlencode, urlparse, parse_qs, urlunparse, quote
 from datetime import date
 import re
 import json
 import logging
+import base64
 from pathlib import Path
 
 import requests
@@ -40,8 +41,8 @@ class Notice(BaseModel):
 
 class SearchRequest(BaseModel):
     university: str
-    board_name: Optional[str] = None      # 게시판 선택용
-    notice_category: Optional[str] = None # 공지 분류 필터용 (장학, 학사, 취업...)
+    board_name: Optional[str] = None
+    notice_category: Optional[str] = None
     since: Optional[str] = None
     until: str
     max_pages: Optional[int] = None
@@ -121,6 +122,7 @@ def make_notice(
         department=clean_department,
         date=date,
     )
+
 
 UNIVERSITY_SOURCES = {
     "충북대학교": UniversitySource(
@@ -212,6 +214,7 @@ UNIVERSITY_SOURCES = {
     ),
 }
 
+
 _DATE_PATTERN = re.compile(r"(\d{2,4})[.\-/](\d{1,2})[.\-/](\d{1,2})")
 
 def _parse_date(raw: str) -> Optional[date]:
@@ -233,7 +236,15 @@ def _extract_date_from_row(row) -> Optional[date]:
             return parsed
     return None
 
-def _build_page_url(base_url: str, page_param: str, page: int) -> str:
+def _build_page_url(base_url: str, page_param: str, page: int,
+                    enc_inner_path: Optional[str] = None,
+                    enc_query_template: Optional[str] = None) -> str:
+    if enc_inner_path:
+        query = enc_query_template.format(page=page) if enc_query_template else f"page={page}"
+        inner = f"{enc_inner_path}?{query}"
+        enc_value = base64.b64encode(("fnct1|@@|" + quote(inner)).encode()).decode()
+        return f"{base_url}?enc={enc_value}"
+
     parsed = urlparse(base_url)
     params = parse_qs(parsed.query, keep_blank_values=True)
     params[page_param] = [str(page)]
@@ -310,7 +321,7 @@ def crawl_notice_board(university: str, board: NoticeBoard,
     limit = max_pages if max_pages is not None else board.max_pages
 
     for page in range(1, limit + 1):
-        page_url = _build_page_url(board.list_url, board.page_param, page)
+        page_url = _build_page_url(board.list_url, board.page_param, page, board.enc_inner_path, board.enc_query_template)
         logger.info("크롤링 시작: %s / %s (page=%d)", university, board.board_name, page)
         try:
             html = fetch_board_html(page_url)
