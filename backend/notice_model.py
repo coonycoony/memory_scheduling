@@ -368,18 +368,7 @@ def summarize_by_category(
 
 def save_notices_to_json(notices: List[Notice], path: str = "notices.json") -> None:
     output = Path(path)
-   
-    if output.exists():
-        existing = load_notices_from_json(path)
-        existing_urls = {n.url for n in existing}
-    else:
-        existing = []
-        existing_urls = set()
-    
-    new_notices = [n for n in notices if n.url not in existing_urls]
-    merged = existing + new_notices
-    
-    data = [n.model_dump() for n in merged]
+    data = [n.model_dump() for n in notices]
     output.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
