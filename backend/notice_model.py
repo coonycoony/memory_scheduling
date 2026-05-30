@@ -18,12 +18,11 @@ class NoticeBoard(BaseModel):
     list_url: str
     page_param: str = "pageIndex"
     max_pages: int = 50
-    board_category: str = "기타" #게시판의 고유 카테고리(ex:장학,학사)
+
 
 class UniversitySource(BaseModel):
     name: str
     boards: List[NoticeBoard]
-    categories: Optional[List[str]] = None
 
 
 class Notice(BaseModel):
@@ -39,7 +38,8 @@ class Notice(BaseModel):
 
 class SearchRequest(BaseModel):
     university: str
-    category:Optional[str] = None
+    board_name: Optional[str] = None      # 게시판 선택용
+    notice_category: Optional[str] = None # 공지 분류 필터용 (장학, 학사, 취업...)
     since: Optional[str] = None
     until: str
     max_pages: Optional[int] = None
@@ -69,7 +69,10 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
     "안전": ["코로나", "감염", "안전", "재난", "비상", "방역", "격리"],
 }
 
-VALID_CATEGORIES: set[str] = set(CATEGORY_KEYWORDS.keys()) | {"기타", "일반"}
+VALID_CATEGORIES: set[str] = set(CATEGORY_KEYWORDS.keys()) | {"기타"}
+
+logger = logging.getLogger(__name__)
+
 
 def is_valid_category(category: str) -> bool:
     return category in VALID_CATEGORIES
@@ -126,7 +129,6 @@ UNIVERSITY_SOURCES = {
                 board_name="대학교 전체공지",
                 list_url="https://www.cbnu.ac.kr/www/selectBbsNttList.do?bbsNo=8&key=813",
                 page_param="pageIndex",
-                board_category="일반" 
             ),
         ]
     ),
@@ -137,19 +139,15 @@ UNIVERSITY_SOURCES = {
                 board_name="대학교 전체공지",
                 list_url="https://plus.cnu.ac.kr/_prog/_board/?code=sub07_0702&site_dvs_cd=kr&menu_dvs_cd=0702",
                 page_param="GotoPage",
-                board_category="일반"
             ),
             NoticeBoard(
                 board_name="장학공지",
                 list_url="https://plus.cnu.ac.kr/_prog/_board/?code=sub07_0713&site_dvs_cd=kr&menu_dvs_cd=0713",
                 page_param="GotoPage",
-                board_category="장학"
             ),
         ]
     ),
 }
-
-logger = logging.getLogger(__name__)
 
 
 _DATE_PATTERN = re.compile(r"(\d{2,4})[.\-/](\d{1,2})[.\-/](\d{1,2})")
@@ -197,58 +195,49 @@ def fetch_board_html(list_url: str) -> str:
         response.encoding = response.apparent_encoding
     return response.text
 
-
 def parse_notice_rows(html: str, university: str, board: NoticeBoard,
                       until_date: Optional[date] = None,
                       since_date: Optional[date] = None):
     soup = BeautifulSoup(html, "html.parser")
     results: List[Notice] = []
     should_stop = False
-
     valid_post_count = 0
-
     rows = soup.select("table tbody tr")
 
     for row in rows:
         cells = row.find_all("td")
         if not cells:
             continue
-
         link_tag = row.find("a", href=True)
         if link_tag is None:
             continue
-
         title = link_tag.get_text(" ", strip=True)
         if not title:
             continue
-
         raw_href = link_tag["href"].strip()
         if not raw_href:
             continue
-
         url = urljoin(board.list_url, raw_href)
         notice_date = _extract_date_from_row(row)
-
         if until_date and notice_date and notice_date > until_date:
             continue
         if since_date and notice_date and notice_date < since_date:
             continue
         valid_post_count += 1
-
         notice = make_notice(
             university=university,
             title=title,
             url=url,
             board_name=board.board_name,
-            source_category=board.board_category,
+            source_category=None,
             date=notice_date.isoformat() if notice_date else None,
         )
         results.append(notice)
+
     if valid_post_count == 0 and len(rows) > 0:
         should_stop = True
 
     return results, should_stop
-
 
 def crawl_notice_board(university: str, board: NoticeBoard,
                        until_date: Optional[date] = None,
@@ -293,7 +282,7 @@ def load_notices(request: SearchRequest) -> List[Notice]:
     results: List[Notice] = []
 
     for board in source.boards:
-        if request.category and request.category != board.board_category:
+        if request.board_name and request.board_name != board.board_name:
             continue
         board_notices = crawl_notice_board(
             source.name, board,
@@ -308,6 +297,10 @@ def load_notices(request: SearchRequest) -> List[Notice]:
         since=request.since_date,
         until=request.until_date,
     )
+
+    if request.notice_category:
+        results = filter_by_category(results, request.notice_category)
+
     results.sort(key=lambda n: n.date or "", reverse=True)
     return results
 
