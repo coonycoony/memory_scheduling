@@ -130,6 +130,11 @@ UNIVERSITY_SOURCES = {
                 list_url="https://www.cbnu.ac.kr/www/selectBbsNttList.do?bbsNo=8&key=813",
                 page_param="pageIndex",
             ),
+            NoticeBoard(
+                board_name="컴퓨터공학과 공지",
+                list_url="https://computer.chungbuk.ac.kr/bbs/bbs.php?db=notice",
+                page_param="page",
+            ),
         ]
     ),
     "충남대학교": UniversitySource(
@@ -369,3 +374,7 @@ def load_notices_from_json(path: str = "notices.json") -> List[Notice]:
     output = Path(path)
     raw = json.loads(output.read_text(encoding="utf-8"))
     return [Notice(**item) for item in raw]
+
+
+def get_university_list() -> List[str]:
+    return list(UNIVERSITY_SOURCES.keys())
