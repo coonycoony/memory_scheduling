@@ -13,7 +13,7 @@ def create_notice(db: Session, univ: str, title: str, url: str, cat: str, date: 
     db.commit()
     db.refresh(db_notice)
     return db_notice
-def get_notices(db: Session, university: str, skip: int = 0, limit: int = 100):
+def get_notices(db: Session, university: str, category: str = None, skip: int = 0, limit: int = 100):
     query = db.query(models.NoticeModel).filter(
             models.NoticeModel.university == university
     )

@@ -44,7 +44,7 @@ def get_notices(university: str, category: Optional[str] = None, db: Session = D
 
     request_data = SearchRequest(
             university=university,
-            category=category,
+            notice_category=category,
             since=thirty_days_ago,
             until=today_str
         )
