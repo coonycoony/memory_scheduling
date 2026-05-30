@@ -49,9 +49,9 @@ def get_notices(university: str, category: Optional[str] = None, db: Session = D
             until=today_str
         )
     #DB에서 먼저 꺼내보고 확인
-    db_results = crud.get_notices(db, university=university)
-    #DB에 데이터가 충분히 있으면 크롤링 안하고 리턴
-    if len(db_results) > 20:
+    db_results = crud.get_notices(db, university=university, category=category)
+    #DB에 데이터가 20개 이상이고, 가장 최근 공지사항이 오늘 또는 어제일때만 크롤링 생략
+    if len(db_results) > 20 and db_results[0].date >= thirty_days_ago:
         return db_results
     results = load_notices(request_data)
     if results:
