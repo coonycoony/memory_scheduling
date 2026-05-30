@@ -272,7 +272,6 @@
         }
 
         allNotices = notices;
-        
         applyFilter(currentCategory);
 
       } catch (error) {
@@ -314,22 +313,31 @@
 
     function renderNotices(notices) {
       const noticeList = document.getElementById("noticeList");
+      
+      if (notices.length === 0) {
+        noticeList.innerHTML = `
+          <div class="empty">
+            해당 카테고리의 공지사항이 없습니다.
+          </div>
+        `;
+        return;
+      }
 
       noticeList.innerHTML = notices.map(notice => `
         <div class="notice-card">
           <div class="notice-top">
-            <span class="badge">${notice.category || "기타"}</span>
-            <span>${notice.university || ""}</span>
+            <span class="badge">${escapeHtml(notice.category || "기타")}</span>
+            <span>${escapeHtml(notice.university || "")}</span>
           </div>
           <div class="title">
-            <a href="${notice.url || "#"}" target="_blank" rel="noopener noreferrer">
-              ${notice.title || "제목 없음"}
+            <a href="${escapeAttribute(notice.url || "#")}" target="_blank" rel="noopener noreferrer">
+              ${escapeHtml(notice.title || "제목 없음")}
             </a>
           </div>
           <div class="meta">
-            <span>원본 분류: ${notice.source_category || "없음"}</span>
-            <span>부서: ${notice.department || "없음"}</span>
-            <span>작성일: ${notice.date || "없음"}</span>
+            <span>원본 분류: ${escapeHtml(notice.source_category || "없음")}</span>
+            <span>부서: ${escapeHtml(notice.department || "없음")}</span>
+            <span>작성일: ${escapeHtml(notice.date || "없음")}</span>
           </div>
         </div>
       `).join("");
