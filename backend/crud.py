@@ -2,6 +2,9 @@ from sqlalchemy.orm import Session
 import models 
 
 def create_notice(db: Session, univ: str, title: str, url: str, cat: str, date: str):
+    existing = db.query(models.NoticeModel).filter(models.NoticeModel.url == url).first()
+    if existing:
+        return existing #이미 있으면 저장 안하고 반환
     db_notice = models.NoticeModel(
             university=univ, title=title, url=url, category=cat, date=date
     )
