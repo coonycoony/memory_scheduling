@@ -514,7 +514,18 @@
   };
 
   // =========================
-  // 4. 날짜 유틸 함수
+  // 4. 상태 메시지
+  // =========================
+  function setStatus(message = "", type = "") {
+    els.statusText.textContent = message;
+    els.statusText.className = "status-text";
+    if (type) {
+      els.statusText.classList.add(type);
+    }
+  }
+
+  // =========================
+  // 5. 날짜 유틸 함수
   // =========================
   const getIso = (date) => {
     const y = date.getFullYear();
@@ -616,7 +627,7 @@
   }
 
   // =========================
-  // 5. 서버 연동
+  // 6. 서버 연동
   // =========================
   async function loadSchedulesFromServer() {
       try {
@@ -649,7 +660,7 @@
     }
 
   // =========================
-  // 6. 카테고리 렌더링
+  // 7. 카테고리 렌더링
   // =========================
   function renderMainCategories() {
     els.mainCategory.innerHTML = "";
@@ -675,7 +686,7 @@
   }
 
   // =========================
-  // 7. 일정 목록 렌더링
+  // 8. 일정 목록 렌더링
   // =========================
   function renderEventList() {
     const list = events[selectedDate] || [];
@@ -752,7 +763,7 @@
   }
 
   // =========================
-  // 8. 달력 렌더링
+  // 9. 달력 렌더링
   // =========================
   function getDotClass(mainCategory) {
     if (mainCategory === "장학") return "scholarship";
@@ -838,7 +849,7 @@
   }
 
   // =========================
-  // 9. 이벤트 핸들러
+  // 10. 이벤트 핸들러
   // =========================
   function handleMainCategoryChange() {
     renderSubCategories(els.mainCategory.value);
@@ -928,7 +939,7 @@
   }
 
   // =========================
-  // 10. 이벤트 바인딩
+  // 11. 이벤트 바인딩
   // =========================
   els.mainCategory.addEventListener("change", handleMainCategoryChange);
   els.eventForm.addEventListener("submit", handleEventSubmit);
@@ -939,7 +950,7 @@
   els.endDate.addEventListener("change", syncRangeFromInputs);
 
   // =========================
-  // 11. 초기화
+  // 12. 초기화
   // =========================
   function init() {
     selectedDate = todayIso();
@@ -951,6 +962,7 @@
     renderSubCategories(els.mainCategory.value);
     updateSelectedDateUI();
     renderCalendar();
+    await loadSchedulesFromServer();
   }
 
   init();
