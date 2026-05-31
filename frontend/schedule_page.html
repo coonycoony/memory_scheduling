@@ -106,6 +106,12 @@
       background: #fff;
     }
 
+    input[type="date"] {
+      width: 100%;
+      display: block;
+      height: 35px;
+    }
+
     textarea {
       min-height: 58px;
       resize: vertical;
@@ -742,7 +748,7 @@
     }
 
     const totalCells = els.calendarGrid.children.length;
-    const remain = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+    const remain = 42 - totalCells;
 
     for (let i = 1; i <= remain; i++) {
       const date = new Date(year, month + 1, i);
