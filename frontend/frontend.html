@@ -317,6 +317,45 @@
     let hasSearched = false;
     let currentPage = 1;
 
+    window.onload = function() {
+      loadUniversities();
+    };
+
+    async function loadUniversities() {
+      const listContainer = document.getElementById("availableUnivsList");
+      try {
+        const response = await fetch(`${API_BASE_URL}/universities`);
+        if (response.ok) {
+          const universities = await response.json();
+          if (universities && universities.length > 0) {
+            listContainer.innerHTML = universities.map(u => 
+              `<span class="univ-tag" onclick="setUniversity('${escapeHtml(u)}')">${escapeHtml(u)}</span>`
+            ).join("");
+          } else {
+            listContainer.innerHTML = `<span style="font-size: 13px; color: #999;">등록된 대학교가 없습니다.</span>`;
+          }
+        } else {
+          showFallbackUniversities();
+        }
+      } catch (error) {
+        showFallbackUniversities();
+      }
+    }
+
+    function showFallbackUniversities() {
+      const listContainer = document.getElementById("availableUnivsList");
+      const fallbackList = ['충북대학교', '전남대학교']; 
+      
+      listContainer.innerHTML = fallbackList.map(u => 
+        `<span class="univ-tag" onclick="setUniversity('${u}')">${u}</span>`
+      ).join("");
+    }
+
+    function setUniversity(name) {
+      document.getElementById("universityInput").value = name;
+      searchNotices();
+    }
+
     async function searchNotices() {
       const university = document.getElementById("universityInput").value.trim();
       const status = document.getElementById("status");
