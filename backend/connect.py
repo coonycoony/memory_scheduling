@@ -24,6 +24,7 @@ app.middleware("http")(log_requests_middleware)
 @app.on_event("startup")
 async def startup_event():
     app_logger.info("서버가 성공적으로 시작되었습니다. 로그 기록을 시작합니다.")
+
 @app.on_event("shutdown")
 async def shutdown_event():
     #서버 종료 시 안전하게 로그 기록

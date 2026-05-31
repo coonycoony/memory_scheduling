@@ -36,7 +36,6 @@ def bulk_insert_notices(db: Session, notices: list):
         logging.error(f"DB 벌크 인서트 중 에러 발생: {e}")
     return inserted_count
 
-
 def get_university_list(db: Session):
     universities = db.query(models.NoticeModel.university).distinct().all()
     return [u[0] for u in universities if u[0] is not None]
