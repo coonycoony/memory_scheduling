@@ -307,6 +307,16 @@
       flex-wrap: wrap;
       gap: 4px;
     }
+    
+    .calendar-day.in-range {
+      background: #dbeafe;
+      border-color: #93c5fd;
+    }
+
+    .calendar-day.range-edge {
+      border: 2px solid #2563eb;
+      background: #bfdbfe;
+    }
 
     .calendar-dot {
       width: 7px;
@@ -618,9 +628,10 @@
     cell.className = "calendar-day";
 
     if (muted) cell.classList.add("muted");
-    if (iso === selectedDate) cell.classList.add("selected");
     if (iso === todayIso()) cell.classList.add("today");
-
+    if (isDateInSelectedRange(iso)) cell.classList.add("in-range");
+    if (iso === rangeStart || iso === rangeEnd) cell.classList.add("range-edge");
+    
     const dots = dayEvents
       .slice(0, 3)
       .map((ev) => `<span class="calendar-dot ${getDotClass(ev.mainCategory)}"></span>`)
@@ -740,21 +751,22 @@
     renderCalendar();
   }
 
-  function handlePrevMonth() {
-    currentMonth = new Date(
-      currentMonth.getFullYear(),
-      currentMonth.getMonth() - 1,
-      1
-    );
-    renderCalendar();
-  }
-
   function handleNextMonth() {
     currentMonth = new Date(
       currentMonth.getFullYear(),
       currentMonth.getMonth() + 1,
       1
     );
+    renderCalendar();
+  }
+
+  function handlePrevMonth() {
+    currentMonth = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth() - 1,
+      1
+    );
+
     renderCalendar();
   }
 
