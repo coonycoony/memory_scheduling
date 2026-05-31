@@ -492,6 +492,14 @@
 
       return result;
   }
+  
+  function isDateInSelectedRange(iso) {
+      if (!rangeStart) return false;
+      if (!rangeEnd) return iso === rangeStart;
+
+      const { start, end } = normalizeRange(rangeStart, rangeEnd);
+      return iso >= start && iso <= end;
+  }
 
   // =========================
   // 5. 카테고리 렌더링
