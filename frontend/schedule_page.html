@@ -517,6 +517,31 @@
       return iso >= start && iso <= end;
   }
 
+  function syncRangeFromInputs() {
+    const start = els.startDate.value;
+    const end = els.endDate.value;
+
+    rangeStart = start || null;
+    rangeEnd = end || null;
+
+    if (rangeStart && rangeEnd) {
+      const { start: normalizedStart, end: normalizedEnd } = normalizeRange(rangeStart, rangeEnd);
+      rangeStart = normalizedStart;
+      rangeEnd = normalizedEnd;
+      selectedDate = rangeEnd;
+      currentMonth = new Date(rangeEnd);
+    } else if (rangeStart) {
+      selectedDate = rangeStart;
+      currentMonth = new Date(rangeStart);
+    } else if (rangeEnd) {
+      selectedDate = rangeEnd;
+      currentMonth = new Date(rangeEnd);
+    }
+
+    updateSelectedDateUI();
+    renderCalendar();
+  }
+
   // =========================
   // 5. 카테고리 렌더링
   // =========================
