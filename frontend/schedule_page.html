@@ -677,6 +677,15 @@
       });
     }
 
+    async function deleteSchedulesOnServer(startDate, endDate) {
+      return await fetchJson(
+        `${API_BASE}/schedules?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`,
+        {
+          method: "DELETE"
+        }
+      );
+    }
+
   // =========================
   // 7. 카테고리 렌더링
   // =========================
@@ -970,7 +979,7 @@
   // =========================
   // 12. 초기화
   // =========================
-  function init() {
+  async function init() {
     selectedDate = todayIso();
     currentMonth = new Date();
     rangeStart = null;
