@@ -404,6 +404,9 @@
   let currentMonth = new Date();
   const events = {};
 
+  let rangeStart = null;
+  let rangeEnd = null;
+
   // =========================
   // 2. 상수(Constants)
   // =========================
@@ -465,6 +468,13 @@
   const formatMonthKorean = (date) => {
     return `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
   };
+
+  function normalizeRange(startIso, endIso) {
+      if (!startIso || !endIso) return { start: startIso, end: endIso };
+      return startIso <= endIso
+        ? { start: startIso, end: endIso }
+        : { start: endIso, end: startIso };
+  }
 
   // =========================
   // 5. 카테고리 렌더링
