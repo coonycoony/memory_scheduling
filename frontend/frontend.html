@@ -262,25 +262,32 @@
 
   <script>
     const API_BASE_URL = "http://127.0.0.1:8000";
+    const ITEMS_PER_PAGE = 30;
     
     let allNotices = [];
+    let currentFilteredNotices = [];
     let currentCategory = '전체';
     let hasSearched = false;
+    let currentPage = 1;
 
     async function searchNotices() {
       const university = document.getElementById("universityInput").value.trim();
       const status = document.getElementById("status");
       const noticeList = document.getElementById("noticeList");
+      const pagination = document.getElementById("pagination");
 
       if (!university) {
         status.textContent = "학교명을 입력해주세요.";
         noticeList.innerHTML = "";
+        pagination.innerHTML = "";
         return;
       }
 
       status.textContent = "공지사항을 불러오는 중입니다...";
       noticeList.innerHTML = "";
+      pagination.innerHTML = "";
       hasSearched = true;
+      currentPage = 1;
 
       try {
         const response = await fetch(`${API_BASE_URL}/notices?university=${encodeURIComponent(university)}`);
@@ -320,6 +327,7 @@
 
     function applyFilter(category) {
       currentCategory = category;
+      currentPage = 1;
 
       const buttons = document.querySelectorAll('.filter-btn');
       buttons.forEach(btn => {
@@ -332,15 +340,50 @@
 
       if (!hasSearched) return;
 
-      const filteredNotices = category === '전체' 
+      currentFilteredNotices = category === '전체' 
         ? allNotices 
         : allNotices.filter(n => (n.category || '기타') === category);
 
       const status = document.getElementById("status");
       const university = document.getElementById("universityInput").value.trim();
-      status.textContent = `${university} '${category}' 공지 ${filteredNotices.length}건을 찾았습니다.`;
+      status.textContent = `${university} '${category}' 공지 ${currentFilteredNotices.length}건을 찾았습니다.`;
 
-      renderNotices(filteredNotices);
+      renderPage();
+    }
+
+    function renderPage() {
+      const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+      const endIndex = startIndex + ITEMS_PER_PAGE;
+      const paginatedNotices = currentFilteredNotices.slice(startIndex, endIndex);
+
+      renderNotices(paginatedNotices);
+      renderPagination(currentFilteredNotices.length);
+    }
+
+    function changePage(pageNumber) {
+      currentPage = pageNumber;
+      renderPage();
+
+      const statusElement = document.getElementById("status");
+      statusElement.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function renderPagination(totalItems) {
+      const paginationContainer = document.getElementById("pagination");
+      const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
+      if (totalPages <= 1) {
+        paginationContainer.innerHTML = "";
+        return;
+      }
+
+      let paginationHtml = "";
+      for (let i = 1; i <= totalPages; i++) {
+        const isActive = i === currentPage ? 'active' : '';
+        paginationHtml += `<button class="page-btn ${isActive}" onclick="changePage(${i})">${i}</button>`;
+      }
+      
+      paginationContainer.innerHTML = paginationHtml;
     }
 
     function renderNotices(notices) {
