@@ -667,6 +667,16 @@
       }
     }
 
+    async function createScheduleOnServer(payload) {
+      return await fetchJson(`${API_BASE}/schedules`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+    }
+
   // =========================
   // 7. 카테고리 렌더링
   // =========================
