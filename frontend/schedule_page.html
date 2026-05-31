@@ -632,7 +632,16 @@
     `;
 
     cell.addEventListener("click", () => {
-      selectedDate = iso;
+      const clickedIso = iso;
+
+      if (!rangeStart || (rangeStart && rangeEnd)) {
+        rangeStart = clickedIso;
+        rangeEnd = null;
+      } else {
+        rangeEnd = clickedIso;
+      }
+
+      selectedDate = clickedIso;
       currentMonth = new Date(date.getFullYear(), date.getMonth(), 1);
       updateSelectedDateUI();
       renderCalendar();
