@@ -38,6 +38,7 @@
       font-size: 16px;
     }
 
+    /* 검색 박스 내 select 스타일 추가 */
     .search-box {
       background: white;
       padding: 20px;
@@ -45,67 +46,47 @@
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
       display: flex;
       gap: 12px;
-      margin-bottom: 16px;
+      margin-bottom: 24px;
       flex-wrap: wrap;
     }
 
-    .search-box input {
+    .search-box select {
       flex: 1;
-      min-width: 220px;
+      min-width: 200px;
       padding: 14px;
       border: 1px solid #d0d7e2;
       border-radius: 10px;
       font-size: 16px;
+      background-color: white;
+      cursor: pointer;
+      appearance: none; /* 브라우저 기본 화살표 숨기기 */
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 16px;
+      padding-right: 40px;
+    }
+
+    .search-box select:disabled {
+      background-color: #f3f4f6;
+      cursor: not-allowed;
+      color: #9ca3af;
     }
 
     .search-box button {
-      padding: 14px 20px;
+      padding: 14px 24px;
       border: none;
       background: #2563eb;
       color: white;
       border-radius: 10px;
       font-size: 16px;
       cursor: pointer;
+      font-weight: bold;
+      min-width: 100px;
     }
 
     .search-box button:hover {
       background: #1d4ed8;
-    }
-
-    .available-univs {
-      margin-bottom: 24px;
-      padding: 0 10px;
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
-    .available-univs-label {
-      font-size: 14px;
-      color: #555;
-      font-weight: bold;
-    }
-
-    .univ-tag-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .univ-tag {
-      background: #e5e7eb;
-      color: #374151;
-      padding: 6px 14px;
-      border-radius: 999px;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .univ-tag:hover {
-      background: #d1d5db;
-      transform: translateY(-1px);
     }
 
     .filter-container {
@@ -252,12 +233,8 @@
       .search-box {
         flex-direction: column;
       }
-      .search-box button {
+      .search-box select, .search-box button {
         width: 100%;
-      }
-      .available-univs {
-        flex-direction: column;
-        align-items: flex-start;
       }
     }
   </style>
@@ -266,25 +243,19 @@
   <div class="container">
     <div class="header">
       <h1>대학교 공지사항 검색</h1>
-      <p>학교명을 입력하면 공지를 불러오고 카테고리별로 확인할 수 있습니다.</p>
+      <p>학교와 게시판을 선택하여 공지를 불러오고 카테고리별로 확인할 수 있습니다.</p>
     </div>
 
     <div class="search-box">
-      <input
-        type="text"
-        id="universityInput"
-        placeholder="예: 충북대학교"
-        value="충북대학교"
-        onkeypress="if(event.key === 'Enter') searchNotices()"
-      />
+      <select id="universitySelect" onchange="handleUniversityChange()">
+        <option value="">학교 목록을 불러오는 중...</option>
+      </select>
+      
+      <select id="boardSelect" disabled>
+        <option value="">게시판 선택 (전체)</option>
+      </select>
+      
       <button onclick="searchNotices()">검색</button>
-    </div>
-
-    <div class="available-univs" id="availableUnivs">
-      <div class="available-univs-label">검색 가능 대학:</div>
-      <div class="univ-tag-container" id="availableUnivsList">
-        <span style="font-size: 13px; color: #999;">목록을 불러오는 중...</span>
-      </div>
     </div>
 
     <div class="filter-container" id="filterContainer">
@@ -301,9 +272,8 @@
       <button class="filter-btn" onclick="applyFilter('기타')">기타</button>
     </div>
 
-    <div class="status" id="status">학교명을 입력하고 검색하세요.</div>
+    <div class="status" id="status">학교를 선택하고 검색하세요.</div>
     <div class="notice-list" id="noticeList"></div>
-    
     <div class="pagination" id="pagination"></div>
   </div>
 
@@ -322,48 +292,65 @@
     };
 
     async function loadUniversities() {
-      const listContainer = document.getElementById("availableUnivsList");
+      const univSelect = document.getElementById("universitySelect");
       try {
         const response = await fetch(`${API_BASE_URL}/universities`);
         if (response.ok) {
           const universities = await response.json();
-          if (universities && universities.length > 0) {
-            listContainer.innerHTML = universities.map(u => 
-              `<span class="univ-tag" onclick="setUniversity('${escapeHtml(u)}')">${escapeHtml(u)}</span>`
-            ).join("");
-          } else {
-            listContainer.innerHTML = `<span style="font-size: 13px; color: #999;">등록된 대학교가 없습니다.</span>`;
-          }
+          univSelect.innerHTML = `<option value="">학교를 선택하세요</option>` + 
+            universities.map(u => `<option value="${escapeAttribute(u)}">${escapeHtml(u)}</option>`).join("");
         } else {
-          showFallbackUniversities();
+          throw new Error("API 응답 실패");
         }
       } catch (error) {
-        showFallbackUniversities();
+        console.error("대학교 목록을 불러오지 못했습니다.", error);
+        const fallbackList = ['충북대학교', '전남대학교', '충남대학교'];
+        univSelect.innerHTML = `<option value="">학교를 선택하세요</option>` + 
+            fallbackList.map(u => `<option value="${escapeAttribute(u)}">${escapeHtml(u)}</option>`).join("");
       }
     }
 
-    function showFallbackUniversities() {
-      const listContainer = document.getElementById("availableUnivsList");
-      const fallbackList = ['충북대학교', '전남대학교']; 
-      
-      listContainer.innerHTML = fallbackList.map(u => 
-        `<span class="univ-tag" onclick="setUniversity('${u}')">${u}</span>`
-      ).join("");
-    }
+    async function handleUniversityChange() {
+      const univSelect = document.getElementById("universitySelect");
+      const boardSelect = document.getElementById("boardSelect");
+      const selectedUniv = univSelect.value;
 
-    function setUniversity(name) {
-      document.getElementById("universityInput").value = name;
-      searchNotices();
+      if (!selectedUniv) {
+        boardSelect.innerHTML = `<option value="">게시판 선택 (전체)</option>`;
+        boardSelect.disabled = true;
+        return;
+      }
+
+      boardSelect.innerHTML = `<option value="">게시판 목록을 불러오는 중...</option>`;
+      boardSelect.disabled = true;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/boards?university=${encodeURIComponent(selectedUniv)}`);
+        if (response.ok) {
+          const boards = await response.json();
+          boardSelect.innerHTML = `<option value="">게시판 선택 (전체)</option>` + 
+            boards.map(b => `<option value="${escapeAttribute(b)}">${escapeHtml(b)}</option>`).join("");
+          
+          boardSelect.disabled = false;
+        } else {
+          throw new Error("게시판 API 응답 실패");
+        }
+      } catch (error) {
+        console.error("게시판 목록을 불러오지 못했습니다.", error);
+        boardSelect.innerHTML = `<option value="">게시판을 불러오지 못했습니다 (전체 검색)</option>`;
+        boardSelect.disabled = false;
+      }
     }
 
     async function searchNotices() {
-      const university = document.getElementById("universityInput").value.trim();
+      const university = document.getElementById("universitySelect").value;
+      const board = document.getElementById("boardSelect").value;
       const status = document.getElementById("status");
       const noticeList = document.getElementById("noticeList");
       const pagination = document.getElementById("pagination");
 
       if (!university) {
-        status.textContent = "학교명을 입력해주세요.";
+        status.textContent = "학교를 먼저 선택해주세요.";
         noticeList.innerHTML = "";
         pagination.innerHTML = "";
         return;
@@ -376,7 +363,12 @@
       currentPage = 1;
 
       try {
-        const response = await fetch(`${API_BASE_URL}/notices?university=${encodeURIComponent(university)}`);
+        let url = `${API_BASE_URL}/notices?university=${encodeURIComponent(university)}`;
+        if (board) {
+          url += `&board=${encodeURIComponent(board)}`;
+        }
+
+        const response = await fetch(url);
 
         if (!response.ok) {
           throw new Error("서버 응답 오류");
@@ -390,7 +382,7 @@
           noticeList.innerHTML = `
             <div class="empty">
               검색 결과가 없습니다.<br />
-              학교명 또는 백엔드 데이터를 확인해주세요.
+              선택한 학교 또는 게시판에 데이터가 있는지 확인해주세요.
             </div>
           `;
           return;
@@ -431,8 +423,11 @@
         : allNotices.filter(n => (n.category || '기타') === category);
 
       const status = document.getElementById("status");
-      const university = document.getElementById("universityInput").value.trim();
-      status.textContent = `${university} '${category}' 공지 ${currentFilteredNotices.length}건을 찾았습니다.`;
+      const university = document.getElementById("universitySelect").value;
+      const board = document.getElementById("boardSelect").value;
+      
+      const targetName = board ? `${university} - ${board}` : university;
+      status.textContent = `${targetName} '${category}' 공지 ${currentFilteredNotices.length}건을 찾았습니다.`;
 
       renderPage();
     }
