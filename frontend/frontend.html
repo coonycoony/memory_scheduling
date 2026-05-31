@@ -72,6 +72,42 @@
       background: #1d4ed8;
     }
 
+    .available-univs {
+      margin-bottom: 24px;
+      padding: 0 10px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .available-univs-label {
+      font-size: 14px;
+      color: #555;
+      font-weight: bold;
+    }
+
+    .univ-tag-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .univ-tag {
+      background: #e5e7eb;
+      color: #374151;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .univ-tag:hover {
+      background: #d1d5db;
+      transform: translateY(-1px);
+    }
+
     .filter-container {
       display: flex;
       flex-wrap: wrap;
@@ -219,6 +255,10 @@
       .search-box button {
         width: 100%;
       }
+      .available-univs {
+        flex-direction: column;
+        align-items: flex-start;
+      }
     }
   </style>
 </head>
@@ -238,6 +278,13 @@
         onkeypress="if(event.key === 'Enter') searchNotices()"
       />
       <button onclick="searchNotices()">검색</button>
+    </div>
+
+    <div class="available-univs" id="availableUnivs">
+      <div class="available-univs-label">검색 가능 대학:</div>
+      <div class="univ-tag-container" id="availableUnivsList">
+        <span style="font-size: 13px; color: #999;">목록을 불러오는 중...</span>
+      </div>
     </div>
 
     <div class="filter-container" id="filterContainer">
