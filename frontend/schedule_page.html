@@ -699,13 +699,19 @@
     const memo = els.eventMemo.value.trim();
 
     if (!title) return;
-
-    (events[selectedDate] ||= []).push({
-      mainCategory,
-      subCategory,
-      title,
-      time,
-      memo
+     
+    const targetDates = rangeStart
+      ? (rangeEnd ? getDatesInRange(rangeStart, rangeEnd) : [rangeStart])
+      : [selectedDate];
+    
+    targetDates.forEach((dateIso) => {
+      (events[selectedDate] ||= []).push({
+        mainCategory,
+        subCategory,
+        title,
+        time,
+        memo
+      });
     });
 
     els.eventTitle.value = "";
