@@ -629,6 +629,14 @@
   // =========================
   // 6. 서버 연동
   // =========================
+  async function fetchJson(url, options = {}) {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      throw new Error(`요청 실패: ${response.status}`);
+    }
+    return await response.json();
+  }
+
   async function loadSchedulesFromServer() {
       try {
         setStatus("스케줄을 불러오는 중입니다...");
