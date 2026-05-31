@@ -723,10 +723,19 @@
   }
 
   function handleDeleteAll() {
-    if (!events[selectedDate]?.length) return;
+    const targetDates = rangeStart
+      ? (rangeEnd ? getDatesInRange(rangeStart, rangeEnd) : [rangeStart])
+      : [selectedDate];
+
+    const hasAnyEvent = targetDates.some((dateIso) => events[dateIso]?.length);
+    if (!hasAnyEvent) return;
+
     if (!confirm("이 날짜의 스케줄을 모두 삭제할까요?")) return;
 
-    delete events[selectedDate];
+    targetDates.forEach((dateIso) => {
+      delete events[selectedDate];
+    });
+
     renderEventList();
     renderCalendar();
   }
