@@ -586,7 +586,15 @@
   }
 
   function updateSelectedDateUI() {
-    if (els.selectedDateBox) {
+    if (els.selectedDateBox) return;
+
+    if (rangeStart && rangeEnd) {
+      const { start, end } = normalizeRange(rangeStart, rangeEnd);
+      els.selectedDateBox.textContent =
+        `${formatDateKorean(start)} ~ ${formatDateKorean(end)}`;
+    } else if (rangeStart) {
+      els.selectedDateBox.textContent = `${formatDateKorean(rangeStart)} (시작 날짜 선택됨)`;
+    } else {
       els.selectedDateBox.textContent = formatDateKorean(selectedDate);
     }
 
