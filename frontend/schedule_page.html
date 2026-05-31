@@ -679,12 +679,18 @@
       if (!rangeStart || (rangeStart && rangeEnd)) {
         rangeStart = clickedIso;
         rangeEnd = null;
-      } else {
-        rangeEnd = clickedIso;
+      } else if (rangeStart && rangeEnd) {
+        const { start, end } = normalizeRange(rangeStart, clickedIso);
+        rangeStart = start;
+        rangeEnd = end;
       }
 
       selectedDate = clickedIso;
       currentMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+
+      els.startDate.value = rangeStart || "";
+      els.endDate.value = rangeEnd || "";
+
       updateSelectedDateUI();
       renderCalendar();
     });
@@ -809,6 +815,8 @@
   els.deleteAllBtn.addEventListener("click", handleDeleteAll);
   els.prevMonthBtn.addEventListener("click", handlePrevMonth);
   els.nextMonthBtn.addEventListener("click", handleNextMonth);
+  els.startDate.addEventListener("change", syncRangeFromInputs);
+  els.endDate.addEventListener("change", syncRangeFromInputs);
 
   // =========================
   // 10. 초기화
