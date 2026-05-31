@@ -364,6 +364,20 @@
     .calendar-dot.etc {
       background: #16a34a;
     }
+
+    .status-text {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 10px;
+    }
+
+    .status-text.error {
+      color: #dc2626;
+    }
+
+    .status-text.success {
+      color: #15803d;
+    }
     </style>
 </head>
 
@@ -418,6 +432,8 @@
                 <button type="submit" class="btn-primary">선택한 날짜 범위에 스케줄 추가</button>
                 <button type="button" class="btn-secondary" id="deleteAllBtn">선택한 날짜 범위 전체 삭제</button>
             </div>
+
+            <div class="status-text" id="statusText"></div>
           </form>
 
           <div class="event-list" id="eventList"></div>
@@ -451,6 +467,7 @@
   // =========================
   // 1. 상태(State)
   // =========================
+  const API_BASE = "http://127.0.0.1:8000";
   let selectedDate;
   let currentMonth = new Date();
   const events = {};
@@ -492,7 +509,8 @@
     calendarGrid: $("calendarGrid"),
     calendarTitle: $("calendarTitle"),
     prevMonthBtn: $("prevMonthBtn"),
-    nextMonthBtn: $("nextMonthBtn")
+    nextMonthBtn: $("nextMonthBtn"),
+    statusText: $("statusText")
   };
 
   // =========================
@@ -598,7 +616,40 @@
   }
 
   // =========================
-  // 5. 카테고리 렌더링
+  // 5. 서버 연동
+  // =========================
+  async function loadSchedulesFromServer() {
+      try {
+        setStatus("스케줄을 불러오는 중입니다...");
+        const data = await fetchJson(`${API_BASE}/schedules`);
+
+        Object.keys(events).forEach((key) => delete events[key]);
+
+        data.forEach((item) => {
+          if (!events[item.date]) events[item.date] = [];
+          events[item.date].push({
+            id: item.id,
+            mainCategory: item.main_category,
+            subCategory: item.sub_category,
+            title: item.title,
+            startDate: item.start_date,
+            endDate: item.end_date,
+            memo: item.memo,
+            url: item.url
+          });
+        });
+
+        updateSelectedDateUI();
+        renderCalendar();
+        setStatus("스케줄을 불러왔습니다.", "success");
+      } catch (error) {
+        console.error(error);
+        setStatus("서버에서 스케줄을 불러오지 못했습니다. 백엔드 실행 여부를 확인하세요.", "error");
+      }
+    }
+
+  // =========================
+  // 6. 카테고리 렌더링
   // =========================
   function renderMainCategories() {
     els.mainCategory.innerHTML = "";
@@ -624,7 +675,7 @@
   }
 
   // =========================
-  // 6. 일정 목록 렌더링
+  // 7. 일정 목록 렌더링
   // =========================
   function renderEventList() {
     const list = events[selectedDate] || [];
@@ -701,7 +752,7 @@
   }
 
   // =========================
-  // 7. 달력 렌더링
+  // 8. 달력 렌더링
   // =========================
   function getDotClass(mainCategory) {
     if (mainCategory === "장학") return "scholarship";
@@ -787,7 +838,7 @@
   }
 
   // =========================
-  // 8. 이벤트 핸들러
+  // 9. 이벤트 핸들러
   // =========================
   function handleMainCategoryChange() {
     renderSubCategories(els.mainCategory.value);
@@ -862,7 +913,7 @@
   }
 
   // =========================
-  // 9. 이벤트 바인딩
+  // 10. 이벤트 바인딩
   // =========================
   els.mainCategory.addEventListener("change", handleMainCategoryChange);
   els.eventForm.addEventListener("submit", handleEventSubmit);
@@ -873,7 +924,7 @@
   els.endDate.addEventListener("change", syncRangeFromInputs);
 
   // =========================
-  // 10. 초기화
+  // 11. 초기화
   // =========================
   function init() {
     selectedDate = todayIso();
