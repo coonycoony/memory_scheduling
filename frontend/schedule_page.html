@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang = "ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>공지/장학 스케줄러</title>
+    <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      padding: 40px 20px;
+      background: #f5f7fb;
+      color: #222;
+    }
+
+    .schedule-container {
+      max-width: 100%;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 340px minmax(0, 1fr);
+      gap: 15px;
+      align-items: start;
+    }
+
+    @media (max-width: 600px) {
+      .schedule-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .left-panel {
+      display: grid;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .right-panel { 
+      min-width: 0;
+    }
+
+    .card { 
+      background: #fff;
+      border: 5px double #e5e7eb;
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .header {
+      font-size: 15px;
+      margin: 0;
+      align-items: center;
+    }
+
+    .section-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .selected-date {
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 12px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    .form-group { 
+      margin-bottom: 10px; 
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    select,
+    input[type="text"],
+    input[type="time"],
+    textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 13px;
+      background: #fff;
+    }
+
+    textarea {
+      min-height: 58px;
+      resize: vertical;
+    }
+
+    select:focus,
+    input:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);
+    }
+
+    .button-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: #fff;
+      font-size: 14px;
+      padding: 9px 12px;
+      font-weight: 600;
+    }
+
+    .btn-primary:hover {
+      background: #1d4ed8;
+    }
+
+    .btn-secondary {
+      background: #f3f4f6;
+      color: #374151;
+      font-size: 13px;
+      padding: 8px 10px;
+    }
+
+    .btn-secondary:hover {
+      background: #e5e7eb;
+    }
+
+    .event-list {
+      margin-top: 14px;
+      max-height: 260px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .event-item {
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      margin-bottom: 6px;
+      font-size: 13px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }   
+
+    .event-main {
+      flex: 1;
+    }
+
+    .event-type-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      margin-bottom: 4px;
+    }
+
+    .event-type-pill.scholarship {
+      background: #fff7ed;
+      color: #c2410c;
+    }
+
+    .event-type-pill.etc {
+      background: #ecfdf3;
+      color: #15803d;
+    }
+
+    .event-title {
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .event-time {
+      font-size: 11px;
+      color: #6b7280;
+      margin-bottom: 2px;
+    }   
+
+    .event-memo {
+      font-size: 12px;
+      color: #4b5563;
+    }
+
+    .empty-text {
+      font-size: 13px;
+      color: #9ca3af;
+      text-align: center;
+      padding: 16px 4px;
+    }
+
+    .calendar-card {
+      padding: 16px;
+    }
+
+    .calendar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .calendar-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .calendar-weekdays,
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+
+    .calendar-weekdays {
+      margin-bottom: 8px;
+    }
+
+    .calendar-weekdays div {
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #6b7280;
+      padding: 6px 0;
+    }
+
+    .calendar-day {
+      min-height: 76px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #fff;
+      padding: 8px 6px;
+      text-align: left;
+      cursor: pointer;
+      position: relative;
+      transition: 0.2s;
+    }
+
+    .calendar-day:hover {
+      background: #f8fafc;
+      border-color: #93c5fd;
+    }
+
+    .calendar-day.muted {
+      background: #f9fafb;
+      color: #9ca3af;
+    }
+
+    .calendar-day.selected {
+      border: 2px solid #2563eb;
+      background: #eff6ff;
+    }
+
+    .calendar-day.today {
+      box-shadow: inset 0 0 0 1px #10b981;
+    }
+
+    .calendar-day-number {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .calendar-day-dots {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .calendar-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #2563eb;
+    }
+
+    .calendar-dot.scholarship {
+      background: #ea580c;
+    }
+
+    .calendar-dot.etc {
+      background: #16a34a;
+    }
+    </style>
+</head>
+
+<body>
+    <div class="schedule-container">
+      <div class="left-panel">
+        <div class="card header">
+          <h1>공지 · 장학 스케줄러</h1>
+        </div>
+
+        <div class="card">
+          <div class="section-title">선택한 날짜</div>
+          <div class="selected-date"></div>
+          <div class="badge">날짜를 눌러 공지/장학/기타 스케줄을 추가할 수 있어요</div>
+
+          <form id="eventForm">
+            <div class="form-group">
+              <label class="form-label" for="mainCategory">종류</label>
+              <select id="mainCategory" required></select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="subCategory">세부항목</label>
+              <select id="subCategory" required></select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="eventTitle">제목</label>
+              <input type="text" id="eventTitle" placeholder="예: 국가장학금 2차 신청" required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="eventTime">시간 (선택)</label>
+              <input type="time" id="eventTime" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="eventMemo">메모 (선택)</label>
+              <textarea id="eventMemo" placeholder="관련 링크, 금액, 해야 할 일을 적어두세요."></textarea>
+            </div>
+
+            <div class="button-row">
+              <button type="submit" class="btn-primary">이 날짜에 스케줄 추가</button>
+              <button type="button" class="btn-secondary" id="deleteAllBtn">이 날짜 전체 삭제</button>
+            </div>
+          </form>
+
+          <div class="event-list" id="eventList"></div>
+        </div>
+      </div>  
+
+      <div class="right-panel">
+        <div class="card calendar-card">
+          <div class="calendar-header">
+            <button type="button" class="btn-secondary" id="prevMonthBtn">◀</button>
+            <div class="calendar-title" id="calendarTitle"></div>
+            <button type="button" class="btn-secondary" id="nextMonthBtn">▶</button>
+          </div>
+
+          <div class="calendar-weekdays">
+            <div>일</div>
+            <div>월</div>
+            <div>화</div>
+            <div>수</div>
+            <div>목</div>
+            <div>금</div>
+            <div>토</div>
+          </div>
+
+          <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+      </div>
+    </div>  
+  
+  <script>
+  // =========================
+  // 1. 상태(State)
+  // =========================
+  let selectedDate;
+  let currentMonth = new Date();
+  const events = {};
+
+  // =========================
+  // 2. 상수(Constants)
+  // =========================
+  const categoryMap = {
+    "장학": ["장학", "국가장학", "성적우수", "근로장학", "장학금", "scholarship", "기타"],
+    "학사": ["학사", "수강", "졸업", "성적", "휴학", "복학", "학점",
+            "재수강", "수료", "논문", "강의", "교육과정", "기타"],
+    "입학/등록": ["입학", "등록", "전형", "합격", "신입생", "편입", "원서", "기타"],
+    "취업/채용": ["채용", "인턴", "취업", "구인", "커리어",
+                "채용설명회", "job", "리크루팅", "현장실습", "기타"],
+    "공모전/대회": ["공모전", "대회", "경진", "콘테스트", "해커톤",
+                 "공모", "시상", "수상", "기타"],
+    "모집/봉사": ["모집", "봉사", "서포터즈", "튜터", "멘토",
+                "지원자", "선발", "학생대표", "위원", "기타"],
+    "시설/행정": ["시설", "도서관", "열람실", "wifi", "와이파이",
+                "주차", "셔틀", "기숙사", "식당", "휴관", "공사", "기타"],
+    "안전": ["안전", "코로나", "감염", "재난", "비상", "방역", "격리", "기타"],
+    "기타": ["기타"]
+  };
+
+  // =========================
+  // 3. DOM 유틸 / DOM 참조
+  // =========================
+  const $ = (id) => document.getElementById(id);
+
+  const els = {
+    eventForm: $("eventForm"),
+    eventList: $("eventList"),
+    deleteAllBtn: $("deleteAllBtn"),
+    mainCategory: $("mainCategory"),
+    subCategory: $("subCategory"),
+    eventTitle: $("eventTitle"),
+    eventTime: $("eventTime"),
+    eventMemo: $("eventMemo"),
+    selectedDateBox: document.querySelector(".selected-date"),
+    calendarGrid: $("calendarGrid"),
+    calendarTitle: $("calendarTitle"),
+    prevMonthBtn: $("prevMonthBtn"),
+    nextMonthBtn: $("nextMonthBtn")
+  };
+
+  // =========================
+  // 4. 날짜 유틸 함수
+  // =========================
+  const getIso = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
+
+  const todayIso = () => getIso(new Date());
+
+  const formatDateKorean = (dateStr) => {
+    const [y, m, d] = dateStr.split("-");
+    return `${y}년 ${+m}월 ${+d}일`;
+  };
+
+  const formatMonthKorean = (date) => {
+    return `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
+  };
+
+  // =========================
+  // 5. 카테고리 렌더링
+  // =========================
+  function renderMainCategories() {
+    els.mainCategory.innerHTML = "";
+
+    Object.keys(categoryMap).forEach((category) => {
+      const option = document.createElement("option");
+      option.value = category;
+      option.textContent = category;
+      els.mainCategory.appendChild(option);
+    });
+  }
+
+  function renderSubCategories(mainCategory) {
+    const subCategories = categoryMap[mainCategory] || [];
+    els.subCategory.innerHTML = "";
+
+    subCategories.forEach((sub) => {
+      const option = document.createElement("option");
+      option.value = sub;
+      option.textContent = sub;
+      els.subCategory.appendChild(option);
+    });
+  }
+
+  // =========================
+  // 6. 일정 목록 렌더링
+  // =========================
+  function renderEventList() {
+    const list = events[selectedDate] || [];
+    els.eventList.innerHTML = "";
+
+    if (!list.length) {
+      els.eventList.innerHTML = '<div class="empty-text">이 날짜에는 저장된 스케줄이 없습니다.</div>';
+      return;
+    }
+
+    list.forEach((ev, index) => {
+      const item = document.createElement("div");
+      item.className = "event-item";
+
+      const pillClass =
+        ev.mainCategory === "장학"
+          ? "scholarship"
+          : ev.mainCategory === "시설/행정"
+          ? "etc"
+          : "";
+
+      item.innerHTML = `
+        <div class="event-main">
+          <div class="event-type-pill ${pillClass}">
+            ${ev.mainCategory}
+          </div>
+          <div class="event-title">${ev.title}</div>
+          <div class="event-time">
+            ${ev.subCategory ? `세부항목: ${ev.subCategory}` : ""}
+            ${ev.time ? ` · 시간: ${ev.time}` : ""}
+          </div>
+          ${ev.memo ? `<div class="event-memo">${ev.memo}</div>` : ""}
+        </div>
+      `;
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "btn-secondary";
+      deleteBtn.type = "button";
+      deleteBtn.textContent = "삭제";
+
+      deleteBtn.addEventListener("click", () => {
+        events[selectedDate].splice(index, 1);
+
+        if (!events[selectedDate].length) {
+          delete events[selectedDate];
+        }
+
+        renderEventList();
+        renderCalendar();
+      });
+
+      item.appendChild(deleteBtn);
+      els.eventList.appendChild(item);
+    });
+  }
+
+  function updateSelectedDateUI() {
+    if (els.selectedDateBox) {
+      els.selectedDateBox.textContent = formatDateKorean(selectedDate);
+    }
+
+    renderEventList();
+  }
+
+  // =========================
+  // 7. 달력 렌더링
+  // =========================
+  function getDotClass(mainCategory) {
+    if (mainCategory === "장학") return "scholarship";
+    if (mainCategory === "시설/행정") return "etc";
+    return "";
+  }
+
+  function createDayCell(date, muted) {
+    const iso = getIso(date);
+    const dayEvents = events[iso] || [];
+
+    const cell = document.createElement("div");
+    cell.className = "calendar-day";
+
+    if (muted) cell.classList.add("muted");
+    if (iso === selectedDate) cell.classList.add("selected");
+    if (iso === todayIso()) cell.classList.add("today");
+
+    const dots = dayEvents
+      .slice(0, 3)
+      .map((ev) => `<span class="calendar-dot ${getDotClass(ev.mainCategory)}"></span>`)
+      .join("");
+
+    cell.innerHTML = `
+      <div class="calendar-day-number">${date.getDate()}</div>
+      <div class="calendar-day-dots">${dots}</div>
+    `;
+
+    cell.addEventListener("click", () => {
+      selectedDate = iso;
+      currentMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+      updateSelectedDateUI();
+      renderCalendar();
+    });
+
+    els.calendarGrid.appendChild(cell);
+  }
+
+  function renderCalendar() {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+
+    els.calendarTitle.textContent = formatMonthKorean(currentMonth);
+    els.calendarGrid.innerHTML = "";
+
+    const firstDay = new Date(year, month, 1);
+    const startWeekday = firstDay.getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const prevMonthDays = new Date(year, month, 0).getDate();
+
+    for (let i = 0; i < startWeekday; i++) {
+      const dayNum = prevMonthDays - startWeekday + i + 1;
+      const date = new Date(year, month - 1, dayNum);
+      createDayCell(date, true);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      createDayCell(date, false);
+    }
+
+    const totalCells = els.calendarGrid.children.length;
+    const remain = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+
+    for (let i = 1; i <= remain; i++) {
+      const date = new Date(year, month + 1, i);
+      createDayCell(date, true);
+    }
+  }
+
+  // =========================
+  // 8. 이벤트 핸들러
+  // =========================
+  function handleMainCategoryChange() {
+    renderSubCategories(els.mainCategory.value);
+  }
+
+  function handleEventSubmit(e) {
+    e.preventDefault();
+
+    const mainCategory = els.mainCategory.value;
+    const subCategory = els.subCategory.value;
+    const title = els.eventTitle.value.trim();
+    const time = els.eventTime.value;
+    const memo = els.eventMemo.value.trim();
+
+    if (!title) return;
+
+    (events[selectedDate] ||= []).push({
+      mainCategory,
+      subCategory,
+      title,
+      time,
+      memo
+    });
+
+    els.eventTitle.value = "";
+    els.eventTime.value = "";
+    els.eventMemo.value = "";
+
+    renderEventList();
+    renderCalendar();
+  }
+
+  function handleDeleteAll() {
+    if (!events[selectedDate]?.length) return;
+    if (!confirm("이 날짜의 스케줄을 모두 삭제할까요?")) return;
+
+    delete events[selectedDate];
+    renderEventList();
+    renderCalendar();
+  }
+
+  function handlePrevMonth() {
+    currentMonth = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth() - 1,
+      1
+    );
+    renderCalendar();
+  }
+
+  function handleNextMonth() {
+    currentMonth = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth() + 1,
+      1
+    );
+    renderCalendar();
+  }
+
+  // =========================
+  // 9. 이벤트 바인딩
+  // =========================
+  els.mainCategory.addEventListener("change", handleMainCategoryChange);
+  els.eventForm.addEventListener("submit", handleEventSubmit);
+  els.deleteAllBtn.addEventListener("click", handleDeleteAll);
+  els.prevMonthBtn.addEventListener("click", handlePrevMonth);
+  els.nextMonthBtn.addEventListener("click", handleNextMonth);
+
+  // =========================
+  // 10. 초기화
+  // =========================
+  function init() {
+    selectedDate = todayIso();
+    currentMonth = new Date();
+
+    renderMainCategories();
+    renderSubCategories(els.mainCategory.value);
+
+    updateSelectedDateUI();
+    renderCalendar();
+  }
+
+  init();
+</script>
+</body>
+</html> 
