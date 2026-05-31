@@ -124,6 +124,33 @@
       border-color: #2563eb;
       box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);
     }
+    
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .move-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: #3b82f6;
+      color: #fff;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.18s ease;
+      white-space: nowrap;
+    }
+
+    .move-btn:hover {
+      background: #2563eb;
+    }
 
     .button-row {
       display: flex;
@@ -344,7 +371,10 @@
     <div class="schedule-container">
       <div class="left-panel">
         <div class="card header">
-          <h1>공지 · 장학 스케줄러</h1>
+          <div class="header-top">
+            <h1>공지 · 장학 스케줄러</h1>
+            <a href="frontend.html" class="move-btn">← 공지 검색으로</a>
+          </div>
         </div>
 
         <div class="card">
