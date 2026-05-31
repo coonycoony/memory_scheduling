@@ -1,9 +1,11 @@
 from typing import List, Optional
-from urllib.parse import urljoin, urlencode, urlparse, parse_qs, urlunparse
+from urllib.parse import urljoin, urlencode, urlparse, parse_qs, urlunparse, quote
 from datetime import date
 import re
 import json
 import logging
+import base64
+import time
 from pathlib import Path
 
 import requests
@@ -18,6 +20,8 @@ class NoticeBoard(BaseModel):
     list_url: str
     page_param: str = "pageIndex"
     max_pages: int = 50
+    enc_inner_path: Optional[str] = None
+    enc_query_template: Optional[str] = None
 
 
 class UniversitySource(BaseModel):
@@ -38,8 +42,8 @@ class Notice(BaseModel):
 
 class SearchRequest(BaseModel):
     university: str
-    board_name: Optional[str] = None      # 게시판 선택용
-    notice_category: Optional[str] = None # 공지 분류 필터용 (장학, 학사, 취업...)
+    board_name: Optional[str] = None
+    notice_category: Optional[str] = None
     since: Optional[str] = None
     until: str
     max_pages: Optional[int] = None
@@ -85,11 +89,17 @@ def classify_notice(title: str, board_name: Optional[str] = None) -> str:
                 return category
 
     text = title.strip().lower()
-    for category, keywords in CATEGORY_KEYWORDS.items():
-        if any(kw in text for kw in keywords):
-            return category
+    best_category = None
+    best_pos = len(text)
 
-    return "기타"
+    for category, keywords in CATEGORY_KEYWORDS.items():
+        for kw in keywords:
+            pos = text.find(kw)
+            if pos != -1 and pos < best_pos:
+                best_pos = pos
+                best_category = category
+
+    return best_category if best_category else "기타"
 
 
 def make_notice(
@@ -130,6 +140,36 @@ UNIVERSITY_SOURCES = {
                 list_url="https://www.cbnu.ac.kr/www/selectBbsNttList.do?bbsNo=8&key=813",
                 page_param="pageIndex",
             ),
+            NoticeBoard(
+                board_name="컴퓨터공학과 공지",
+                list_url="https://computer.chungbuk.ac.kr/bbs/bbs.php?db=notice",
+                page_param="page",
+            ),
+            NoticeBoard(
+                board_name="전기공학과 공지",
+                list_url="https://ee.chungbuk.ac.kr/sub0502",
+                page_param="page",
+            ),
+            NoticeBoard(
+                board_name="정보통신공학부 학사/장학",
+                list_url="https://inform.chungbuk.ac.kr/cisub5_1",
+                page_param="page",
+            ),
+            NoticeBoard(
+                board_name="정보통신공학부 일반",
+                list_url="https://inform.chungbuk.ac.kr/cisub5_2",
+                page_param="page",
+            ),
+            NoticeBoard(
+                board_name="정보통신공학부 취업",
+                list_url="https://inform.chungbuk.ac.kr/cisub5_3",
+                page_param="page",
+            ),
+            NoticeBoard(
+                board_name="정보통신공학부 뉴스",
+                list_url="https://inform.chungbuk.ac.kr/cisub5_4",
+                page_param="page",
+            ),
         ]
     ),
     "충남대학교": UniversitySource(
@@ -146,6 +186,36 @@ UNIVERSITY_SOURCES = {
                 page_param="GotoPage",
             ),
         ]
+    ),
+    "서울대학교": UniversitySource(
+        name="서울대학교",
+        boards=[
+            NoticeBoard(
+                board_name="학부대학 공지",
+                list_url="https://snuc.snu.ac.kr/%EA%B3%B5%EC%A7%80%EC%82%AC%ED%95%AD/",
+                page_param="pageid",
+            ),
+        ]
+    ),
+    "전남대학교": UniversitySource(
+        name="전남대학교",
+        boards=[
+            NoticeBoard(
+                board_name="대학교 전체공지",
+                list_url="https://www.jnu.ac.kr/WebApp/web/HOM/COM/Board/board.aspx?boardID=5&bbsMode=list&cate=0",
+                page_param="page",
+            ),
+        ]
+    ),
+    "인천대학교": UniversitySource(
+        name="인천대학교",
+        boards=[
+            board_name="대학교 전체공지",
+            list_url="https://www.inu.ac.kr/inu/1534/subview.do",
+            page_param="page",
+            enc_inner_path="/bbs/inu/2006/artclList.do",
+            enc_query_template="page={page}&srchColumn=&srchWrd=&bbsClSeq=&bbsOpenWrdSeq=&rgsBgndeStr=&rgsEnddeStr=&isViewMine=false&",
+),       ]
     ),
 }
 
@@ -171,7 +241,15 @@ def _extract_date_from_row(row) -> Optional[date]:
             return parsed
     return None
 
-def _build_page_url(base_url: str, page_param: str, page: int) -> str:
+def _build_page_url(base_url: str, page_param: str, page: int,
+                    enc_inner_path: Optional[str] = None,
+                    enc_query_template: Optional[str] = None) -> str:
+    if enc_inner_path:
+        query = enc_query_template.format(page=page) if enc_query_template else f"page={page}"
+        inner = f"{enc_inner_path}?{query}"
+        enc_value = base64.b64encode(("fnct1|@@|" + quote(inner)).encode()).decode()
+        return f"{base_url}?enc={enc_value}"
+
     parsed = urlparse(base_url)
     params = parse_qs(parsed.query, keep_blank_values=True)
     params[page_param] = [str(page)]
@@ -248,14 +326,21 @@ def crawl_notice_board(university: str, board: NoticeBoard,
     limit = max_pages if max_pages is not None else board.max_pages
 
     for page in range(1, limit + 1):
-        page_url = _build_page_url(board.list_url, board.page_param, page)
+        page_url = _build_page_url(board.list_url, board.page_param, page, board.enc_inner_path, board.enc_query_template)
         logger.info("크롤링 시작: %s / %s (page=%d)", university, board.board_name, page)
-        try:
-            html = fetch_board_html(page_url)
-        except requests.RequestException as e:
-            app_logger.error("======== 크롤링 네트워크 장애 발생 ========")
-            app_logger.error(f"학교: {university}, URL: {page_url}")
-            app_logger.error(f"상세 에러 내용: {str(e)}")
+        html = None
+        for attempt in range(1, 4):
+            try:
+                html = fetch_board_html(page_url)
+                break
+            except requests.RequestException as e:
+                app_logger.error(f"======== 크롤링 네트워크 장애 발생 (시도 {attempt}/3) ========")
+                app_logger.error(f"학교: {university}, URL: {page_url}")
+                app_logger.error(f"상세 에러 내용: {str(e)}")
+                if attempt < 3:
+                    time.sleep(2 ** (attempt - 1))
+        if html is None:
+            app_logger.error(f"3회 재시도 모두 실패, 크롤링 중단: {university} / {board.board_name}")
             break
         notices, should_stop = parse_notice_rows(html, university, board, until_date, since_date)
 
@@ -369,3 +454,14 @@ def load_notices_from_json(path: str = "notices.json") -> List[Notice]:
     output = Path(path)
     raw = json.loads(output.read_text(encoding="utf-8"))
     return [Notice(**item) for item in raw]
+
+
+def get_university_list() -> List[str]:
+    return list(UNIVERSITY_SOURCES.keys())
+
+
+def get_board_list(university: str) -> List[str]:
+    source = UNIVERSITY_SOURCES.get(university)
+    if source is None:
+        return []
+    return [board.board_name for board in source.boards]
