@@ -39,7 +39,6 @@
 
     .left-panel {
       display: grid;
-      flex-direction: column;
       gap: 15px;
     }
 
@@ -97,7 +96,7 @@
 
     select,
     input[type="text"],
-    input[type="time"],
+    input[type="date"],
     textarea {
       width: 100%;
       padding: 8px 10px;
@@ -373,15 +372,15 @@
               <input type="date" id="endDate" />
             </div>
 
-
             <div class="form-group">
               <label class="form-label" for="eventMemo">메모 (선택)</label>
               <textarea id="eventMemo" placeholder="관련 링크, 금액, 해야 할 일을 적어두세요."></textarea>
             </div>
 
             <div class="button-row">
-              <button type="submit" class="btn-primary">이 날짜에 스케줄 추가</button>
-              <button type="button" class="btn-secondary" id="deleteAllBtn">이 날짜 전체 삭제</button>
+              <div class="badge">시작 날짜와 종료 날짜를 선택하면 해당 범위 전체에 스케줄을 추가할 수 있어요</div>
+                <button type="submit" class="btn-primary">선택한 날짜 범위에 스케줄 추가</button>
+                <button type="button" class="btn-secondary" id="deleteAllBtn">선택한 날짜 범위 전체 삭제</button>
             </div>
           </form>
 
@@ -428,17 +427,12 @@
   // =========================
   const categoryMap = {
     "장학": ["장학", "국가장학", "성적우수", "근로장학", "장학금", "scholarship", "기타"],
-    "학사": ["학사", "수강", "졸업", "성적", "휴학", "복학", "학점",
-            "재수강", "수료", "논문", "강의", "교육과정", "기타"],
+    "학사": ["학사", "수강", "졸업", "성적", "휴학", "복학", "학점", "재수강", "수료", "논문", "강의", "교육과정", "기타"],
     "입학/등록": ["입학", "등록", "전형", "합격", "신입생", "편입", "원서", "기타"],
-    "취업/채용": ["채용", "인턴", "취업", "구인", "커리어",
-                "채용설명회", "job", "리크루팅", "현장실습", "기타"],
-    "공모전/대회": ["공모전", "대회", "경진", "콘테스트", "해커톤",
-                 "공모", "시상", "수상", "기타"],
-    "모집/봉사": ["모집", "봉사", "서포터즈", "튜터", "멘토",
-                "지원자", "선발", "학생대표", "위원", "기타"],
-    "시설/행정": ["시설", "도서관", "열람실", "wifi", "와이파이",
-                "주차", "셔틀", "기숙사", "식당", "휴관", "공사", "기타"],
+    "취업/채용": ["채용", "인턴", "취업", "구인", "커리어", "채용설명회", "job", "리크루팅", "현장실습", "기타"],
+    "공모전/대회": ["공모전", "대회", "경진", "콘테스트", "해커톤", "공모", "시상", "수상", "기타"],
+    "모집/봉사": ["모집", "봉사", "서포터즈", "튜터", "멘토", "지원자", "선발", "학생대표", "위원", "기타"],
+    "시설/행정": ["시설", "도서관", "열람실", "wifi", "와이파이", "주차", "셔틀", "기숙사", "식당", "휴관", "공사", "기타"],
     "안전": ["안전", "코로나", "감염", "재난", "비상", "방역", "격리", "기타"],
     "기타": ["기타"]
   };
@@ -455,7 +449,8 @@
     mainCategory: $("mainCategory"),
     subCategory: $("subCategory"),
     eventTitle: $("eventTitle"),
-    eventTime: $("eventTime"),
+    startDate: $("startDate"),
+    endDate: $("endDate"),
     eventMemo: $("eventMemo"),
     selectedDateBox: document.querySelector(".selected-date"),
     calendarGrid: $("calendarGrid"),
@@ -516,6 +511,30 @@
       const { start, end } = normalizeRange(rangeStart, rangeEnd);
       return iso >= start && iso <= end;
   }
+  
+   function getCurrentTargetDates() {
+      if (rangeStart && rangeEnd) {
+        return getDatesInRange(rangeStart, rangeEnd);
+      }
+      if (rangeStart) {
+        return [rangeStart];
+      }
+      return selectedDate ? [selectedDate] : [];
+    }
+
+    function syncDateInputsFromRange() {
+      if (rangeStart && rangeEnd) {
+        const { start, end } = normalizeRange(rangeStart, rangeEnd);
+        els.startDate.value = start;
+        els.endDate.value = end;
+      } else if (rangeStart) {
+        els.startDate.value = rangeStart;
+        els.endDate.value = "";
+      } else {
+        els.startDate.value = "";
+        els.endDate.value = "";
+      }
+    }
 
   function syncRangeFromInputs() {
     const start = els.startDate.value;
@@ -599,7 +618,8 @@
           <div class="event-title">${ev.title}</div>
           <div class="event-time">
             ${ev.subCategory ? `세부항목: ${ev.subCategory}` : ""}
-            ${ev.time ? ` · 시간: ${ev.time}` : ""}
+            ${ev.startDate ? ` · 시작: ${ev.startDate}` : ""}
+            ${ev.endDate ? ` · 종료: ${ev.endDate}` : ""}
           </div>
           ${ev.memo ? `<div class="event-memo">${ev.memo}</div>` : ""}
         </div>
@@ -635,8 +655,10 @@
         `${formatDateKorean(start)} ~ ${formatDateKorean(end)}`;
     } else if (rangeStart) {
       els.selectedDateBox.textContent = `${formatDateKorean(rangeStart)} (시작 날짜 선택됨)`;
-    } else {
+    } else if (selectedDate) {
       els.selectedDateBox.textContent = formatDateKorean(selectedDate);
+    } else {
+      els.selectedDateBox.textContent = "날짜를 선택하세요";
     }
 
     renderEventList();
@@ -679,18 +701,16 @@
       if (!rangeStart || (rangeStart && rangeEnd)) {
         rangeStart = clickedIso;
         rangeEnd = null;
-      } else if (rangeStart && rangeEnd) {
-        const { start, end } = normalizeRange(rangeStart, clickedIso);
-        rangeStart = start;
-        rangeEnd = end;
+      } else {
+        const normalized = normalizeRange(rangeStart, clickedIso);
+        rangeStart = normalized.start;
+        rangeEnd = normalized.end;
       }
 
       selectedDate = clickedIso;
       currentMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-
-      els.startDate.value = rangeStart || "";
-      els.endDate.value = rangeEnd || "";
-
+        
+      syncDateInputsFromRange();
       updateSelectedDateUI();
       renderCalendar();
     });
@@ -743,27 +763,29 @@
     const mainCategory = els.mainCategory.value;
     const subCategory = els.subCategory.value;
     const title = els.eventTitle.value.trim();
-    const time = els.eventTime.value;
     const memo = els.eventMemo.value.trim();
 
     if (!title) return;
      
-    const targetDates = rangeStart
-      ? (rangeEnd ? getDatesInRange(rangeStart, rangeEnd) : [rangeStart])
-      : [selectedDate];
+    const targetDates = getCurrentTargetDates();
+
+      if (!targetDates.length) {
+        alert("먼저 시작 날짜 또는 종료 날짜를 선택해 주세요.");
+        return;
+      }
     
     targetDates.forEach((dateIso) => {
       (events[selectedDate] ||= []).push({
         mainCategory,
         subCategory,
         title,
-        time,
+        startDate: rangeStart,
+        endDate: rangeEnd,
         memo
       });
     });
 
     els.eventTitle.value = "";
-    els.eventTime.value = "";
     els.eventMemo.value = "";
 
     renderEventList();
@@ -771,17 +793,14 @@
   }
 
   function handleDeleteAll() {
-    const targetDates = rangeStart
-      ? (rangeEnd ? getDatesInRange(rangeStart, rangeEnd) : [rangeStart])
-      : [selectedDate];
-
+    const targetDates = getCurrentTargetDates();
     const hasAnyEvent = targetDates.some((dateIso) => events[dateIso]?.length);
+    
     if (!hasAnyEvent) return;
-
-    if (!confirm("이 날짜의 스케줄을 모두 삭제할까요?")) return;
+    if (!confirm("선택된 날짜의 스케줄을 모두 삭제할까요?")) return;
 
     targetDates.forEach((dateIso) => {
-      delete events[selectedDate];
+      delete events[dataIso];
     });
 
     renderEventList();
@@ -803,7 +822,6 @@
       currentMonth.getMonth() - 1,
       1
     );
-
     renderCalendar();
   }
 
@@ -824,10 +842,11 @@
   function init() {
     selectedDate = todayIso();
     currentMonth = new Date();
+    rangeStart = null;
+    rangeEnd = null;
 
     renderMainCategories();
     renderSubCategories(els.mainCategory.value);
-
     updateSelectedDateUI();
     renderCalendar();
   }
