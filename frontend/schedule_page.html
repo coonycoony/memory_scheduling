@@ -861,22 +861,31 @@
         return;
       }
     
-    targetDates.forEach((dateIso) => {
-      (events[selectedDate] ||= []).push({
-        mainCategory,
-        subCategory,
-        title,
-        startDate: rangeStart,
-        endDate: rangeEnd,
-        memo
-      });
-    });
+    try {
+        setStatus("스케줄을 저장하는 중입니다...");
 
-    els.eventTitle.value = "";
-    els.eventMemo.value = "";
+        for (const dateIso of targetDates) {
+          await createScheduleOnServer({
+            date: dateIso,
+            main_category: mainCategory,
+            sub_category: subCategory,
+            title: title,
+            start_date: rangeStart,
+            end_date: rangeEnd,
+            memo: memo,
+            url: null
+          });
+        }
 
-    renderEventList();
-    renderCalendar();
+      els.eventTitle.value = "";
+      els.eventMemo.value = "";
+
+      await loadSchedulesFromServer();
+      setStatus("스케줄이 저장되었습니다.", "success");
+    } catch (error) {
+      console.error(error);
+      setStatus("스케줄 저장 중 오류가 발생했습니다.", "error");
+    }
   }
 
   function handleDeleteAll() {
