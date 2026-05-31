@@ -58,23 +58,30 @@ def get_boards(university: str):
             return [board["board_name"] for board in data[university]["boards"]]
     return []
 
+# --- 수정된 공지사항 검색 API ---
 @app.get("/notices")
-def get_notices(university: str, category: Optional[str] = None, db: Session = Depends(get_db)):
+def get_notices(university: str, board: Optional[str] = None, category: Optional[str] = None, db: Session = Depends(get_db)):
+    # 프론트엔드에서 넘겨주는 board 값을 category 로 매핑
+    actual_category = board if board else category
+
     # 기본 검색 기간: 최근 30일 설정
     thirty_days_ago = (date.today() - timedelta(days=30)).isoformat()
     today_str = date.today().isoformat()
 
     request_data = SearchRequest(
             university=university,
-            notice_category=category,
+            notice_category=actual_category,
             since=thirty_days_ago,
             until=today_str
         )
-    #DB에서 먼저 꺼내보고 확인
-    db_results = crud.get_notices(db, university=university, category=category)
-    #DB에 데이터가 20개 이상이고, 가장 최근 공지사항이 오늘 또는 어제일때만 크롤링 생략
+    
+    # DB에서 먼저 꺼내보고 확인
+    db_results = crud.get_notices(db, university=university, category=actual_category)
+    
+    # DB에 데이터가 20개 이상이고, 가장 최근 공지사항이 오늘 또는 어제일때만 크롤링 생략
     if len(db_results) > 20 and db_results[0].date >= thirty_days_ago:
         return db_results
+        
     results = load_notices(request_data)
     if results:
         inserted_count = crud.bulk_insert_notices(db, results)
@@ -82,7 +89,7 @@ def get_notices(university: str, category: Optional[str] = None, db: Session = D
     else:
         app_logger.warning("크롤링된 새 데이터가 없어 DB 동기화를 생략합니다.")
     return results
+
 @app.get("/health")
 def health_check():
-    #서버 상태 점검용 Ping API
     return {"status": "ok", "message": "Server is running smoothly."}
