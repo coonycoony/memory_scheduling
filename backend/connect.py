@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import date, timedelta
 from typing import Optional
@@ -108,3 +108,24 @@ def add_source(req: AddSourceRequest):
 @app.get("/health")
 def health_check():
     return {"status": "ok", "message": "Server is running smoothly."}
+
+# Schedule API Models
+class ScheduleCreate(BaseModel):
+    date: str
+    main_category: str
+    title: str
+    sub_category: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    memo: Optional[str] = None
+    url: Optional[str] = None
+
+class ScheduleUpdate(BaseModel):
+    date: Optional[str] = None
+    main_category: Optional[str] = None
+    title: Optional[str] = None
+    sub_category: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    memo: Optional[str] = None
+    url: Optional[str] = None
