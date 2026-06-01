@@ -563,8 +563,8 @@
       const { start, end } = normalizeRange(startIso, endIso);
       const result = [];
 
-      let cursor = parseLocalDate(rangeStart);
-      const endDate = parseLocalDate(rangeEnd);
+      let cursor = parseLocalDate(start);
+      const endDate = parseLocalDate(end);
 
       while (cursor <= endDate) {
         result.push(getIso(cursor));
@@ -883,11 +883,11 @@
   // =========================
   // 10. 이벤트 핸들러
   // =========================
-  async function handleMainCategoryChange() {
+  function handleMainCategoryChange() {
     renderSubCategories(els.mainCategory.value);
   }
 
-  function handleEventSubmit(e) {
+  async function handleEventSubmit(e) {
     e.preventDefault();
 
     const mainCategory = els.mainCategory.value;
