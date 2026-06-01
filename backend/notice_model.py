@@ -388,3 +388,31 @@ def get_board_list(university: str) -> List[str]:
     if source is None:
         return []
     return [board.board_name for board in source.boards]
+
+
+def save_sources_to_json(sources: dict[str, UniversitySource], path: Path = SOURCES_PATH) -> None:
+    data = {k: v.model_dump() for k, v in sources.items()}
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def add_board_source(
+    university: str,
+    board_name: str,
+    list_url: str,
+    page_param: str = "page",
+    max_pages: int = 50,
+) -> None:
+    sources = _load_university_sources()
+    board = NoticeBoard(
+        board_name=board_name,
+        list_url=list_url,
+        page_param=page_param,
+        max_pages=max_pages,
+    )
+    if university in sources:
+        sources[university].boards.append(board)
+    else:
+        sources[university] = UniversitySource(name=university, boards=[board])
+    save_sources_to_json(sources)
+    global UNIVERSITY_SOURCES
+    UNIVERSITY_SOURCES = sources

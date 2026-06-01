@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import date, timedelta
 from typing import Optional
-from notice_model import load_notices, SearchRequest
+from notice_model import load_notices, SearchRequest, add_board_source
 
 from middleware import log_requests_middleware
 from logger import app_logger
@@ -16,6 +16,8 @@ from database import get_db
 import crud
 import json
 import os
+
+from pydantic import BaseModel
 
 app = FastAPI()
 models.Base.metadata.create_all(bind=engine)
@@ -90,6 +92,24 @@ def get_notices(university: str, board: Optional[str] = None, category: Optional
     else:
         app_logger.warning("크롤링된 새 데이터가 없어 DB 동기화를 생략합니다.")
     return results
+
+class AddSourceRequest(BaseModel):
+    university: str
+    board_name: str
+    list_url: str
+    page_param: str = "page"
+    max_pages: int = 50
+
+@app.post("/sources/url")
+def add_source(req: AddSourceRequest):
+    add_board_source(
+        university=req.university,
+        board_name=req.board_name,
+        list_url=req.list_url,
+        page_param=req.page_param,
+        max_pages=req.max_pages,
+    )
+    return {"message": f"{req.university} - {req.board_name} 추가 완료"}
 
 @app.get("/health")
 def health_check():
