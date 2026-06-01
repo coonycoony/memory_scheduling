@@ -68,3 +68,14 @@ def get_schedules(db: Session, main_category: str = None, skip: int = 0, limit: 
         query = query.filter(models.ScheduleModel.main_category == main_category)
         
     return query.offset(skip).limit(limit).all()
+
+def update_schedule(db: Session, schedule_id: int, update_data: dict):
+    schedule = db.query(models.ScheduleModel).filter(models.ScheduleModel.id == schedule_id).first()
+    if not schedule:
+        return None
+    #넘어온 update_date의 키값만 뽑아서 수정함
+    for key, value in update_data.items():
+        setattr(schedule, key, value) 
+    db.commit()
+    db.refresh(schedule)
+    return schedule
