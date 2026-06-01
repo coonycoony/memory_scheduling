@@ -661,6 +661,106 @@
 
     return sortItems(filtered, sortType);
   }
+  
+  // =========================
+  // 6. 렌더링
+  // =========================
+  function renderSummary(items) {
+    const today = getTodayStart();
+
+    const scholarshipCount = items.filter((item) => item.category === '장학').length;
+    const withDateCount = items.filter((item) => parseLocalDate(item.date)).length;
+    const upcomingCount = items.filter((item) => {
+      const dateObj = parseLocalDate(item.date);
+      return dateObj && dateObj >= today;
+    }).length;
+
+    els.summaryTotal.textContent = String(items.length);
+    els.summaryScholarship.textContent = String(scholarshipCount);
+    els.summaryWithDate.textContent = String(withDateCount);
+    els.summaryUpcoming.textContent = String(upcomingCount);
+  }
+
+  function renderSavedList(items) {
+    if (!items.length) {
+      els.savedList.innerHTML = `<div class="empty-text">저장된 공지가 없습니다.</div>`;
+      return;
+    }
+
+    els.savedList.innerHTML = items.map((item) => `
+      <div class="event-item">
+        <div class="event-main">
+          <div class="event-type-pill ${getPillClass(item.category)}">${escapeHtml(item.category)}</div>
+          <div class="event-title">${escapeHtml(item.title)}</div>
+          <div class="event-time">${escapeHtml(item.date || '날짜 없음')} · ${escapeHtml(item.source_category || '세부항목 없음')}</div>
+          <div class="event-meta">${escapeHtml(item.department || '부서 없음')} ${item.university ? `| ${escapeHtml(item.university)}` : ''}</div>
+        </div>
+        <button type="button" class="btn-secondary" data-remove-id="${escapeAttribute(item.id)}">삭제</button>
+      </div>
+    `).join('');
+  }
+
+  function renderNoticeGrid(items) {
+    if (!items.length) {
+      els.noticeGrid.innerHTML = `<div class="empty-text">조건에 맞는 공지가 없습니다.</div>`;
+      return;
+    }
+
+    els.noticeGrid.innerHTML = items.map((item) => `
+      <div class="notice-card">
+        <div class="notice-top">
+          <div class="pill-row">
+            <span class="mini-badge">${escapeHtml(item.category)}</span>
+            <span class="date-badge">${escapeHtml(item.date || '날짜 없음')}</span>
+            <span class="saved-badge">보관 완료</span>
+          </div>
+          <span class="status-text">${escapeHtml(item.university || '')}</span>
+        </div>
+
+        <div class="notice-title">
+          <a href="${escapeAttribute(item.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.title)}</a>
+        </div>
+
+        <div class="event-meta">세부항목: ${escapeHtml(item.source_category || '없음')} · 부서: ${escapeHtml(item.department || '없음')}</div>
+
+        <div class="notice-memo">${escapeHtml(item.memo || '메모가 없습니다. 저장 이유를 남겨두면 나중에 다시 확인하기 쉽습니다.')}</div>
+
+        <div class="notice-actions">
+          <a class="btn-primary" href="${escapeAttribute(item.url)}" target="_blank" rel="noopener noreferrer">원문 보기</a>
+          <a class="btn-secondary" href="${escapeAttribute(buildScheduleUrl(item))}">달력에 가져가기</a>
+          <button type="button" class="btn-danger" data-remove-id="${escapeAttribute(item.id)}">보관함에서 제거</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderStatus(allItems, filteredItems) {
+    if (!allItems.length) {
+      els.status.textContent = '아직 저장된 공지가 없습니다. 샘플을 추가하거나 공지 검색 페이지에서 저장하세요.';
+      els.resultText.textContent = '보관함이 비어 있습니다.';
+      return;
+    }
+
+    els.status.textContent = `필터 결과 ${filteredItems.length}건을 표시 중입니다.`;
+    els.resultText.textContent = `전체 ${allItems.length}건 중 현재 조건에 맞는 공지 ${filteredItems.length}건`;
+  }
+
+  function bindRemoveButtons() {
+    document.querySelectorAll('[data-remove-id]').forEach((button) => {
+      button.addEventListener('click', () => handleRemoveItem(button.dataset.removeId));
+    });
+  }
+
+  function renderArchive() {
+    const allItems = getAllItems();
+    const filteredItems = getFilteredItems();
+
+    renderSummary(allItems);
+    renderSavedList(allItems);
+    renderNoticeGrid(filteredItems);
+    renderStatus(allItems, filteredItems);
+    bindRemoveButtons();
+  }
 
   </script>
 </body>
