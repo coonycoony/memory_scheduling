@@ -178,6 +178,11 @@ def _build_page_url(base_url: str, page_param: str, page: int,
                     enc_inner_path: Optional[str] = None,
                     enc_query_template: Optional[str] = None) -> str:
     if enc_inner_path:
+        if enc_query_template is None:
+            logger.warning(
+                "_build_page_url: enc_inner_path 있지만 enc_query_template 없음 "
+                "(base_url=%s, page=%d), 'page={page}' 폴백 적용", base_url, page
+            )
         query = enc_query_template.format(page=page) if enc_query_template else f"page={page}"
         inner = f"{enc_inner_path}?{query}"
         enc_value = base64.b64encode(("fnct1|@@|" + quote(inner)).encode()).decode()
