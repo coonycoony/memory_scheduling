@@ -120,6 +120,61 @@
       border-color: #2563eb;
       box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);
   }
+  
+  .button-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+  }
+
+  .btn-primary {
+      background: #2563eb;
+      color: #fff;
+      font-size: 14px;
+      padding: 9px 12px;
+      font-weight: 600;
+  }
+
+  .btn-primary:hover {
+      background: #1d4ed8;
+  }
+
+  .btn-secondary {
+      background: #f3f4f6;
+      color: #374151;
+      font-size: 13px;
+      padding: 8px 10px;
+  }
+
+  .btn-secondary:hover {
+      background: #e5e7eb;
+  }
+
+  .btn-danger {
+      background: #fee2e2;
+      color: #b91c1c;
+      font-size: 13px;
+      padding: 8px 10px;
+  }
+
+  .btn-danger:hover {
+      background: #fecaca;
+  }
 
   .mini-badge,
   .date-badge,
