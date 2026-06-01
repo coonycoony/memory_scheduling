@@ -129,3 +129,22 @@ class ScheduleUpdate(BaseModel):
     end_date: Optional[str] = None
     memo: Optional[str] = None
     url: Optional[str] = None
+
+# --- Schedule Endpoints ---
+@app.post("/schedules")
+def create_schedule_api(req: ScheduleCreate, db: Session = Depends(get_db)):
+    return crud.create_schedule(
+        db=db,
+        date=req.date,
+        main_category=req.main_category,
+        title=req.title,
+        sub_category=req.sub_category,
+        start_date=req.start_date,
+        end_date=req.end_date,
+        memo=req.memo,
+        url=req.url
+    )
+
+@app.get("/schedules")
+def get_schedules_api(main_category: Optional[str] = None, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    return crud.get_schedules(db=db, main_category=main_category, skip=skip, limit=limit)
