@@ -45,27 +45,43 @@
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
       display: flex;
       gap: 12px;
-      margin-bottom: 16px;
+      margin-bottom: 24px;
       flex-wrap: wrap;
     }
 
-    .search-box input {
+    .search-box select {
       flex: 1;
-      min-width: 220px;
+      min-width: 200px;
       padding: 14px;
       border: 1px solid #d0d7e2;
       border-radius: 10px;
       font-size: 16px;
+      background-color: white;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 16px;
+      padding-right: 40px;
+    }
+
+    .search-box select:disabled {
+      background-color: #f3f4f6;
+      cursor: not-allowed;
+      color: #9ca3af;
     }
 
     .search-box button {
-      padding: 14px 20px;
+      padding: 14px 24px;
       border: none;
       background: #2563eb;
       color: white;
       border-radius: 10px;
       font-size: 16px;
       cursor: pointer;
+      font-weight: bold;
+      min-width: 100px;
     }
 
     .search-box button:hover {
@@ -179,16 +195,132 @@
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
     }
 
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 30px;
+      flex-wrap: wrap;
+    }
+
+    .page-btn {
+      padding: 8px 12px;
+      border: 1px solid #d0d7e2;
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #444;
+      transition: all 0.2s;
+    }
+
+    .page-btn:hover {
+      background: #f0f4f8;
+    }
+
+    .page-btn.active {
+      background: #2563eb;
+      color: white;
+      border-color: #2563eb;
+      font-weight: bold;
+    }
+
+    .list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .sort-select {
+      padding: 8px 12px;
+      border: 1px solid #d0d7e2;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      cursor: pointer;
+      background-color: white;
+    }
+
+    .new-badge {
+      display: inline-block;
+      background-color: #ef4444;
+      color: white;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 8px;
+      vertical-align: middle;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
+
+    .recommend-section {
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border: 1px solid #bfdbfe;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+      display: none;
+    }
+
+    .recommend-header {
+      font-size: 18px;
+      font-weight: bold;
+      color: #1e40af;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .recommend-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .recommend-card {
+      background: white;
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+      border-left: 4px solid #3b82f6;
+    }
+    .add-schedule-btn {
+      margin-top: 12px;
+      padding: 8px 12px;
+      background: #f3f4f6;
+      color: #374151;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .add-schedule-btn:hover {
+      background: #e5e7eb;
+      border-color: #9ca3af;
+    }
+
     @media (max-width: 640px) {
-      .header h1 {
-        font-size: 26px;
-      }
-      .search-box {
-        flex-direction: column;
-      }
-      .search-box button {
-        width: 100%;
-      }
+      .header h1 { font-size: 26px; }
+      .search-box { flex-direction: column; }
+      .search-box select, .search-box button { width: 100%; }
     }
   </style>
 </head>
@@ -196,17 +328,21 @@
   <div class="container">
     <div class="header">
       <h1>대학교 공지사항 검색</h1>
-      <p>학교명을 입력하면 공지를 불러오고 카테고리별로 확인할 수 있습니다.</p>
+      <p>학교와 게시판을 선택하여 공지를 불러오고 카테고리별로 확인할 수 있습니다.</p>
+      <button onclick="location.href='schedule_page.html'" style="margin-top: 16px; padding: 12px 24px; background: #10b981; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
+        📅 내 스케줄러 관리하기
+      </button>
     </div>
 
     <div class="search-box">
-      <input
-        type="text"
-        id="universityInput"
-        placeholder="예: 충북대학교"
-        value="충북대학교"
-        onkeypress="if(event.key === 'Enter') searchNotices()"
-      />
+      <select id="universitySelect" onchange="handleUniversityChange()">
+        <option value="">학교 목록을 불러오는 중...</option>
+      </select>
+      
+      <select id="boardSelect" disabled>
+        <option value="">게시판 선택 (전체)</option>
+      </select>
+      
       <button onclick="searchNotices()">검색</button>
     </div>
 
@@ -224,34 +360,162 @@
       <button class="filter-btn" onclick="applyFilter('기타')">기타</button>
     </div>
 
-    <div class="status" id="status">학교명을 입력하고 검색하세요.</div>
+    <div class="recommend-section" id="recommendSection">
+      <div class="recommend-header">
+        ✨ <span id="recommendTitle">나를 위한 맞춤 추천 공지</span>
+      </div>
+      <div class="recommend-list" id="recommendList"></div>
+    </div>
+
+    <div class="list-header">
+      <div class="status" id="status">학교를 선택하고 검색하세요.</div>
+      <select id="sortSelect" class="sort-select" onchange="handleSortChange()">
+        <option value="desc">최신순</option>
+        <option value="asc">과거순</option>
+      </select>
+    </div>
+    
     <div class="notice-list" id="noticeList"></div>
+    <div class="pagination" id="pagination"></div>
+
+    <div class="register-section" style="margin-top: 60px; background: white; padding: 24px; border-radius: 16px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); border-top: 4px solid #10b981;">
+      <h2 style="font-size: 18px; margin-bottom: 16px; color: #111827;">➕ 새로운 크롤링 소스(게시판) 등록</h2>
+      <p style="font-size: 14px; color: #6b7280; margin-bottom: 20px;">1페이지와 2페이지 URL을 모두 입력하면 시스템이 페이징 패턴을 자동 분석합니다.</p>
+      
+      <form id="registerForm" onsubmit="handleRegisterSource(event)" style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <input type="text" id="regUniv" placeholder="대학명 (예: OO대학교)" required style="flex: 1; min-width: 150px; padding: 12px; border: 1px solid #d0d7e2; border-radius: 8px; outline: none;" />
+          <input type="text" id="regBoard" placeholder="게시판명 (예: 공지사항)" required style="flex: 1; min-width: 150px; padding: 12px; border: 1px solid #d0d7e2; border-radius: 8px; outline: none;" />
+        </div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <input type="url" id="regUrl1" placeholder="1페이지 URL (예: https://...?page=1)" required style="flex: 1; min-width: 250px; padding: 12px; border: 1px solid #d0d7e2; border-radius: 8px; outline: none;" />
+          <input type="url" id="regUrl2" placeholder="2페이지 URL (예: https://...?page=2)" required style="flex: 1; min-width: 250px; padding: 12px; border: 1px solid #d0d7e2; border-radius: 8px; outline: none;" />
+        </div>
+        <button type="submit" style="padding: 14px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s;">등록하기</button>
+      </form>
+    </div>
   </div>
 
   <script>
     const API_BASE_URL = "http://127.0.0.1:8000";
+    const ITEMS_PER_PAGE = 30;
     
     let allNotices = [];
+    let currentFilteredNotices = [];
     let currentCategory = '전체';
     let hasSearched = false;
+    let currentPage = 1;
+    let currentSort = 'desc';
+
+    window.onload = async function() {
+      await loadUniversities();
+      
+      const savedSession = localStorage.getItem("userSession");
+      if (savedSession) {
+        try {
+          const user = JSON.parse(savedSession);
+          const univSelect = document.getElementById("universitySelect");
+          const status = document.getElementById("status");
+          
+          let schoolExists = false;
+          for (let i = 0; i < univSelect.options.length; i++) {
+            if (univSelect.options[i].value === user.school) {
+              schoolExists = true;
+              break;
+            }
+          }
+
+          if (schoolExists) {
+            univSelect.value = user.school;
+            status.textContent = `👋 ${user.name}님 환영합니다! ${user.school} 게시판을 선택해 검색해 보세요.`;
+            handleUniversityChange();
+          } else {
+            status.textContent = `👋 ${user.name}님 환영합니다! (아쉽게도 입력하신 '${user.school}'은 아직 지원하지 않습니다.)`;
+          }
+        } catch (error) {
+          console.error("세션 데이터를 읽는 중 오류가 발생했습니다.", error);
+        }
+      }
+    };
+
+    async function loadUniversities() {
+      const univSelect = document.getElementById("universitySelect");
+      try {
+        const response = await fetch(`${API_BASE_URL}/universities`);
+        if (response.ok) {
+          const universities = await response.json();
+          univSelect.innerHTML = `<option value="">학교를 선택하세요</option>` + 
+            universities.map(u => `<option value="${escapeAttribute(u)}">${escapeHtml(u)}</option>`).join("");
+        } else {
+          throw new Error("API 응답 실패");
+        }
+      } catch (error) {
+        console.error("대학교 목록을 불러오지 못했습니다.", error);
+        const fallbackList = ['충북대학교', '전남대학교', '충남대학교'];
+        univSelect.innerHTML = `<option value="">학교를 선택하세요</option>` + 
+            fallbackList.map(u => `<option value="${escapeAttribute(u)}">${escapeHtml(u)}</option>`).join("");
+      }
+    }
+
+    async function handleUniversityChange() {
+      const univSelect = document.getElementById("universitySelect");
+      const boardSelect = document.getElementById("boardSelect");
+      const selectedUniv = univSelect.value;
+
+      if (!selectedUniv) {
+        boardSelect.innerHTML = `<option value="">게시판 선택 (전체)</option>`;
+        boardSelect.disabled = true;
+        return;
+      }
+
+      boardSelect.innerHTML = `<option value="">게시판 목록을 불러오는 중...</option>`;
+      boardSelect.disabled = true;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/boards?university=${encodeURIComponent(selectedUniv)}`);
+        if (response.ok) {
+          const boards = await response.json();
+          boardSelect.innerHTML = `<option value="">게시판 선택 (전체)</option>` + 
+            boards.map(b => `<option value="${escapeAttribute(b)}">${escapeHtml(b)}</option>`).join("");
+          
+          boardSelect.disabled = false;
+        } else {
+          throw new Error("게시판 API 응답 실패");
+        }
+      } catch (error) {
+        console.error("게시판 목록을 불러오지 못했습니다.", error);
+        boardSelect.innerHTML = `<option value="">게시판을 불러오지 못했습니다 (전체 검색)</option>`;
+        boardSelect.disabled = false;
+      }
+    }
 
     async function searchNotices() {
-      const university = document.getElementById("universityInput").value.trim();
+      const university = document.getElementById("universitySelect").value;
+      const board = document.getElementById("boardSelect").value;
       const status = document.getElementById("status");
       const noticeList = document.getElementById("noticeList");
+      const pagination = document.getElementById("pagination");
 
       if (!university) {
-        status.textContent = "학교명을 입력해주세요.";
+        status.textContent = "학교를 먼저 선택해주세요.";
         noticeList.innerHTML = "";
+        pagination.innerHTML = "";
         return;
       }
 
       status.textContent = "공지사항을 불러오는 중입니다...";
       noticeList.innerHTML = "";
+      pagination.innerHTML = "";
       hasSearched = true;
+      currentPage = 1;
 
       try {
-        const response = await fetch(`${API_BASE_URL}/notices?university=${encodeURIComponent(university)}`);
+        let url = `${API_BASE_URL}/notices?university=${encodeURIComponent(university)}`;
+        if (board) {
+          url += `&board=${encodeURIComponent(board)}`;
+        }
+
+        const response = await fetch(url);
 
         if (!response.ok) {
           throw new Error("서버 응답 오류");
@@ -262,16 +526,18 @@
         if (!Array.isArray(notices) || notices.length === 0) {
           allNotices = [];
           status.textContent = `${university} 공지사항이 없습니다.`;
+          document.getElementById("recommendSection").style.display = "none";
           noticeList.innerHTML = `
             <div class="empty">
               검색 결과가 없습니다.<br />
-              학교명 또는 백엔드 데이터를 확인해주세요.
+              선택한 학교 또는 게시판에 데이터가 있는지 확인해주세요.
             </div>
           `;
           return;
         }
 
         allNotices = notices;
+        renderRecommendations();
         applyFilter(currentCategory);
 
       } catch (error) {
@@ -288,6 +554,7 @@
 
     function applyFilter(category) {
       currentCategory = category;
+      currentPage = 1;
 
       const buttons = document.querySelectorAll('.filter-btn');
       buttons.forEach(btn => {
@@ -300,15 +567,51 @@
 
       if (!hasSearched) return;
 
-      const filteredNotices = category === '전체' 
+      currentFilteredNotices = category === '전체' 
         ? allNotices 
         : allNotices.filter(n => (n.category || '기타') === category);
 
       const status = document.getElementById("status");
-      const university = document.getElementById("universityInput").value.trim();
-      status.textContent = `${university} '${category}' 공지 ${filteredNotices.length}건을 찾았습니다.`;
+      const university = document.getElementById("universitySelect").value;
+      const board = document.getElementById("boardSelect").value;
+      
+      const targetName = board ? `${university} - ${board}` : university;
+      status.textContent = `${targetName} '${category}' 공지 ${currentFilteredNotices.length}건을 찾았습니다.`;
 
-      renderNotices(filteredNotices);
+      sortNotices();
+    }
+
+    function renderPage() {
+      const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+      const endIndex = startIndex + ITEMS_PER_PAGE;
+      const paginatedNotices = currentFilteredNotices.slice(startIndex, endIndex);
+
+      renderNotices(paginatedNotices);
+      renderPagination(currentFilteredNotices.length);
+    }
+
+    function changePage(pageNumber) {
+      currentPage = pageNumber;
+      renderPage();
+      const statusElement = document.getElementById("status");
+      statusElement.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function renderPagination(totalItems) {
+      const paginationContainer = document.getElementById("pagination");
+      const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
+      if (totalPages <= 1) {
+        paginationContainer.innerHTML = "";
+        return;
+      }
+
+      let paginationHtml = "";
+      for (let i = 1; i <= totalPages; i++) {
+        const isActive = i === currentPage ? 'active' : '';
+        paginationHtml += `<button class="page-btn ${isActive}" onclick="changePage(${i})">${i}</button>`;
+      }
+      paginationContainer.innerHTML = paginationHtml;
     }
 
     function renderNotices(notices) {
@@ -333,12 +636,15 @@
             <a href="${escapeAttribute(notice.url || "#")}" target="_blank" rel="noopener noreferrer">
               ${escapeHtml(notice.title || "제목 없음")}
             </a>
-          </div>
+            ${isNew(notice.date) ? '<span class="new-badge">NEW</span>' : ''} </div>
           <div class="meta">
             <span>원본 분류: ${escapeHtml(notice.source_category || "없음")}</span>
             <span>부서: ${escapeHtml(notice.department || "없음")}</span>
             <span>작성일: ${escapeHtml(notice.date || "없음")}</span>
           </div>
+          <button class="add-schedule-btn" onclick="sendToSchedule('${escapeAttribute(notice.title || "")}', '${escapeAttribute(notice.category || "기타")}', '${escapeAttribute(notice.url || "")}')">
+            📅 내 스케줄러에 추가하기
+          </button>
         </div>
       `).join("");
     }
@@ -354,6 +660,153 @@
 
     function escapeAttribute(value) {
       return String(value).replace(/\"/g, "&quot;");
+    }
+
+    function handleSortChange() {
+      currentSort = document.getElementById("sortSelect").value;
+      currentPage = 1;
+      sortNotices();
+    }
+
+    function sortNotices() {
+      if (currentSort === 'desc') {
+        currentFilteredNotices.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+      } else {
+        currentFilteredNotices.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+      }
+      renderPage();
+    }
+
+    function isNew(dateString) {
+      if (!dateString) return false;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const noticeDate = new Date(dateString);
+      noticeDate.setHours(0, 0, 0, 0);
+      
+      const diffTime = today - noticeDate;
+      const diffDays = diffTime / (1000 * 60 * 60 * 24);
+      
+      return diffDays <= 2 && diffDays >= 0;
+    }
+
+    function renderRecommendations() {
+      const recommendSection = document.getElementById("recommendSection");
+      const recommendList = document.getElementById("recommendList");
+      const recommendTitle = document.getElementById("recommendTitle");
+      
+      const savedSession = localStorage.getItem("userSession");
+      if (!savedSession || allNotices.length === 0) {
+        recommendSection.style.display = "none";
+        return;
+      }
+
+      const user = JSON.parse(savedSession);
+      let recommended = [];
+
+      if (user.interests && user.interests.length > 0) {
+        recommended = allNotices.filter(notice => user.interests.includes(notice.category));
+      }
+
+      if (user.year === "4") {
+        const priorityNotices = allNotices.filter(notice => 
+          (notice.category === "취업/채용" || notice.category === "학사") && 
+          !recommended.includes(notice)
+        );
+        recommended = [...recommended, ...priorityNotices];
+      }
+
+      if (user.year === "1") {
+         const priorityNotices = allNotices.filter(notice => 
+          (notice.category === "입학/등록" || notice.category === "일반") && 
+          !recommended.includes(notice)
+        );
+        recommended = [...recommended, ...priorityNotices];
+      }
+
+      if (recommended.length === 0) {
+        recommendSection.style.display = "none";
+        return;
+      }
+
+      recommended.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+      const topPicks = recommended.slice(0, 3);
+
+      recommendTitle.textContent = `${user.name}님(${user.year}학년)을 위한 오늘의 추천 공지`;
+      
+      recommendList.innerHTML = topPicks.map(notice => `
+        <div class="recommend-card">
+          <div class="notice-top" style="margin-bottom: 8px;">
+            <span class="badge" style="background: #dbeafe;">${escapeHtml(notice.category || "기타")}</span>
+            <span style="font-size: 13px; color: #6b7280;">${isNew(notice.date) ? '<span style="color:#ef4444; font-weight:bold; margin-right:4px;">[NEW]</span>' : ''}${escapeHtml(notice.date || "")}</span>
+          </div>
+          <div class="title" style="font-size: 16px; margin-bottom: 0;">
+            <a href="${escapeAttribute(notice.url || "#")}" target="_blank" rel="noopener noreferrer">
+              ${escapeHtml(notice.title || "제목 없음")}
+            </a>
+          </div>
+          <button class="add-schedule-btn" onclick="sendToSchedule('${escapeAttribute(notice.title || "")}', '${escapeAttribute(notice.category || "기타")}', '${escapeAttribute(notice.url || "")}')">
+            📅 스케줄 추가
+          </button>
+        </div>
+      `).join("");
+
+      recommendSection.style.display = "block";
+    }
+
+    async function handleRegisterSource(event) {
+      event.preventDefault();
+
+      const univ = document.getElementById("regUniv").value.trim();
+      const board = document.getElementById("regBoard").value.trim();
+      const url1 = document.getElementById("regUrl1").value.trim();
+      const url2 = document.getElementById("regUrl2").value.trim();
+      const submitBtn = event.target.querySelector("button[type='submit']");
+
+      if (!univ || !board || !url1 || !url2) {
+        alert("모든 필드를 입력해주세요.");
+        return;
+      }
+
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = "등록 중...";
+      submitBtn.style.background = "#9ca3af";
+      submitBtn.disabled = true;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/sources/url`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            university: univ,
+            board_name: board,
+            url1: url1,
+            url2: url2
+          })
+        });
+
+        if (response.ok) {
+          alert(`🎉 성공적으로 등록되었습니다!\n대학: ${univ}\n게시판: ${board}`);
+          document.getElementById("registerForm").reset();
+
+          await loadUniversities(); 
+        } else {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || "서버 응답 오류");
+        }
+      } catch (error) {
+        console.error("소스 등록 오류:", error);
+        alert(`❌ 등록에 실패했습니다.\n사유: ${error.message}`);
+      } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.style.background = "#10b981";
+        submitBtn.disabled = false;
+      }
+    }
+    function sendToSchedule(title, category, url) {
+      const pendingData = { title, category, url };
+      localStorage.setItem('pendingSchedule', JSON.stringify(pendingData));
+      location.href = 'schedule_page.html';
     }
   </script>
 </body>
