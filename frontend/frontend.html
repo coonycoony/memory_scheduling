@@ -312,6 +312,8 @@
     let currentCategory = '전체';
     let hasSearched = false;
     let currentPage = 1;
+    let currentPage = 1;
+    let currentSort = 'desc';
 
     window.onload = async function() {
       await loadUniversities();
@@ -483,7 +485,7 @@
       const targetName = board ? `${university} - ${board}` : university;
       status.textContent = `${targetName} '${category}' 공지 ${currentFilteredNotices.length}건을 찾았습니다.`;
 
-      renderPage();
+      sortNotices();
     }
 
     function renderPage() {
@@ -564,6 +566,20 @@
 
     function escapeAttribute(value) {
       return String(value).replace(/\"/g, "&quot;");
+    }
+    function handleSortChange() {
+      currentSort = document.getElementById("sortSelect").value;
+      currentPage = 1;
+      sortNotices();
+    }
+
+    function sortNotices() {
+      if (currentSort === 'desc') {
+        currentFilteredNotices.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+      } else {
+        currentFilteredNotices.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+      }
+      renderPage();
     }
   </script>
 </body>
