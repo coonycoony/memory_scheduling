@@ -148,3 +148,13 @@ def create_schedule_api(req: ScheduleCreate, db: Session = Depends(get_db)):
 @app.get("/schedules")
 def get_schedules_api(main_category: Optional[str] = None, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return crud.get_schedules(db=db, main_category=main_category, skip=skip, limit=limit)
+
+@app.put("/schedules/{schedule_id}")
+def update_schedule_api(schedule_id: int, req: ScheduleUpdate, db: Session = Depends(get_db)):
+    # 프론트엔드에서 보낸 값 중 None이 아닌(실제로 수정 요청된) 값만 추출
+    update_data = req.model_dump(exclude_unset=True) 
+    updated_schedule = crud.update_schedule(db=db, schedule_id=schedule_id, update_data=update_data)
+    
+    if not updated_schedule:
+        raise HTTPException(status_code=404, detail="해당 일정을 찾을 수 없습니다.")
+    return updated_schedule
