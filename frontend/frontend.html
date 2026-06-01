@@ -273,6 +273,34 @@
         width: 100%;
       }
     }
+    .recommend-section {
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border: 1px solid #bfdbfe;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+      display: none;
+    }
+    .recommend-header {
+      font-size: 18px;
+      font-weight: bold;
+      color: #1e40af;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .recommend-list {
+      display: grid;
+      gap: 12px;
+    }
+    .recommend-card {
+      background: white;
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+      border-left: 4px solid #3b82f6;
+    }
   </style>
 </head>
 <body>
@@ -308,6 +336,13 @@
       <button class="filter-btn" onclick="applyFilter('시설/행정')">시설/행정</button>
       <button class="filter-btn" onclick="applyFilter('안전')">안전</button>
       <button class="filter-btn" onclick="applyFilter('기타')">기타</button>
+    </div>
+
+    <div class="recommend-section" id="recommendSection">
+      <div class="recommend-header">
+        ✨ <span id="recommendTitle">나를 위한 맞춤 추천 공지</span>
+      </div>
+      <div class="recommend-list" id="recommendList"></div>
     </div>
 
     <div class="list-header">
