@@ -642,6 +642,9 @@
             <span>부서: ${escapeHtml(notice.department || "없음")}</span>
             <span>작성일: ${escapeHtml(notice.date || "없음")}</span>
           </div>
+          <button class="add-schedule-btn" onclick="sendToSchedule('${escapeAttribute(notice.title || "")}', '${escapeAttribute(notice.category || "기타")}', '${escapeAttribute(notice.url || "")}')">
+            📅 내 스케줄러에 추가하기
+          </button>
         </div>
       `).join("");
     }
@@ -742,6 +745,9 @@
               ${escapeHtml(notice.title || "제목 없음")}
             </a>
           </div>
+          <button class="add-schedule-btn" onclick="sendToSchedule('${escapeAttribute(notice.title || "")}', '${escapeAttribute(notice.category || "기타")}', '${escapeAttribute(notice.url || "")}')">
+            📅 스케줄 추가
+          </button>
         </div>
       `).join("");
 
