@@ -79,3 +79,11 @@ def update_schedule(db: Session, schedule_id: int, update_data: dict):
     db.commit()
     db.refresh(schedule)
     return schedule
+
+def delete_schedule(db: Session, schedule_id: int):
+    schedule = db.query(models.ScheduleModel).filter(models.ScheduleModel.id == schedule_id).first()
+    if schedule:
+        db.delete(schedule)
+        db.commit()
+        return True
+    return False
