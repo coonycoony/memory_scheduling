@@ -244,6 +244,24 @@
       cursor: pointer;
       background-color: white;
     }
+    .new-badge {
+      display: inline-block;
+      background-color: #ef4444;
+      color: white;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 8px;
+      vertical-align: middle;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
     @media (max-width: 640px) {
       .header h1 {
         font-size: 26px;
@@ -580,6 +598,18 @@
         currentFilteredNotices.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
       }
       renderPage();
+    }
+    function isNew(dateString) {
+      if (!dateString) return false;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const noticeDate = new Date(dateString);
+      noticeDate.setHours(0, 0, 0, 0);
+      
+      const diffTime = today - noticeDate;
+      const diffDays = diffTime / (1000 * 60 * 60 * 24);
+      
+      return diffDays <= 2 && diffDays >= 0;
     }
   </script>
 </body>
