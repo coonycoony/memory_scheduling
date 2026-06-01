@@ -562,6 +562,105 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     } catch (error) {}
   }
+  
+  function normalizeItem(item) {
+    return {
+      id: item.id || `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+      title: item.title || '제목 없음',
+      url: item.url || '#',
+      category: item.category || '기타',
+      source_category: item.source_category || item.subCategory || '기타',
+      department: item.department || '',
+      university: item.university || '',
+      date: item.date || '',
+      memo: item.memo || '',
+      savedAt: item.savedAt || new Date().toISOString()
+    };
+  }
+
+  function buildScheduleUrl(item) {
+    const params = new URLSearchParams({
+      title: item.title || '',
+      category: item.category || '기타',
+      subCategory: item.source_category || '기타',
+      url: item.url || '',
+      memo: item.memo || ''
+    });
+    return `schedule_page-1.html?${params.toString()}`;
+  }
+
+  function getPillClass(category) {
+    if (category === '장학') return 'scholarship';
+    if (category === '학사') return 'academic';
+    if (category === '취업/채용') return 'job';
+    return 'etc';
+  }
+
+  function matchesKeyword(item, keyword) {
+    const textBlob = [
+      item.title,
+      item.department,
+      item.memo,
+      item.source_category,
+      item.university
+    ].join(' ').toLowerCase();
+
+    return keyword ? textBlob.includes(keyword) : true;
+  }
+
+  function matchesCategory(item, category) {
+    return category === '전체' ? true : item.category === category;
+  }
+
+  function matchesSavedMode(item, mode) {
+    const dateObj = parseLocalDate(item.date);
+    const today = getTodayStart();
+
+    if (mode === 'all') return true;
+    if (mode === 'with-date') return Boolean(dateObj);
+    if (mode === 'urgent') return Boolean(dateObj && dateObj >= today);
+    return true;
+  }
+
+  function sortItems(items, sortType) {
+    return [...items].sort((a, b) => {
+      if (sortType === 'saved-asc') {
+        return new Date(a.savedAt) - new Date(b.savedAt);
+      }
+
+      if (sortType === 'date-asc') {
+        const aDate = parseLocalDate(a.date)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+        const bDate = parseLocalDate(b.date)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+        return aDate - bDate;
+      }
+
+      if (sortType === 'date-desc') {
+        const aDate = parseLocalDate(a.date)?.getTime() ?? 0;
+        const bDate = parseLocalDate(b.date)?.getTime() ?? 0;
+        return bDate - aDate;
+      }
+
+      return new Date(b.savedAt) - new Date(a.savedAt);
+    });
+  }
+
+  function getAllItems() {
+    return getStoredItems().map(normalizeItem);
+  }
+
+  function getFilteredItems() {
+    const keyword = els.keywordInput.value.trim().toLowerCase();
+    const category = els.categoryFilter.value;
+    const mode = els.savedOnlyFilter.value;
+    const sortType = els.sortFilter.value;
+
+    const filtered = getAllItems()
+      .filter((item) => matchesKeyword(item, keyword))
+      .filter((item) => matchesCategory(item, category))
+      .filter((item) => matchesSavedMode(item, mode));
+
+    return sortItems(filtered, sortType);
+  }
 
   </script>
 </body>
