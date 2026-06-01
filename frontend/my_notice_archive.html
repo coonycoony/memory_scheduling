@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>내 공지 보관함</title>
+  <style><LeftMouse>
+  * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+  }
+
+  body {
+      padding: 40px 20px;
+      background: #f5f7fb;
+      color: #222;
+  }
+
+  .archive-container {
+      max-width: 100%;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 340px minmax(0, 1fr);
+      gap: 15px;
+      align-items: start;
+  }
+
+  .left-panel {
+      display: grid;
+      gap: 15px;
+    }
+
+  .right-panel {
+      min-width: 0;
+  }
+
+  .card {
+      background: #fff;
+      border: 1.5px double #e5e7eb;
+      border-radius: 16px;
+      padding: 14px;
+  }
+
+  .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+  }
+
+  .header h1 {
+      font-size: 18px;
+      margin: 0;
+  }
+  </style>
+</head>
+
+<body>
+  <div class="archive-container">
+    <div class="left-panel">
+      <div class="card header">
+        <h1>내 공지 보관함</h1>
+        <a href="frontend.html" class="btn-secondary">공지 검색으로</a>
+        <a href="P.html" class="btn-secondary">스케줄하러</a>
+      </div>
+
+      <div class="card">
+      </div>
+
+      <div class="card">
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="card archive-board">
+        <div class="archive-header">
+          <div class="archive-title">보관한 공지 카드</div>
+          <div class="status-text" id="status">보관함을 불러오는 중입니다.</div>
+        </div>
+        <div class="archive-grid" id="noticeGrid"></div>
+      </div>
+    </div>
+  </div>
+
+</body>
+
+
