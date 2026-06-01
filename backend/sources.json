@@ -43,6 +43,24 @@
         "list_url": "https://inform.chungbuk.ac.kr/cisub5_4",
         "page_param": "page",
         "max_pages": 50
+      },
+      {
+        "board_name": "소프트웨어학부 공지",
+        "list_url": "https://software.cbnu.ac.kr/sub0401",
+        "page_param": "page",
+        "max_pages": 50
+      },
+      {
+        "board_name": "바이오시스템공학과 공지",
+        "list_url": "https://bse.chungbuk.ac.kr/index.php?pg_idx=48",
+        "page_param": "page",
+        "max_pages": 50
+      },
+      {
+        "board_name": "물리학과 공지",
+        "list_url": "https://physics.chungbuk.ac.kr/?pg_idx=145",
+        "page_param": "page",
+        "max_pages": 50
       }
     ]
   },
