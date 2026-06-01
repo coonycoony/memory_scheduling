@@ -289,8 +289,36 @@
     let hasSearched = false;
     let currentPage = 1;
 
-    window.onload = function() {
-      loadUniversities();
+    window.onload = async function() {
+      await loadUniversities();
+      
+      const savedSession = localStorage.getItem("userSession");
+      if (savedSession) {
+        try {
+          const user = JSON.parse(savedSession);
+          const univSelect = document.getElementById("universitySelect");
+          const status = document.getElementById("status");
+          
+          let schoolExists = false;
+          for (let i = 0; i < univSelect.options.length; i++) {
+            if (univSelect.options[i].value === user.school) {
+              schoolExists = true;
+              break;
+            }
+          }
+
+          if (schoolExists) {
+            univSelect.value = user.school;
+            status.textContent = `👋 ${user.name}님 환영합니다! ${user.school} 게시판을 선택해 검색해 보세요.`;
+            
+            handleUniversityChange();
+          } else {
+            status.textContent = `👋 ${user.name}님 환영합니다! (아쉽게도 입력하신 '${user.school}'은 아직 지원하지 않습니다.)`;
+          }
+        } catch (error) {
+          console.error("세션 데이터를 읽는 중 오류가 발생했습니다.", error);
+        }
+      }
     };
 
     async function loadUniversities() {
