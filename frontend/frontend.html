@@ -310,7 +310,7 @@
       <button class="filter-btn" onclick="applyFilter('기타')">기타</button>
     </div>
 
-    <div class="status" id="status">
+    <div class="list-header">
       <div class="status" id="status">학교를 선택하고 검색하세요.</div>
       <select id="sortSelect" class="sort-select" onchange="handleSortChange()">
         <option value="desc">최신순</option>
@@ -329,7 +329,6 @@
     let currentFilteredNotices = [];
     let currentCategory = '전체';
     let hasSearched = false;
-    let currentPage = 1;
     let currentPage = 1;
     let currentSort = 'desc';
 
@@ -563,7 +562,7 @@
             <a href="${escapeAttribute(notice.url || "#")}" target="_blank" rel="noopener noreferrer">
               ${escapeHtml(notice.title || "제목 없음")}
             </a>
-          </div>
+            ${isNew(notice.date) ? '<span class="new-badge">NEW</span>' : ''} </div>
           <div class="meta">
             <span>원본 분류: ${escapeHtml(notice.source_category || "없음")}</span>
             <span>부서: ${escapeHtml(notice.department || "없음")}</span>
