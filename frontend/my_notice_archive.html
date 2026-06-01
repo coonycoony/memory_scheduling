@@ -842,6 +842,32 @@
     renderArchive();
   }
 
+  // =========================
+  // 8. 이벤트
+  // =========================
+  function bindEvents() {
+    els.keywordInput.addEventListener('input', renderArchive);
+    els.categoryFilter.addEventListener('change', renderArchive);
+    els.savedOnlyFilter.addEventListener('change', renderArchive);
+    els.sortFilter.addEventListener('change', renderArchive);
+
+    els.seedBtn.addEventListener('click', handleSeedSampleItems);
+    els.resetBtn.addEventListener('click', handleResetFilters);
+    els.clearBtn.addEventListener('click', handleClearArchive);
+
+    window.addEventListener('storage', handleStorageSync);
+  }
+
+  // =========================
+  // 9. 초기화
+  // =========================
+  function init() {
+    bindEvents();
+    renderArchive();
+  }
+
+  init();
+
   </script>
 </body>
 </html>
