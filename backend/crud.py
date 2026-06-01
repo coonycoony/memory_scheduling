@@ -43,6 +43,7 @@ def get_university_list(db: Session):
 def get_board_list(db: Session, university: str):
     boards = db.query(models.NoticeModel.category).filter(models.NoticeModel.university == university).distinct().all()
     return [b[0] for b in boards if b[0] is not None]
+
 def create_schedule(db: Session, date: str, main_category: str, title: str,
         sub_category: str = None, start_date: str = None,
         end_date: str = None, memo: str = None, url: str = None):
@@ -52,6 +53,7 @@ def create_schedule(db: Session, date: str, main_category: str, title: str,
             sub_category=sub_category,
             title=title,
             start_date=start_date,
+            end_date=end_date,
             memo=memo,
             url=url
     )
