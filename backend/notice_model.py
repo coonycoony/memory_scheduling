@@ -483,6 +483,8 @@ def add_board_source(
     list_url: str,
     page_param: str = "page",
     max_pages: int = 50,
+    enc_inner_path: Optional[str] = None,
+    enc_query_template: Optional[str] = None,
 ) -> None:
     sources = _load_university_sources()
     board = NoticeBoard(
@@ -490,12 +492,10 @@ def add_board_source(
         list_url=list_url,
         page_param=page_param,
         max_pages=max_pages,
+        enc_inner_path=enc_inner_path,
+        enc_query_template=enc_query_template,
     )
     if university in sources:
-        existing_names = [b.board_name for b in sources[university].boards]
-        if board_name in existing_names:
-            logger.warning("이미 존재하는 board, 추가 생략: %s / %s", university, board_name)
-            return
         sources[university].boards.append(board)
     else:
         sources[university] = UniversitySource(name=university, boards=[board])
