@@ -86,18 +86,23 @@ def classify_notice(title: str, board_name: Optional[str] = None) -> str:
     if board_name:
         board_lower = board_name.lower()
         for category, keywords in CATEGORY_KEYWORDS.items():
-            if any(kw in board_lower for kw in keywords):
-                return category
+            for kw in sorted(keywords, key=len, reverse=True):
+                if kw in board_lower:
+                    return category
 
     text = title.strip().lower()
     best_category = None
     best_pos = len(text)
+    best_kw_len = 0
 
     for category, keywords in CATEGORY_KEYWORDS.items():
-        for kw in keywords:
+        for kw in sorted(keywords, key=len, reverse=True):
             pos = text.find(kw)
-            if pos != -1 and pos < best_pos:
+            if pos == -1:
+                continue
+            if pos < best_pos or (pos == best_pos and len(kw) > best_kw_len):
                 best_pos = pos
+                best_kw_len = len(kw)
                 best_category = category
 
     return best_category if best_category else "기타"
