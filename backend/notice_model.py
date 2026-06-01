@@ -272,7 +272,8 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
     soup = BeautifulSoup(html, "html.parser")
     results: List[Notice] = []
     should_stop = False
-    valid_post_count = 0
+    all_dated_count = 0
+    out_of_range_count = 0
     rows = soup.select("table tbody tr")
 
     for row in rows:
@@ -290,11 +291,16 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
             continue
         url = urljoin(board.list_url, raw_href)
         notice_date = _extract_date_from_row(row)
-        if until_date and notice_date and notice_date > until_date:
-            continue
-        if since_date and notice_date and notice_date < since_date:
-            continue
-        valid_post_count += 1
+
+        if notice_date:
+            all_dated_count += 1
+            if until_date and notice_date > until_date:
+                out_of_range_count += 1
+                continue
+            if since_date and notice_date < since_date:
+                out_of_range_count += 1
+                continue
+
         notice = make_notice(
             university=university,
             title=title,
@@ -305,7 +311,7 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
         )
         results.append(notice)
 
-    if valid_post_count == 0 and len(rows) > 0:
+    if all_dated_count > 0 and out_of_range_count == all_dated_count:
         should_stop = True
 
     return results, should_stop
