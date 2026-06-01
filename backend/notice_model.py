@@ -487,6 +487,10 @@ def add_board_source(
         max_pages=max_pages,
     )
     if university in sources:
+        existing_names = [b.board_name for b in sources[university].boards]
+        if board_name in existing_names:
+            logger.warning("이미 존재하는 board, 추가 생략: %s / %s", university, board_name)
+            return
         sources[university].boards.append(board)
     else:
         sources[university] = UniversitySource(name=university, boards=[board])
