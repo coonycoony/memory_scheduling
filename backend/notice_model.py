@@ -388,3 +388,7 @@ def get_board_list(university: str) -> List[str]:
     if source is None:
         return []
     return [board.board_name for board in source.boards]
+
+def save_sources_to_json(sources: dict[str, UniversitySource], path: Path = SOURCES_PATH) -> None:
+    data = {k: v.model_dump() for k, v in sources.items()}
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
