@@ -14,3 +14,6 @@ class ScheduleModel(Base):
     __tablename__="schedules"
 
     id = Column(Integer, primary_key=True, index=True)
+    main_category = Column(String, nullable=False, index=True)
+    title = Column(String, nullable=False)
+    date = Column(String, index=True)
