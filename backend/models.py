@@ -17,3 +17,8 @@ class ScheduleModel(Base):
     main_category = Column(String, nullable=False, index=True)
     title = Column(String, nullable=False)
     date = Column(String, index=True)
+    start_date = Column(String)
+    end_date = Column(String)
+    sub_category = Column(String)
+    memo = Column(Text)
+    url = Column(String)
