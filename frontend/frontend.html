@@ -38,6 +38,7 @@
       font-size: 16px;
     }
 
+    /* 검색 박스 내 select 스타일 추가 */
     .search-box {
       background: white;
       padding: 20px;
@@ -45,27 +46,43 @@
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
       display: flex;
       gap: 12px;
-      margin-bottom: 16px;
+      margin-bottom: 24px;
       flex-wrap: wrap;
     }
 
-    .search-box input {
+    .search-box select {
       flex: 1;
-      min-width: 220px;
+      min-width: 200px;
       padding: 14px;
       border: 1px solid #d0d7e2;
       border-radius: 10px;
       font-size: 16px;
+      background-color: white;
+      cursor: pointer;
+      appearance: none; /* 브라우저 기본 화살표 숨기기 */
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 16px;
+      padding-right: 40px;
+    }
+
+    .search-box select:disabled {
+      background-color: #f3f4f6;
+      cursor: not-allowed;
+      color: #9ca3af;
     }
 
     .search-box button {
-      padding: 14px 20px;
+      padding: 14px 24px;
       border: none;
       background: #2563eb;
       color: white;
       border-radius: 10px;
       font-size: 16px;
       cursor: pointer;
+      font-weight: bold;
+      min-width: 100px;
     }
 
     .search-box button:hover {
@@ -179,6 +196,36 @@
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
     }
 
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 30px;
+      flex-wrap: wrap;
+    }
+
+    .page-btn {
+      padding: 8px 12px;
+      border: 1px solid #d0d7e2;
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #444;
+      transition: all 0.2s;
+    }
+
+    .page-btn:hover {
+      background: #f0f4f8;
+    }
+
+    .page-btn.active {
+      background: #2563eb;
+      color: white;
+      border-color: #2563eb;
+      font-weight: bold;
+    }
+
     @media (max-width: 640px) {
       .header h1 {
         font-size: 26px;
@@ -186,7 +233,7 @@
       .search-box {
         flex-direction: column;
       }
-      .search-box button {
+      .search-box select, .search-box button {
         width: 100%;
       }
     }
@@ -196,17 +243,20 @@
   <div class="container">
     <div class="header">
       <h1>대학교 공지사항 검색</h1>
-      <p>학교명을 입력하면 공지를 불러오고 카테고리별로 확인할 수 있습니다.</p>
+        <p>학교와 게시판을 선택하여 공지를 불러오고 카테고리별로 확인할 수 있습니다.</p><button onclick="location.href='schedule_page.html'" style="margin-top: 16px; padding: 12px 24px; background: #10b981; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
+      📅 내 스케줄러 관리하기
+    </button>
     </div>
 
     <div class="search-box">
-      <input
-        type="text"
-        id="universityInput"
-        placeholder="예: 충북대학교"
-        value="충북대학교"
-        onkeypress="if(event.key === 'Enter') searchNotices()"
-      />
+      <select id="universitySelect" onchange="handleUniversityChange()">
+        <option value="">학교 목록을 불러오는 중...</option>
+      </select>
+      
+      <select id="boardSelect" disabled>
+        <option value="">게시판 선택 (전체)</option>
+      </select>
+      
       <button onclick="searchNotices()">검색</button>
     </div>
 
@@ -224,34 +274,131 @@
       <button class="filter-btn" onclick="applyFilter('기타')">기타</button>
     </div>
 
-    <div class="status" id="status">학교명을 입력하고 검색하세요.</div>
+    <div class="status" id="status">학교를 선택하고 검색하세요.</div>
     <div class="notice-list" id="noticeList"></div>
+    <div class="pagination" id="pagination"></div>
   </div>
 
   <script>
     const API_BASE_URL = "http://127.0.0.1:8000";
+    const ITEMS_PER_PAGE = 30;
     
     let allNotices = [];
+    let currentFilteredNotices = [];
     let currentCategory = '전체';
     let hasSearched = false;
+    let currentPage = 1;
+
+    window.onload = async function() {
+      await loadUniversities();
+      
+      const savedSession = localStorage.getItem("userSession");
+      if (savedSession) {
+        try {
+          const user = JSON.parse(savedSession);
+          const univSelect = document.getElementById("universitySelect");
+          const status = document.getElementById("status");
+          
+          let schoolExists = false;
+          for (let i = 0; i < univSelect.options.length; i++) {
+            if (univSelect.options[i].value === user.school) {
+              schoolExists = true;
+              break;
+            }
+          }
+
+          if (schoolExists) {
+            univSelect.value = user.school;
+            status.textContent = `👋 ${user.name}님 환영합니다! ${user.school} 게시판을 선택해 검색해 보세요.`;
+            
+            handleUniversityChange();
+          } else {
+            status.textContent = `👋 ${user.name}님 환영합니다! (아쉽게도 입력하신 '${user.school}'은 아직 지원하지 않습니다.)`;
+          }
+        } catch (error) {
+          console.error("세션 데이터를 읽는 중 오류가 발생했습니다.", error);
+        }
+      }
+    };
+
+    async function loadUniversities() {
+      const univSelect = document.getElementById("universitySelect");
+      try {
+        const response = await fetch(`${API_BASE_URL}/universities`);
+        if (response.ok) {
+          const universities = await response.json();
+          univSelect.innerHTML = `<option value="">학교를 선택하세요</option>` + 
+            universities.map(u => `<option value="${escapeAttribute(u)}">${escapeHtml(u)}</option>`).join("");
+        } else {
+          throw new Error("API 응답 실패");
+        }
+      } catch (error) {
+        console.error("대학교 목록을 불러오지 못했습니다.", error);
+        const fallbackList = ['충북대학교', '전남대학교', '충남대학교'];
+        univSelect.innerHTML = `<option value="">학교를 선택하세요</option>` + 
+            fallbackList.map(u => `<option value="${escapeAttribute(u)}">${escapeHtml(u)}</option>`).join("");
+      }
+    }
+
+    async function handleUniversityChange() {
+      const univSelect = document.getElementById("universitySelect");
+      const boardSelect = document.getElementById("boardSelect");
+      const selectedUniv = univSelect.value;
+
+      if (!selectedUniv) {
+        boardSelect.innerHTML = `<option value="">게시판 선택 (전체)</option>`;
+        boardSelect.disabled = true;
+        return;
+      }
+
+      boardSelect.innerHTML = `<option value="">게시판 목록을 불러오는 중...</option>`;
+      boardSelect.disabled = true;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/boards?university=${encodeURIComponent(selectedUniv)}`);
+        if (response.ok) {
+          const boards = await response.json();
+          boardSelect.innerHTML = `<option value="">게시판 선택 (전체)</option>` + 
+            boards.map(b => `<option value="${escapeAttribute(b)}">${escapeHtml(b)}</option>`).join("");
+          
+          boardSelect.disabled = false;
+        } else {
+          throw new Error("게시판 API 응답 실패");
+        }
+      } catch (error) {
+        console.error("게시판 목록을 불러오지 못했습니다.", error);
+        boardSelect.innerHTML = `<option value="">게시판을 불러오지 못했습니다 (전체 검색)</option>`;
+        boardSelect.disabled = false;
+      }
+    }
 
     async function searchNotices() {
-      const university = document.getElementById("universityInput").value.trim();
+      const university = document.getElementById("universitySelect").value;
+      const board = document.getElementById("boardSelect").value;
       const status = document.getElementById("status");
       const noticeList = document.getElementById("noticeList");
+      const pagination = document.getElementById("pagination");
 
       if (!university) {
-        status.textContent = "학교명을 입력해주세요.";
+        status.textContent = "학교를 먼저 선택해주세요.";
         noticeList.innerHTML = "";
+        pagination.innerHTML = "";
         return;
       }
 
       status.textContent = "공지사항을 불러오는 중입니다...";
       noticeList.innerHTML = "";
+      pagination.innerHTML = "";
       hasSearched = true;
+      currentPage = 1;
 
       try {
-        const response = await fetch(`${API_BASE_URL}/notices?university=${encodeURIComponent(university)}`);
+        let url = `${API_BASE_URL}/notices?university=${encodeURIComponent(university)}`;
+        if (board) {
+          url += `&board=${encodeURIComponent(board)}`;
+        }
+
+        const response = await fetch(url);
 
         if (!response.ok) {
           throw new Error("서버 응답 오류");
@@ -265,7 +412,7 @@
           noticeList.innerHTML = `
             <div class="empty">
               검색 결과가 없습니다.<br />
-              학교명 또는 백엔드 데이터를 확인해주세요.
+              선택한 학교 또는 게시판에 데이터가 있는지 확인해주세요.
             </div>
           `;
           return;
@@ -288,6 +435,7 @@
 
     function applyFilter(category) {
       currentCategory = category;
+      currentPage = 1;
 
       const buttons = document.querySelectorAll('.filter-btn');
       buttons.forEach(btn => {
@@ -300,15 +448,53 @@
 
       if (!hasSearched) return;
 
-      const filteredNotices = category === '전체' 
+      currentFilteredNotices = category === '전체' 
         ? allNotices 
         : allNotices.filter(n => (n.category || '기타') === category);
 
       const status = document.getElementById("status");
-      const university = document.getElementById("universityInput").value.trim();
-      status.textContent = `${university} '${category}' 공지 ${filteredNotices.length}건을 찾았습니다.`;
+      const university = document.getElementById("universitySelect").value;
+      const board = document.getElementById("boardSelect").value;
+      
+      const targetName = board ? `${university} - ${board}` : university;
+      status.textContent = `${targetName} '${category}' 공지 ${currentFilteredNotices.length}건을 찾았습니다.`;
 
-      renderNotices(filteredNotices);
+      renderPage();
+    }
+
+    function renderPage() {
+      const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+      const endIndex = startIndex + ITEMS_PER_PAGE;
+      const paginatedNotices = currentFilteredNotices.slice(startIndex, endIndex);
+
+      renderNotices(paginatedNotices);
+      renderPagination(currentFilteredNotices.length);
+    }
+
+    function changePage(pageNumber) {
+      currentPage = pageNumber;
+      renderPage();
+
+      const statusElement = document.getElementById("status");
+      statusElement.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function renderPagination(totalItems) {
+      const paginationContainer = document.getElementById("pagination");
+      const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
+      if (totalPages <= 1) {
+        paginationContainer.innerHTML = "";
+        return;
+      }
+
+      let paginationHtml = "";
+      for (let i = 1; i <= totalPages; i++) {
+        const isActive = i === currentPage ? 'active' : '';
+        paginationHtml += `<button class="page-btn ${isActive}" onclick="changePage(${i})">${i}</button>`;
+      }
+      
+      paginationContainer.innerHTML = paginationHtml;
     }
 
     function renderNotices(notices) {
@@ -358,3 +544,4 @@
   </script>
 </body>
 </html>
+

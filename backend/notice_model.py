@@ -131,93 +131,16 @@ def make_notice(
     )
 
 
-UNIVERSITY_SOURCES = {
-    "충북대학교": UniversitySource(
-        name="충북대학교",
-        boards=[
-            NoticeBoard(
-                board_name="대학교 전체공지",
-                list_url="https://www.cbnu.ac.kr/www/selectBbsNttList.do?bbsNo=8&key=813",
-                page_param="pageIndex",
-            ),
-            NoticeBoard(
-                board_name="컴퓨터공학과 공지",
-                list_url="https://computer.chungbuk.ac.kr/bbs/bbs.php?db=notice",
-                page_param="page",
-            ),
-            NoticeBoard(
-                board_name="전기공학과 공지",
-                list_url="https://ee.chungbuk.ac.kr/sub0502",
-                page_param="page",
-            ),
-            NoticeBoard(
-                board_name="정보통신공학부 학사/장학",
-                list_url="https://inform.chungbuk.ac.kr/cisub5_1",
-                page_param="page",
-            ),
-            NoticeBoard(
-                board_name="정보통신공학부 일반",
-                list_url="https://inform.chungbuk.ac.kr/cisub5_2",
-                page_param="page",
-            ),
-            NoticeBoard(
-                board_name="정보통신공학부 취업",
-                list_url="https://inform.chungbuk.ac.kr/cisub5_3",
-                page_param="page",
-            ),
-            NoticeBoard(
-                board_name="정보통신공학부 뉴스",
-                list_url="https://inform.chungbuk.ac.kr/cisub5_4",
-                page_param="page",
-            ),
-        ]
-    ),
-    "충남대학교": UniversitySource(
-        name="충남대학교",
-        boards=[
-            NoticeBoard(
-                board_name="대학교 전체공지",
-                list_url="https://plus.cnu.ac.kr/_prog/_board/?code=sub07_0702&site_dvs_cd=kr&menu_dvs_cd=0702",
-                page_param="GotoPage",
-            ),
-            NoticeBoard(
-                board_name="장학공지",
-                list_url="https://plus.cnu.ac.kr/_prog/_board/?code=sub07_0713&site_dvs_cd=kr&menu_dvs_cd=0713",
-                page_param="GotoPage",
-            ),
-        ]
-    ),
-    "서울대학교": UniversitySource(
-        name="서울대학교",
-        boards=[
-            NoticeBoard(
-                board_name="학부대학 공지",
-                list_url="https://snuc.snu.ac.kr/%EA%B3%B5%EC%A7%80%EC%82%AC%ED%95%AD/",
-                page_param="pageid",
-            ),
-        ]
-    ),
-    "전남대학교": UniversitySource(
-        name="전남대학교",
-        boards=[
-            NoticeBoard(
-                board_name="대학교 전체공지",
-                list_url="https://www.jnu.ac.kr/WebApp/web/HOM/COM/Board/board.aspx?boardID=5&bbsMode=list&cate=0",
-                page_param="page",
-            ),
-        ]
-    ),
-    "인천대학교": UniversitySource(
-        name="인천대학교",
-        boards=[
-            board_name="대학교 전체공지",
-            list_url="https://www.inu.ac.kr/inu/1534/subview.do",
-            page_param="page",
-            enc_inner_path="/bbs/inu/2006/artclList.do",
-            enc_query_template="page={page}&srchColumn=&srchWrd=&bbsClSeq=&bbsOpenWrdSeq=&rgsBgndeStr=&rgsEnddeStr=&isViewMine=false&",
-),       ]
-    ),
-}
+SOURCES_PATH = Path(__file__).parent / "sources.json"
+
+def _load_university_sources(path: Path = SOURCES_PATH) -> dict[str, UniversitySource]:
+    if not path.exists():
+        logger.warning("sources.json 파일이 없습니다: %s", path)
+        return {}
+    raw: dict = json.loads(path.read_text(encoding="utf-8"))
+    return {k: UniversitySource(**v) for k, v in raw.items()}
+
+UNIVERSITY_SOURCES: dict[str, UniversitySource] = _load_university_sources()
 
 
 _DATE_PATTERN = re.compile(r"(\d{2,4})[.\-/](\d{1,2})[.\-/](\d{1,2})")
