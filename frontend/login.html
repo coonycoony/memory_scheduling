@@ -184,9 +184,13 @@
       event.preventDefault();
       const name = document.getElementById("userName").value.trim();
       const school = document.getElementById("userSchool").value.trim();
-      const birth = document.getElementById("userBirth").value;
+      const major = document.getElementById("userMajor").value.trim();
+      const year = document.getElementById("userYear").value;
+      
+      const checkboxes = document.querySelectorAll('#interestGroup input:checked');
+      const interests = Array.from(checkboxes).map(cb => cb.value);
 
-      if (!name || !school || !birth) {
+      if (!name || !school || !major || !year) {
         alert("모든 정보를 올바르게 입력해주세요.");
         return;
       }
@@ -194,11 +198,14 @@
       const userInfo = {
         name: name,
         school: school,
-        birth: birth,
+        major: major,
+        year: year,
+        interests: interests,
         loginAt: new Date().toISOString()
       };
+      
       localStorage.setItem("userSession", JSON.stringify(userInfo));
-      alert(`${name}님 환영합니다! 공지사항 대시보드로 이동합니다.`);
+      alert(`${name}님 환영합니다! 맞춤형 공지사항을 준비해 드릴게요.`);
       window.location.href = "frontend.html";
     }
 
