@@ -38,7 +38,6 @@
       font-size: 16px;
     }
 
-    /* 검색 박스 내 select 스타일 추가 */
     .search-box {
       background: white;
       padding: 20px;
@@ -59,7 +58,7 @@
       font-size: 16px;
       background-color: white;
       cursor: pointer;
-      appearance: none; /* 브라우저 기본 화살표 숨기기 */
+      appearance: none;
       background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
       background-repeat: no-repeat;
       background-position: right 14px center;
@@ -244,6 +243,7 @@
       cursor: pointer;
       background-color: white;
     }
+
     .new-badge {
       display: inline-block;
       background-color: #ef4444;
@@ -262,17 +262,7 @@
       50% { opacity: 0.6; }
       100% { opacity: 1; }
     }
-    @media (max-width: 640px) {
-      .header h1 {
-        font-size: 26px;
-      }
-      .search-box {
-        flex-direction: column;
-      }
-      .search-box select, .search-box button {
-        width: 100%;
-      }
-    }
+
     .recommend-section {
       background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
       border: 1px solid #bfdbfe;
@@ -281,6 +271,7 @@
       margin-bottom: 24px;
       display: none;
     }
+
     .recommend-header {
       font-size: 18px;
       font-weight: bold;
@@ -290,10 +281,12 @@
       align-items: center;
       gap: 8px;
     }
+
     .recommend-list {
       display: grid;
       gap: 12px;
     }
+
     .recommend-card {
       background: white;
       padding: 16px;
@@ -301,15 +294,22 @@
       box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
       border-left: 4px solid #3b82f6;
     }
+
+    @media (max-width: 640px) {
+      .header h1 { font-size: 26px; }
+      .search-box { flex-direction: column; }
+      .search-box select, .search-box button { width: 100%; }
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
       <h1>대학교 공지사항 검색</h1>
-        <p>학교와 게시판을 선택하여 공지를 불러오고 카테고리별로 확인할 수 있습니다.</p><button onclick="location.href='schedule_page.html'" style="margin-top: 16px; padding: 12px 24px; background: #10b981; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
-      📅 내 스케줄러 관리하기
-    </button>
+      <p>학교와 게시판을 선택하여 공지를 불러오고 카테고리별로 확인할 수 있습니다.</p>
+      <button onclick="location.href='schedule_page.html'" style="margin-top: 16px; padding: 12px 24px; background: #10b981; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
+        📅 내 스케줄러 관리하기
+      </button>
     </div>
 
     <div class="search-box">
@@ -352,6 +352,7 @@
         <option value="asc">과거순</option>
       </select>
     </div>
+    
     <div class="notice-list" id="noticeList"></div>
     <div class="pagination" id="pagination"></div>
   </div>
@@ -388,7 +389,6 @@
           if (schoolExists) {
             univSelect.value = user.school;
             status.textContent = `👋 ${user.name}님 환영합니다! ${user.school} 게시판을 선택해 검색해 보세요.`;
-            
             handleUniversityChange();
           } else {
             status.textContent = `👋 ${user.name}님 환영합니다! (아쉽게도 입력하신 '${user.school}'은 아직 지원하지 않습니다.)`;
@@ -487,6 +487,7 @@
         if (!Array.isArray(notices) || notices.length === 0) {
           allNotices = [];
           status.textContent = `${university} 공지사항이 없습니다.`;
+          document.getElementById("recommendSection").style.display = "none";
           noticeList.innerHTML = `
             <div class="empty">
               검색 결과가 없습니다.<br />
@@ -497,6 +498,7 @@
         }
 
         allNotices = notices;
+        renderRecommendations();
         applyFilter(currentCategory);
 
       } catch (error) {
@@ -552,7 +554,6 @@
     function changePage(pageNumber) {
       currentPage = pageNumber;
       renderPage();
-
       const statusElement = document.getElementById("status");
       statusElement.scrollIntoView({ behavior: 'smooth' });
     }
@@ -571,7 +572,6 @@
         const isActive = i === currentPage ? 'active' : '';
         paginationHtml += `<button class="page-btn ${isActive}" onclick="changePage(${i})">${i}</button>`;
       }
-      
       paginationContainer.innerHTML = paginationHtml;
     }
 
@@ -619,6 +619,7 @@
     function escapeAttribute(value) {
       return String(value).replace(/\"/g, "&quot;");
     }
+
     function handleSortChange() {
       currentSort = document.getElementById("sortSelect").value;
       currentPage = 1;
@@ -633,6 +634,7 @@
       }
       renderPage();
     }
+
     function isNew(dateString) {
       if (!dateString) return false;
       const today = new Date();
@@ -645,7 +647,67 @@
       
       return diffDays <= 2 && diffDays >= 0;
     }
+
+    function renderRecommendations() {
+      const recommendSection = document.getElementById("recommendSection");
+      const recommendList = document.getElementById("recommendList");
+      const recommendTitle = document.getElementById("recommendTitle");
+      
+      const savedSession = localStorage.getItem("userSession");
+      if (!savedSession || allNotices.length === 0) {
+        recommendSection.style.display = "none";
+        return;
+      }
+
+      const user = JSON.parse(savedSession);
+      let recommended = [];
+
+      if (user.interests && user.interests.length > 0) {
+        recommended = allNotices.filter(notice => user.interests.includes(notice.category));
+      }
+
+      if (user.year === "4") {
+        const priorityNotices = allNotices.filter(notice => 
+          (notice.category === "취업/채용" || notice.category === "학사") && 
+          !recommended.includes(notice)
+        );
+        recommended = [...recommended, ...priorityNotices];
+      }
+
+      if (user.year === "1") {
+         const priorityNotices = allNotices.filter(notice => 
+          (notice.category === "입학/등록" || notice.category === "일반") && 
+          !recommended.includes(notice)
+        );
+        recommended = [...recommended, ...priorityNotices];
+      }
+
+      if (recommended.length === 0) {
+        recommendSection.style.display = "none";
+        return;
+      }
+
+      recommended.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+      const topPicks = recommended.slice(0, 3);
+
+      recommendTitle.textContent = `${user.name}님(${user.year}학년)을 위한 오늘의 추천 공지`;
+      
+      recommendList.innerHTML = topPicks.map(notice => `
+        <div class="recommend-card">
+          <div class="notice-top" style="margin-bottom: 8px;">
+            <span class="badge" style="background: #dbeafe;">${escapeHtml(notice.category || "기타")}</span>
+            <span style="font-size: 13px; color: #6b7280;">${isNew(notice.date) ? '<span style="color:#ef4444; font-weight:bold; margin-right:4px;">[NEW]</span>' : ''}${escapeHtml(notice.date || "")}</span>
+          </div>
+          <div class="title" style="font-size: 16px; margin-bottom: 0;">
+            <a href="${escapeAttribute(notice.url || "#")}" target="_blank" rel="noopener noreferrer">
+              ${escapeHtml(notice.title || "제목 없음")}
+            </a>
+          </div>
+        </div>
+      `).join("");
+
+      recommendSection.style.display = "block";
+    }
   </script>
 </body>
 </html>
-
