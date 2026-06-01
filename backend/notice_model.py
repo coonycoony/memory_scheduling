@@ -81,6 +81,7 @@ logger = logging.getLogger(__name__)
 def is_valid_category(category: str) -> bool:
     return category in VALID_CATEGORIES
 
+
 def classify_notice(title: str, board_name: Optional[str] = None) -> str:
     if board_name:
         board_lower = board_name.lower()
@@ -133,6 +134,7 @@ def make_notice(
 
 SOURCES_PATH = Path(__file__).parent / "sources.json"
 
+
 def _load_university_sources(path: Path = SOURCES_PATH) -> dict[str, UniversitySource]:
     if not path.exists():
         logger.warning("sources.json 파일이 없습니다: %s", path)
@@ -140,10 +142,11 @@ def _load_university_sources(path: Path = SOURCES_PATH) -> dict[str, UniversityS
     raw: dict = json.loads(path.read_text(encoding="utf-8"))
     return {k: UniversitySource(**v) for k, v in raw.items()}
 
+
 UNIVERSITY_SOURCES: dict[str, UniversitySource] = _load_university_sources()
 
-
 _DATE_PATTERN = re.compile(r"(\d{2,4})[.\-/](\d{1,2})[.\-/](\d{1,2})")
+
 
 def _parse_date(raw: str) -> Optional[date]:
     m = _DATE_PATTERN.search(raw.strip())
@@ -157,12 +160,14 @@ def _parse_date(raw: str) -> Optional[date]:
     except ValueError:
         return None
 
+
 def _extract_date_from_row(row) -> Optional[date]:
     for td in row.find_all("td"):
         parsed = _parse_date(td.get_text(strip=True))
         if parsed:
             return parsed
     return None
+
 
 def _build_page_url(base_url: str, page_param: str, page: int,
                     enc_inner_path: Optional[str] = None,
@@ -178,6 +183,70 @@ def _build_page_url(base_url: str, page_param: str, page: int,
     params[page_param] = [str(page)]
     new_query = urlencode({k: v[0] for k, v in params.items()})
     return urlunparse(parsed._replace(query=new_query))
+
+
+def analyze_page_urls(url1: str, url2: Optional[str] = None) -> dict:
+    if url2 is None:
+        return {"page_param": "page", "enc_inner_path": None, "enc_query_template": None}
+
+    parsed1 = urlparse(url1)
+    parsed2 = urlparse(url2)
+
+    params1 = parse_qs(parsed1.query, keep_blank_values=True)
+    params2 = parse_qs(parsed2.query, keep_blank_values=True)
+
+    if "enc" in params1 and "enc" in params2:
+        try:
+            def decode_enc(enc_val: str) -> str:
+                decoded = base64.b64decode(enc_val).decode()
+                if "|@@|" in decoded:
+                    decoded = decoded.split("|@@|", 1)[1]
+                return decoded
+
+            inner1 = decode_enc(params1["enc"][0])
+            inner2 = decode_enc(params2["enc"][0])
+
+            parsed_inner1 = urlparse(inner1)
+            parsed_inner2 = urlparse(inner2)
+
+            inner_params1 = parse_qs(parsed_inner1.query, keep_blank_values=True)
+            inner_params2 = parse_qs(parsed_inner2.query, keep_blank_values=True)
+
+            enc_inner_path = parsed_inner1.path
+
+            page_key = None
+            for key in inner_params1:
+                if key in inner_params2 and inner_params1[key] != inner_params2[key]:
+                    page_key = key
+                    break
+
+            if page_key is None:
+                page_key = "page"
+
+            template_parts = []
+            for key in inner_params1:
+                if key == page_key:
+                    template_parts.append(f"{key}={{page}}")
+                else:
+                    template_parts.append(f"{key}={inner_params1[key][0]}")
+            enc_query_template = "&".join(template_parts)
+
+            return {
+                "page_param": page_key,
+                "enc_inner_path": enc_inner_path,
+                "enc_query_template": enc_query_template,
+            }
+        except Exception as e:
+            logger.warning("enc 파라미터 분석 실패, 폴백 적용: %s", e)
+            return {"page_param": "page", "enc_inner_path": None, "enc_query_template": None}
+
+    for key in params1:
+        if key in params2 and params1[key] != params2[key]:
+            return {"page_param": key, "enc_inner_path": None, "enc_query_template": None}
+
+    logger.warning("두 URL 간 변경된 파라미터를 찾지 못했습니다. 폴백 적용")
+    return {"page_param": "page", "enc_inner_path": None, "enc_query_template": None}
+
 
 def fetch_board_html(list_url: str) -> str:
     session = requests.Session()
@@ -195,6 +264,7 @@ def fetch_board_html(list_url: str) -> str:
     if response.apparent_encoding:
         response.encoding = response.apparent_encoding
     return response.text
+
 
 def parse_notice_rows(html: str, university: str, board: NoticeBoard,
                       until_date: Optional[date] = None,
@@ -239,6 +309,7 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
         should_stop = True
 
     return results, should_stop
+
 
 def crawl_notice_board(university: str, board: NoticeBoard,
                        until_date: Optional[date] = None,
