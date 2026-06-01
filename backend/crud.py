@@ -59,3 +59,12 @@ def create_schedule(db: Session, date: str, main_category: str, title: str,
     db.commit()
     db.refresh(db_schedule)
     return db_schedule
+
+def get_schedules(db: Session, main_category: str = None, skip: int = 0, limit: int = 100):
+    query = db.query(models.ScheduleModel)
+    query = query.order_by(models.ScheduleModel.date.asc())
+    # 메인 카테고리 필터링이 들어오면 적용
+    if main_category:
+        query = query.filter(models.ScheduleModel.main_category == main_category)
+        
+    return query.offset(skip).limit(limit).all()
