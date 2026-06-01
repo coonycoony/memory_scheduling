@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Text
 from database import Base
 
 class NoticeModel(Base):
@@ -10,3 +10,15 @@ class NoticeModel(Base):
     url = Column(String, unique=True, index=True, nullable=False)
     category = Column(String, index=True)
     date = Column(String)
+class ScheduleModel(Base):
+    __tablename__="schedules"
+
+    id = Column(Integer, primary_key=True, index=True)
+    main_category = Column(String, nullable=False, index=True)
+    title = Column(String, nullable=False)
+    date = Column(String, index=True)
+    start_date = Column(String)
+    end_date = Column(String)
+    sub_category = Column(String)
+    memo = Column(Text)
+    url = Column(String)

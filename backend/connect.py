@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import date, timedelta
 from typing import Optional
@@ -59,7 +59,6 @@ def get_boards(university: str):
 @app.get("/notices")
 def get_notices(university: str, board: Optional[str] = None, category: Optional[str] = None, db: Session = Depends(get_db)):
     actual_category = board if board else category
-
     thirty_days_ago = (date.today() - timedelta(days=30)).isoformat()
     today_str = date.today().isoformat()
 
@@ -91,9 +90,14 @@ class AddSourceRequest(BaseModel):
     url2: Optional[str] = None
     max_pages: int = 50
 
+
 @app.post("/sources/url")
 def add_source(req: AddSourceRequest):
-    params = analyze_page_urls(req.url1, req.url2)
+    try:
+        params = analyze_page_urls(req.url1, req.url2)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
     add_board_source(
         university=req.university,
         board_name=req.board_name,
@@ -104,6 +108,7 @@ def add_source(req: AddSourceRequest):
         enc_query_template=params["enc_query_template"],
     )
     return {"message": f"{req.university} - {req.board_name} 추가 완료"}
+
 
 @app.get("/health")
 def health_check():

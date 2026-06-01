@@ -43,3 +43,49 @@ def get_university_list(db: Session):
 def get_board_list(db: Session, university: str):
     boards = db.query(models.NoticeModel.category).filter(models.NoticeModel.university == university).distinct().all()
     return [b[0] for b in boards if b[0] is not None]
+
+def create_schedule(db: Session, date: str, main_category: str, title: str,
+        sub_category: str = None, start_date: str = None,
+        end_date: str = None, memo: str = None, url: str = None):
+    db_schedule = models.ScheduleModel(
+            date=date,
+            main_category=main_category,
+            sub_category=sub_category,
+            title=title,
+            start_date=start_date,
+            end_date=end_date,
+            memo=memo,
+            url=url
+    )
+    db.add(db_schedule)
+    db.commit()
+    db.refresh(db_schedule)
+    return db_schedule
+
+def get_schedules(db: Session, main_category: str = None, skip: int = 0, limit: int = 100):
+    query = db.query(models.ScheduleModel)
+    query = query.order_by(models.ScheduleModel.date.asc())
+    # 메인 카테고리 필터링이 들어오면 적용
+    if main_category:
+        query = query.filter(models.ScheduleModel.main_category == main_category)
+        
+    return query.offset(skip).limit(limit).all()
+
+def update_schedule(db: Session, schedule_id: int, update_data: dict):
+    schedule = db.query(models.ScheduleModel).filter(models.ScheduleModel.id == schedule_id).first()
+    if not schedule:
+        return None
+    #넘어온 update_date의 키값만 뽑아서 수정함
+    for key, value in update_data.items():
+        setattr(schedule, key, value) 
+    db.commit()
+    db.refresh(schedule)
+    return schedule
+
+def delete_schedule(db: Session, schedule_id: int):
+    schedule = db.query(models.ScheduleModel).filter(models.ScheduleModel.id == schedule_id).first()
+    if schedule:
+        db.delete(schedule)
+        db.commit()
+        return True
+    return False
