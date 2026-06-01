@@ -158,3 +158,10 @@ def update_schedule_api(schedule_id: int, req: ScheduleUpdate, db: Session = Dep
     if not updated_schedule:
         raise HTTPException(status_code=404, detail="해당 일정을 찾을 수 없습니다.")
     return updated_schedule
+
+@app.delete("/schedules/{schedule_id}")
+def delete_schedule_api(schedule_id: int, db: Session = Depends(get_db)):
+    deleted = crud.delete_schedule(db=db, schedule_id=schedule_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="해당 일정을 찾을 수 없거나 이미 삭제되었습니다.")
+    return {"message": "일정이 성공적으로 삭제되었습니다."}
