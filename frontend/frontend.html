@@ -226,6 +226,24 @@
       font-weight: bold;
     }
 
+    .list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .sort-select {
+      padding: 8px 12px;
+      border: 1px solid #d0d7e2;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      cursor: pointer;
+      background-color: white;
+    }
     @media (max-width: 640px) {
       .header h1 {
         font-size: 26px;
@@ -274,7 +292,13 @@
       <button class="filter-btn" onclick="applyFilter('기타')">기타</button>
     </div>
 
-    <div class="status" id="status">학교를 선택하고 검색하세요.</div>
+    <div class="status" id="status">
+      <div class="status" id="status">학교를 선택하고 검색하세요.</div>
+      <select id="sortSelect" class="sort-select" onchange="handleSortChange()">
+        <option value="desc">최신순</option>
+        <option value="asc">과거순</option>
+      </select>
+    </div>
     <div class="notice-list" id="noticeList"></div>
     <div class="pagination" id="pagination"></div>
   </div>
