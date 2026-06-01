@@ -145,7 +145,15 @@ def _load_university_sources(path: Path = SOURCES_PATH) -> dict[str, UniversityS
         logger.warning("sources.json 파일이 없습니다: %s", path)
         return {}
     raw: dict = json.loads(path.read_text(encoding="utf-8"))
-    return {k: UniversitySource(**v) for k, v in raw.items()}
+    result: dict[str, UniversitySource] = {}
+    for k, v in raw.items():
+        source = UniversitySource(**v)
+        if source.name != k:
+            logger.warning(
+                "sources.json key/name 불일치: key='%s', name='%s' — key 기준으로 등록됩니다", k, source.name
+            )
+        result[k] = source
+    return result
 
 
 UNIVERSITY_SOURCES: dict[str, UniversitySource] = _load_university_sources()
