@@ -109,6 +109,28 @@
       color: #9ca3af;
       line-height: 1.5;
     }
+    .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 5px;
+    }
+    .checkbox-group label {
+      font-weight: 400;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      background: #f9fafb;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+    }
+    .checkbox-group input[type="checkbox"] {
+      width: auto;
+      margin: 0;
+    }
   </style>
 </head>
 <body>
@@ -128,8 +150,27 @@
         <input type="text" id="userSchool" placeholder="예: 서울대학교" required />
       </div>
       <div class="form-group">
-        <label for="userBirth">생년월일</label>
-        <input type="date" id="userBirth" required />
+        <label for="userMajor">학과(전공)</label>
+        <input type="text" id="userMajor" placeholder="예: 컴퓨터공학과" required />
+      </div>
+      <div class="form-group">
+        <label for="userYear">학년</label>
+        <select id="userYear" style="width: 100%; padding: 14px 16px; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 15px;" required>
+          <option value="">학년을 선택해주세요</option>
+          <option value="1">1학년 (신입생)</option>
+          <option value="2">2학년</option>
+          <option value="3">3학년</option>
+          <option value="4">4학년 이상 (취업/졸업 준비)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>가장 관심 있는 분야 (다중 선택 가능)</label>
+        <div class="checkbox-group" id="interestGroup">
+          <label><input type="checkbox" value="장학"> 💰 장학금</label>
+          <label><input type="checkbox" value="취업/채용"> 💼 취업/인턴</label>
+          <label><input type="checkbox" value="공모전/대회"> 🏆 공모전/대회</label>
+          <label><input type="checkbox" value="학사"> 📚 학사/졸업</label>
+        </div>
       </div>
       <button type="submit" class="btn-login">시작하기</button>
     </form>
