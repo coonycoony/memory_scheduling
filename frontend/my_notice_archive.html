@@ -72,9 +72,64 @@
       </div>
 
       <div class="card">
+        <div class="section-title">보관함 필터</div>
+        <div class="selected-date" id="resultText">저장한 공지를 검색하고 분류별로 다시 볼 수 있어요</div>
+        <div class="badge">보관된 공지 다시 보기</div>
+
+        <div class="form-group">
+          <label class="form-label" for="keywordInput">검색어</label>
+          <input type="text" id="keywordInput" placeholder="제목, 메모, 부서" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="categoryFilter">종류</label>
+          <select id="categoryFilter">
+            <option value="전체">전체</option>
+            <option value="장학">장학</option>
+            <option value="학사">학사</option>
+            <option value="입학/등록">입학/등록</option>
+            <option value="취업/채용">취업/채용</option>
+            <option value="모집/봉사">모집/봉사</option>
+            <option value="기타">기타</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="savedOnlyFilter">상태</label>
+          <select id="savedOnlyFilter">
+            <option value="all">전체</option>
+            <option value="with-date">날짜 있는 공지</option>
+            <option value="urgent">오늘 이후 공지</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="sortFilter">정렬</label>
+          <select id="sortFilter">
+            <option value="saved-desc">최근 저장순</option>
+            <option value="saved-asc">오래된 저장순</option>
+            <option value="date-asc">날짜 빠른순</option>
+            <option value="date-desc">날짜 늦은순</option>
+          </select>
+        </div>
+
+        <div class="button-row">
+          <button type="button" class="btn-primary" id="seedBtn">샘플 추가</button>
+          <button type="button" class="btn-secondary" id="resetBtn">필터 초기화</button>
+          <button type="button" class="btn-danger" id="clearBtn">전체 비우기</button>
+        </div>
+
+        <div class="event-list" id="savedList"></div>
       </div>
 
       <div class="card">
+        <div class="section-title">보관함 요약</div>
+        <div class="summary-list">
+          <div class="summary-item">전체 공지<strong id="summaryTotal">0</strong></div>
+          <div class="summary-item">장학 공지<strong id="summaryScholarship">0</strong></div>
+          <div class="summary-item">날짜 있는 공지<strong id="summaryWithDate">0</strong></div>
+          <div class="summary-item">오늘 이후 공지<strong id="summaryUpcoming">0</strong></div>
+        </div>
       </div>
     </div>
 
