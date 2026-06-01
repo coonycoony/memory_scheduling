@@ -294,6 +294,28 @@
       box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
       border-left: 4px solid #3b82f6;
     }
+    .add-schedule-btn {
+      margin-top: 12px;
+      padding: 8px 12px;
+      background: #f3f4f6;
+      color: #374151;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .add-schedule-btn:hover {
+      background: #e5e7eb;
+      border-color: #9ca3af;
+    }
 
     @media (max-width: 640px) {
       .header h1 { font-size: 26px; }
@@ -355,6 +377,23 @@
     
     <div class="notice-list" id="noticeList"></div>
     <div class="pagination" id="pagination"></div>
+
+    <div class="register-section" style="margin-top: 60px; background: white; padding: 24px; border-radius: 16px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); border-top: 4px solid #10b981;">
+      <h2 style="font-size: 18px; margin-bottom: 16px; color: #111827;">➕ 새로운 크롤링 소스(게시판) 등록</h2>
+      <p style="font-size: 14px; color: #6b7280; margin-bottom: 20px;">1페이지와 2페이지 URL을 모두 입력하면 시스템이 페이징 패턴을 자동 분석합니다.</p>
+      
+      <form id="registerForm" onsubmit="handleRegisterSource(event)" style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <input type="text" id="regUniv" placeholder="대학명 (예: OO대학교)" required style="flex: 1; min-width: 150px; padding: 12px; border: 1px solid #d0d7e2; border-radius: 8px; outline: none;" />
+          <input type="text" id="regBoard" placeholder="게시판명 (예: 공지사항)" required style="flex: 1; min-width: 150px; padding: 12px; border: 1px solid #d0d7e2; border-radius: 8px; outline: none;" />
+        </div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <input type="url" id="regUrl1" placeholder="1페이지 URL (예: https://...?page=1)" required style="flex: 1; min-width: 250px; padding: 12px; border: 1px solid #d0d7e2; border-radius: 8px; outline: none;" />
+          <input type="url" id="regUrl2" placeholder="2페이지 URL (예: https://...?page=2)" required style="flex: 1; min-width: 250px; padding: 12px; border: 1px solid #d0d7e2; border-radius: 8px; outline: none;" />
+        </div>
+        <button type="submit" style="padding: 14px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s;">등록하기</button>
+      </form>
+    </div>
   </div>
 
   <script>
@@ -603,6 +642,9 @@
             <span>부서: ${escapeHtml(notice.department || "없음")}</span>
             <span>작성일: ${escapeHtml(notice.date || "없음")}</span>
           </div>
+          <button class="add-schedule-btn" onclick="sendToSchedule('${escapeAttribute(notice.title || "")}', '${escapeAttribute(notice.category || "기타")}', '${escapeAttribute(notice.url || "")}')">
+            📅 내 스케줄러에 추가하기
+          </button>
         </div>
       `).join("");
     }
@@ -703,10 +745,68 @@
               ${escapeHtml(notice.title || "제목 없음")}
             </a>
           </div>
+          <button class="add-schedule-btn" onclick="sendToSchedule('${escapeAttribute(notice.title || "")}', '${escapeAttribute(notice.category || "기타")}', '${escapeAttribute(notice.url || "")}')">
+            📅 스케줄 추가
+          </button>
         </div>
       `).join("");
 
       recommendSection.style.display = "block";
+    }
+
+    async function handleRegisterSource(event) {
+      event.preventDefault();
+
+      const univ = document.getElementById("regUniv").value.trim();
+      const board = document.getElementById("regBoard").value.trim();
+      const url1 = document.getElementById("regUrl1").value.trim();
+      const url2 = document.getElementById("regUrl2").value.trim();
+      const submitBtn = event.target.querySelector("button[type='submit']");
+
+      if (!univ || !board || !url1 || !url2) {
+        alert("모든 필드를 입력해주세요.");
+        return;
+      }
+
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = "등록 중...";
+      submitBtn.style.background = "#9ca3af";
+      submitBtn.disabled = true;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/sources/url`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            university: univ,
+            board_name: board,
+            url1: url1,
+            url2: url2
+          })
+        });
+
+        if (response.ok) {
+          alert(`🎉 성공적으로 등록되었습니다!\n대학: ${univ}\n게시판: ${board}`);
+          document.getElementById("registerForm").reset();
+
+          await loadUniversities(); 
+        } else {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || "서버 응답 오류");
+        }
+      } catch (error) {
+        console.error("소스 등록 오류:", error);
+        alert(`❌ 등록에 실패했습니다.\n사유: ${error.message}`);
+      } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.style.background = "#10b981";
+        submitBtn.disabled = false;
+      }
+    }
+    function sendToSchedule(title, category, url) {
+      const pendingData = { title, category, url };
+      localStorage.setItem('pendingSchedule', JSON.stringify(pendingData));
+      location.href = 'schedule_page.html';
     }
   </script>
 </body>

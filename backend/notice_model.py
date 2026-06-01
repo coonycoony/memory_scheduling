@@ -81,22 +81,28 @@ logger = logging.getLogger(__name__)
 def is_valid_category(category: str) -> bool:
     return category in VALID_CATEGORIES
 
+
 def classify_notice(title: str, board_name: Optional[str] = None) -> str:
     if board_name:
         board_lower = board_name.lower()
         for category, keywords in CATEGORY_KEYWORDS.items():
-            if any(kw in board_lower for kw in keywords):
-                return category
+            for kw in sorted(keywords, key=len, reverse=True):
+                if kw in board_lower:
+                    return category
 
     text = title.strip().lower()
     best_category = None
     best_pos = len(text)
+    best_kw_len = 0
 
     for category, keywords in CATEGORY_KEYWORDS.items():
-        for kw in keywords:
+        for kw in sorted(keywords, key=len, reverse=True):
             pos = text.find(kw)
-            if pos != -1 and pos < best_pos:
+            if pos == -1:
+                continue
+            if pos < best_pos or (pos == best_pos and len(kw) > best_kw_len):
                 best_pos = pos
+                best_kw_len = len(kw)
                 best_category = category
 
     return best_category if best_category else "기타"
@@ -133,6 +139,7 @@ def make_notice(
 
 SOURCES_PATH = Path(__file__).parent / "sources.json"
 
+
 def _load_university_sources(path: Path = SOURCES_PATH) -> dict[str, UniversitySource]:
     if not path.exists():
         logger.warning("sources.json 파일이 없습니다: %s", path)
@@ -140,10 +147,11 @@ def _load_university_sources(path: Path = SOURCES_PATH) -> dict[str, UniversityS
     raw: dict = json.loads(path.read_text(encoding="utf-8"))
     return {k: UniversitySource(**v) for k, v in raw.items()}
 
+
 UNIVERSITY_SOURCES: dict[str, UniversitySource] = _load_university_sources()
 
-
 _DATE_PATTERN = re.compile(r"(\d{2,4})[.\-/](\d{1,2})[.\-/](\d{1,2})")
+
 
 def _parse_date(raw: str) -> Optional[date]:
     m = _DATE_PATTERN.search(raw.strip())
@@ -157,6 +165,7 @@ def _parse_date(raw: str) -> Optional[date]:
     except ValueError:
         return None
 
+
 def _extract_date_from_row(row) -> Optional[date]:
     for td in row.find_all("td"):
         parsed = _parse_date(td.get_text(strip=True))
@@ -164,10 +173,16 @@ def _extract_date_from_row(row) -> Optional[date]:
             return parsed
     return None
 
+
 def _build_page_url(base_url: str, page_param: str, page: int,
                     enc_inner_path: Optional[str] = None,
                     enc_query_template: Optional[str] = None) -> str:
     if enc_inner_path:
+        if enc_query_template is None:
+            logger.warning(
+                "_build_page_url: enc_inner_path 있지만 enc_query_template 없음 "
+                "(base_url=%s, page=%d), 'page={page}' 폴백 적용", base_url, page
+            )
         query = enc_query_template.format(page=page) if enc_query_template else f"page={page}"
         inner = f"{enc_inner_path}?{query}"
         enc_value = base64.b64encode(("fnct1|@@|" + quote(inner)).encode()).decode()
@@ -178,6 +193,70 @@ def _build_page_url(base_url: str, page_param: str, page: int,
     params[page_param] = [str(page)]
     new_query = urlencode({k: v[0] for k, v in params.items()})
     return urlunparse(parsed._replace(query=new_query))
+
+
+def analyze_page_urls(url1: str, url2: Optional[str] = None) -> dict:
+    if url2 is None:
+        return {"page_param": "page", "enc_inner_path": None, "enc_query_template": None}
+
+    parsed1 = urlparse(url1)
+    parsed2 = urlparse(url2)
+
+    params1 = parse_qs(parsed1.query, keep_blank_values=True)
+    params2 = parse_qs(parsed2.query, keep_blank_values=True)
+
+    if "enc" in params1 and "enc" in params2:
+        try:
+            def decode_enc(enc_val: str) -> str:
+                decoded = base64.b64decode(enc_val).decode()
+                if "|@@|" in decoded:
+                    decoded = decoded.split("|@@|", 1)[1]
+                return decoded
+
+            inner1 = decode_enc(params1["enc"][0])
+            inner2 = decode_enc(params2["enc"][0])
+
+            parsed_inner1 = urlparse(inner1)
+            parsed_inner2 = urlparse(inner2)
+
+            inner_params1 = parse_qs(parsed_inner1.query, keep_blank_values=True)
+            inner_params2 = parse_qs(parsed_inner2.query, keep_blank_values=True)
+
+            enc_inner_path = parsed_inner1.path
+
+            page_key = None
+            for key in inner_params1:
+                if key in inner_params2 and inner_params1[key] != inner_params2[key]:
+                    page_key = key
+                    break
+
+            if page_key is None:
+                page_key = "page"
+
+            template_parts = []
+            for key in inner_params1:
+                if key == page_key:
+                    template_parts.append(f"{key}={{page}}")
+                else:
+                    template_parts.append(f"{key}={inner_params1[key][0]}")
+            enc_query_template = "&".join(template_parts)
+
+            return {
+                "page_param": page_key,
+                "enc_inner_path": enc_inner_path,
+                "enc_query_template": enc_query_template,
+            }
+        except Exception as e:
+            logger.warning("enc 파라미터 분석 실패, 폴백 적용: %s", e)
+            return {"page_param": "page", "enc_inner_path": None, "enc_query_template": None}
+
+    for key in params1:
+        if key in params2 and params1[key] != params2[key]:
+            return {"page_param": key, "enc_inner_path": None, "enc_query_template": None}
+
+    logger.warning("두 URL 간 변경된 파라미터를 찾지 못했습니다. 폴백 적용")
+    return {"page_param": "page", "enc_inner_path": None, "enc_query_template": None}
+
 
 def fetch_board_html(list_url: str) -> str:
     session = requests.Session()
@@ -196,13 +275,15 @@ def fetch_board_html(list_url: str) -> str:
         response.encoding = response.apparent_encoding
     return response.text
 
+
 def parse_notice_rows(html: str, university: str, board: NoticeBoard,
                       until_date: Optional[date] = None,
                       since_date: Optional[date] = None):
     soup = BeautifulSoup(html, "html.parser")
     results: List[Notice] = []
     should_stop = False
-    valid_post_count = 0
+    all_dated_count = 0
+    out_of_range_count = 0
     rows = soup.select("table tbody tr")
 
     for row in rows:
@@ -220,11 +301,16 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
             continue
         url = urljoin(board.list_url, raw_href)
         notice_date = _extract_date_from_row(row)
-        if until_date and notice_date and notice_date > until_date:
-            continue
-        if since_date and notice_date and notice_date < since_date:
-            continue
-        valid_post_count += 1
+
+        if notice_date:
+            all_dated_count += 1
+            if until_date and notice_date > until_date:
+                out_of_range_count += 1
+                continue
+            if since_date and notice_date < since_date:
+                out_of_range_count += 1
+                continue
+
         notice = make_notice(
             university=university,
             title=title,
@@ -235,10 +321,11 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
         )
         results.append(notice)
 
-    if valid_post_count == 0 and len(rows) > 0:
+    if all_dated_count > 0 and out_of_range_count == all_dated_count:
         should_stop = True
 
     return results, should_stop
+
 
 def crawl_notice_board(university: str, board: NoticeBoard,
                        until_date: Optional[date] = None,
@@ -401,6 +488,8 @@ def add_board_source(
     list_url: str,
     page_param: str = "page",
     max_pages: int = 50,
+    enc_inner_path: Optional[str] = None,
+    enc_query_template: Optional[str] = None,
 ) -> None:
     sources = _load_university_sources()
     board = NoticeBoard(
@@ -408,6 +497,8 @@ def add_board_source(
         list_url=list_url,
         page_param=page_param,
         max_pages=max_pages,
+        enc_inner_path=enc_inner_path,
+        enc_query_template=enc_query_template,
     )
     if university in sources:
         sources[university].boards.append(board)
