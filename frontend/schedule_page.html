@@ -106,6 +106,12 @@
       background: #fff;
     }
 
+    input[type="date"] {
+      width: 100%;
+      display: block;
+      height: 35px;
+    }
+
     textarea {
       min-height: 58px;
       resize: vertical;
@@ -117,6 +123,33 @@
       outline: none;
       border-color: #2563eb;
       box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);
+    }
+    
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .move-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: #3b82f6;
+      color: #fff;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.18s ease;
+      white-space: nowrap;
+    }
+
+    .move-btn:hover {
+      background: #2563eb;
     }
 
     .button-row {
@@ -265,7 +298,7 @@
     }
 
     .calendar-day {
-      min-height: 76px;
+      min-height: 120px;
       border: 1px solid #e5e7eb;
       border-radius: 12px;
       background: #fff;
@@ -331,6 +364,20 @@
     .calendar-dot.etc {
       background: #16a34a;
     }
+
+    .status-text {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 10px;
+    }
+
+    .status-text.error {
+      color: #dc2626;
+    }
+
+    .status-text.success {
+      color: #15803d;
+    }
     </style>
 </head>
 
@@ -338,6 +385,7 @@
     <div class="schedule-container">
       <div class="left-panel">
         <div class="card header">
+          <div class="header-top">
           <h1>공지 · 장학 스케줄러</h1>
 		<button type="button" onclick="location.href='frontend.html'" class="btn-primary" style="background: #475569; padding: 8px 14px;">
    	   🔍 공지 검색으로 돌아가기
@@ -385,6 +433,8 @@
                 <button type="submit" class="btn-primary">선택한 날짜 범위에 스케줄 추가</button>
                 <button type="button" class="btn-secondary" id="deleteAllBtn">선택한 날짜 범위 전체 삭제</button>
             </div>
+
+            <div class="status-text" id="statusText"></div>
           </form>
 
           <div class="event-list" id="eventList"></div>
@@ -418,6 +468,7 @@
   // =========================
   // 1. 상태(State)
   // =========================
+  const API_BASE = "http://127.0.0.1:8000";
   let selectedDate;
   let currentMonth = new Date();
   const events = {};
@@ -459,12 +510,29 @@
     calendarGrid: $("calendarGrid"),
     calendarTitle: $("calendarTitle"),
     prevMonthBtn: $("prevMonthBtn"),
-    nextMonthBtn: $("nextMonthBtn")
+    nextMonthBtn: $("nextMonthBtn"),
+    statusText: $("statusText")
   };
 
   // =========================
-  // 4. 날짜 유틸 함수
+  // 4. 상태 메시지
   // =========================
+  function setStatus(message = "", type = "") {
+    els.statusText.textContent = message;
+    els.statusText.className = "status-text";
+    if (type) {
+      els.statusText.classList.add(type);
+    }
+  }
+
+  // =========================
+  // 5. 날짜 유틸 함수
+  // =========================
+  function parseLocalDate(iso) {
+    const [y, m, d] = iso.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }
+
   const getIso = (date) => {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -496,8 +564,8 @@
       const { start, end } = normalizeRange(startIso, endIso);
       const result = [];
 
-      let cursor = new Date(start);
-      const endDate = new Date(end);
+      let cursor = parseLocalDate(start);
+      const endDate = parseLocalDate(end);
 
       while (cursor <= endDate) {
         result.push(getIso(cursor));
@@ -551,13 +619,13 @@
       rangeStart = normalizedStart;
       rangeEnd = normalizedEnd;
       selectedDate = rangeEnd;
-      currentMonth = new Date(rangeEnd);
+      currentMonth = parseLocalDate(rangeEnd);
     } else if (rangeStart) {
       selectedDate = rangeStart;
-      currentMonth = new Date(rangeStart);
+      currentMonth = parseLocalDate(rangeStart);
     } else if (rangeEnd) {
       selectedDate = rangeEnd;
-      currentMonth = new Date(rangeEnd);
+      currentMonth = parseLocalDate(rangeEnd);
     }
 
     updateSelectedDateUI();
@@ -565,7 +633,70 @@
   }
 
   // =========================
-  // 5. 카테고리 렌더링
+  // 6. 서버 연동
+  // =========================
+  async function fetchJson(url, options = {}) {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      throw new Error(`요청 실패: ${response.status}`);
+    }
+    if(response.status == 204) return null;
+
+    const text = await response.text();
+    return text ? JSON.parse(text) : null;
+  }
+
+  async function loadSchedulesFromServer() {
+      try {
+        setStatus("스케줄을 불러오는 중입니다...");
+        const data = await fetchJson(`${API_BASE}/schedules`);
+
+        Object.keys(events).forEach((key) => delete events[key]);
+
+        data.forEach((item) => {
+          if (!events[item.date]) events[item.date] = [];
+          events[item.date].push({
+            id: item.id,
+            mainCategory: item.main_category,
+            subCategory: item.sub_category,
+            title: item.title,
+            startDate: item.start_date,
+            endDate: item.end_date,
+            memo: item.memo,
+            url: item.url
+          });
+        });
+
+        updateSelectedDateUI();
+        renderCalendar();
+        setStatus("스케줄을 불러왔습니다.", "success");
+      } catch (error) {
+        console.error(error);
+        setStatus("서버에서 스케줄을 불러오지 못했습니다. 백엔드 실행 여부를 확인하세요.", "error");
+      }
+    }
+
+    async function createScheduleOnServer(payload) {
+      return await fetchJson(`${API_BASE}/schedules`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+    }
+
+    async function deleteSchedulesOnServer(startDate, endDate) {
+      return await fetchJson(
+        `${API_BASE}/schedules?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`,
+        {
+          method: "DELETE"
+        }
+      );
+    }
+
+  // =========================
+  // 7. 카테고리 렌더링
   // =========================
   function renderMainCategories() {
     els.mainCategory.innerHTML = "";
@@ -591,7 +722,7 @@
   }
 
   // =========================
-  // 6. 일정 목록 렌더링
+  // 8. 일정 목록 렌더링
   // =========================
   function renderEventList() {
     const list = events[selectedDate] || [];
@@ -650,7 +781,7 @@
   }
 
   function updateSelectedDateUI() {
-    if (els.selectedDateBox) return;
+    if (!els.selectedDateBox) return;
 
     if (rangeStart && rangeEnd) {
       const { start, end } = normalizeRange(rangeStart, rangeEnd);
@@ -668,7 +799,7 @@
   }
 
   // =========================
-  // 7. 달력 렌더링
+  // 9. 달력 렌더링
   // =========================
   function getDotClass(mainCategory) {
     if (mainCategory === "장학") return "scholarship";
@@ -745,7 +876,7 @@
     }
 
     const totalCells = els.calendarGrid.children.length;
-    const remain = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+    const remain = 42 - totalCells;
 
     for (let i = 1; i <= remain; i++) {
       const date = new Date(year, month + 1, i);
@@ -754,13 +885,13 @@
   }
 
   // =========================
-  // 8. 이벤트 핸들러
+  // 10. 이벤트 핸들러
   // =========================
   function handleMainCategoryChange() {
     renderSubCategories(els.mainCategory.value);
   }
 
-  function handleEventSubmit(e) {
+  async function handleEventSubmit(e) {
     e.preventDefault();
 
     const mainCategory = els.mainCategory.value;
@@ -777,37 +908,52 @@
         return;
       }
     
-    targetDates.forEach((dateIso) => {
-      (events[selectedDate] ||= []).push({
-        mainCategory,
-        subCategory,
-        title,
-        startDate: rangeStart,
-        endDate: rangeEnd,
-        memo
-      });
-    });
+    try {
+        setStatus("스케줄을 저장하는 중입니다...");
 
-    els.eventTitle.value = "";
-    els.eventMemo.value = "";
+        for (const dateIso of targetDates) {
+          await createScheduleOnServer({
+            date: dateIso,
+            main_category: mainCategory,
+            sub_category: subCategory,
+            title: title,
+            start_date: rangeStart,
+            end_date: rangeEnd,
+            memo: memo,
+            url: null
+          });
+        }
 
-    renderEventList();
-    renderCalendar();
+      els.eventTitle.value = "";
+      els.eventMemo.value = "";
+
+      await loadSchedulesFromServer();
+      setStatus("스케줄이 저장되었습니다.", "success");
+    } catch (error) {
+      console.error(error);
+      setStatus("스케줄 저장 중 오류가 발생했습니다.", "error");
+    }
   }
 
-  function handleDeleteAll() {
+  async function handleDeleteAll() {
     const targetDates = getCurrentTargetDates();
     const hasAnyEvent = targetDates.some((dateIso) => events[dateIso]?.length);
     
-    if (!hasAnyEvent) return;
+    if (!targetDates.length || !hasAnyEvent) return;
     if (!confirm("선택된 날짜의 스케줄을 모두 삭제할까요?")) return;
 
-    targetDates.forEach((dateIso) => {
-      delete events[dataIso];
-    });
+    const start = targetDates[0];
+    const end = targetDates[targetDates.length - 1];
 
-    renderEventList();
-    renderCalendar();
+    try {
+      setStatus("스케줄을 삭제하는 중입니다...");
+      await deleteSchedulesOnServer(start, end);
+      await loadSchedulesFromServer();
+      setStatus("선택 범위의 스케줄이 삭제되었습니다.", "success");
+    } catch (error) {
+      console.error(error);
+      setStatus("스케줄 삭제 중 오류가 발생했습니다.", "error");
+    }
   }
 
   function handleNextMonth() {
@@ -829,7 +975,7 @@
   }
 
   // =========================
-  // 9. 이벤트 바인딩
+  // 11. 이벤트 바인딩
   // =========================
   els.mainCategory.addEventListener("change", handleMainCategoryChange);
   els.eventForm.addEventListener("submit", handleEventSubmit);
@@ -840,9 +986,9 @@
   els.endDate.addEventListener("change", syncRangeFromInputs);
 
   // =========================
-  // 10. 초기화
+  // 12. 초기화
   // =========================
-  function init() {
+  async function init() {
     selectedDate = todayIso();
     currentMonth = new Date();
     rangeStart = null;
@@ -852,6 +998,7 @@
     renderSubCategories(els.mainCategory.value);
     updateSelectedDateUI();
     renderCalendar();
+    await loadSchedulesFromServer();
   }
 
   init();
