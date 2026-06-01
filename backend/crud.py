@@ -13,6 +13,7 @@ def create_notice(db: Session, univ: str, title: str, url: str, cat: str, date: 
     db.commit()
     db.refresh(db_notice)
     return db_notice
+
 def get_notices(db: Session, university: str, category: str = None, skip: int = 0, limit: int = 100):
     query = db.query(models.NoticeModel).filter(
             models.NoticeModel.university == university
@@ -22,7 +23,7 @@ def get_notices(db: Session, university: str, category: str = None, skip: int = 
     if category:
         query = query.filter(models.NoticeModel.category == category)
     return query.offset(skip).limit(limit).all()
-    
+
 def bulk_insert_notices(db: Session, notices: list):
     # 배열로 들어온 공지사항들을 한 번에 넣기 위한 뼈대
     inserted_count = 0
@@ -34,3 +35,11 @@ def bulk_insert_notices(db: Session, notices: list):
         db.rollback()
         logging.error(f"DB 벌크 인서트 중 에러 발생: {e}")
     return inserted_count
+
+def get_university_list(db: Session):
+    universities = db.query(models.NoticeModel.university).distinct().all()
+    return [u[0] for u in universities if u[0] is not None]
+
+def get_board_list(db: Session, university: str):
+    boards = db.query(models.NoticeModel.category).filter(models.NoticeModel.university == university).distinct().all()
+    return [b[0] for b in boards if b[0] is not None]
