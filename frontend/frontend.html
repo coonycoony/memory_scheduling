@@ -797,6 +797,11 @@
         submitBtn.disabled = false;
       }
     }
+    function sendToSchedule(title, category, url) {
+      const pendingData = { title, category, url };
+      localStorage.setItem('pendingSchedule', JSON.stringify(pendingData));
+      location.href = 'schedule_page.html';
+    }
   </script>
 </body>
 </html>
