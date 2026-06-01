@@ -527,6 +527,11 @@
   // =========================
   // 5. 날짜 유틸 함수
   // =========================
+  function parseLocalDate(iso) {
+    const [y, m, d] = iso.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }
+
   const getIso = (date) => {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -558,8 +563,8 @@
       const { start, end } = normalizeRange(startIso, endIso);
       const result = [];
 
-      let cursor = new Date(start);
-      const endDate = new Date(end);
+      let cursor = parseLocalDate(rangeStart);
+      const endDate = parseLocalDate(rangeEnd);
 
       while (cursor <= endDate) {
         result.push(getIso(cursor));
@@ -613,13 +618,13 @@
       rangeStart = normalizedStart;
       rangeEnd = normalizedEnd;
       selectedDate = rangeEnd;
-      currentMonth = new Date(rangeEnd);
+      currentMonth = parseLocalDate(rangeEnd);
     } else if (rangeStart) {
       selectedDate = rangeStart;
-      currentMonth = new Date(rangeStart);
+      currentMonth = parseLocalDate(rangeStart);
     } else if (rangeEnd) {
       selectedDate = rangeEnd;
-      currentMonth = new Date(rangeEnd);
+      currentMonth = parseLocalDate(rangeEnd);
     }
 
     updateSelectedDateUI();
@@ -772,7 +777,7 @@
   }
 
   function updateSelectedDateUI() {
-    if (els.selectedDateBox) return;
+    if (!els.selectedDateBox) return;
 
     if (rangeStart && rangeEnd) {
       const { start, end } = normalizeRange(rangeStart, rangeEnd);
@@ -878,7 +883,7 @@
   // =========================
   // 10. 이벤트 핸들러
   // =========================
-  function handleMainCategoryChange() {
+  async function handleMainCategoryChange() {
     renderSubCategories(els.mainCategory.value);
   }
 
@@ -926,7 +931,7 @@
     }
   }
 
-  function handleDeleteAll() {
+  async function handleDeleteAll() {
     const targetDates = getCurrentTargetDates();
     const hasAnyEvent = targetDates.some((dateIso) => events[dateIso]?.length);
     
