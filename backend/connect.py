@@ -33,7 +33,7 @@ async def shutdown_event():
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=False,  # 🚨 CORS 에러 방지 (필수 유지)
+    allow_credentials=False,  # CORS 에러 방지 (필수 유지)
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -58,11 +58,11 @@ def get_boards(university: str):
 @app.get("/notices")
 def get_notices(
     university: str,
-    board: Optional[str] = None,       # ✅ board_name으로 사용될 게시판 이름
-    category: Optional[str] = None,    # ✅ notice_category로 사용될 분류 (장학, 학사 등)
-    since: Optional[str] = None,       # ✅ 시작 날짜 파라미터 추가
-    until: Optional[str] = None,       # ✅ 종료 날짜 파라미터 추가
-    limit: int = 500,                  # ✅ 조회 건수 제한 (기본값 500, 전체 게시판은 각 게시판당 50페이지)
+    board: Optional[str] = None,       # board_name으로 사용될 게시판 이름
+    category: Optional[str] = None,    # notice_category로 사용될 분류 (장학, 학사 등)
+    since: Optional[str] = None,       # 시작 날짜 파라미터 추가
+    until: Optional[str] = None,       # 종료 날짜 파라미터 추가
+    limit: int = 500,                  # 조회 건수 제한 (기본값 500, 전체 게시판은 각 게시판당 50페이지)
     db: Session = Depends(get_db)
 ):
     
