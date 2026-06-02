@@ -733,6 +733,12 @@
       );
     }
 
+  async function deleteScheduleOnServer(id) {
+      return await fetchJson(`${API_BASE}/schedules/${id}`, {
+        method: "DELETE",
+      });
+  } 
+
   // =========================
   // 7. 카테고리 렌더링
   // =========================
