@@ -319,6 +319,7 @@
       border-color: #9ca3af;
     }
 
+    /* 프로필 영역 CSS */
     .profile-container {
       position: absolute;
       top: 20px;
@@ -424,6 +425,49 @@
       background: #fee2e2;
     }
 
+    /* 게시판 추가 모달 CSS */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(2px);
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 24px;
+      border-radius: 16px;
+      width: 90%; max-width: 500px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      position: relative;
+      animation: modalFadeIn 0.2s ease-out;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 16px; right: 16px;
+      font-size: 20px; color: #9ca3af;
+      cursor: pointer; border: none; background: none;
+      transition: color 0.2s;
+    }
+
+    .modal-close:hover {
+      color: #374151;
+    }
+
     @media (max-width: 640px) {
       .header h1 { font-size: 26px; }
       .search-box { flex-direction: column; }
@@ -463,6 +507,9 @@
         </button>
         <button onclick="location.href='my_notice_archive.html'" style="padding: 12px 24px; background: #3b82f6; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2); transition: 0.2s;">
           🗂️ 내 공지 보관함
+        </button>
+        <button onclick="openRegisterModal()" style="padding: 12px 24px; background: #8b5cf6; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2); transition: 0.2s;">
+          ➕ 새 게시판 등록
         </button>
       </div>
     </div>
@@ -510,10 +557,12 @@
     
     <div class="notice-list" id="noticeList"></div>
     <div class="pagination" id="pagination"></div>
+  </div>
 
-    <div class="register-section" style="margin-top: 60px; background: white; padding: 24px; border-radius: 16px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); border-top: 4px solid #10b981;">
+  <div class="modal-overlay" id="registerModal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeRegisterModal()">✖</button>
       <h2 style="font-size: 18px; margin-bottom: 16px; color: #111827;">➕ 새로운 크롤링 소스(게시판) 등록</h2>
-      
       <p style="font-size: 14px; color: #6b7280; margin-bottom: 20px;">2페이지와 3페이지 URL을 모두 입력하면 시스템이 페이징 패턴을 자동 분석합니다.</p>
       
       <form id="registerForm" onsubmit="handleRegisterSource(event)" style="display: flex; flex-direction: column; gap: 12px;">
@@ -521,11 +570,11 @@
           <input type="text" id="regUniv" placeholder="대학명 (예: OO대학교)" required style="flex: 1; min-width: 150px; padding: 12px; border: 1px solid #d0d7e2; border-radius: 8px; outline: none;" />
           <input type="text" id="regBoard" placeholder="게시판명 (예: 공지사항)" required style="flex: 1; min-width: 150px; padding: 12px; border: 1px solid #d0d7e2; border-radius: 8px; outline: none;" />
         </div>
-        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <input type="url" id="regUrl1" placeholder="2페이지 URL (예: https://...?page=2)" required style="flex: 1; min-width: 250px; padding: 12px; border: 1px solid #d0d7e2; border-radius: 8px; outline: none;" />
-          <input type="url" id="regUrl2" placeholder="3페이지 URL (예: https://...?page=3)" required style="flex: 1; min-width: 250px; padding: 12px; border: 1px solid #d0d7e2; border-radius: 8px; outline: none;" />
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; flex-direction: column;">
+          <input type="url" id="regUrl1" placeholder="2페이지 URL (예: https://...?page=2)" required style="flex: 1; padding: 12px; border: 1px solid #d0d7e2; border-radius: 8px; outline: none;" />
+          <input type="url" id="regUrl2" placeholder="3페이지 URL (예: https://...?page=3)" required style="flex: 1; padding: 12px; border: 1px solid #d0d7e2; border-radius: 8px; outline: none;" />
         </div>
-        <button type="submit" style="padding: 14px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s;">등록하기</button>
+        <button type="submit" style="padding: 14px; background: #8b5cf6; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 8px;">등록하기</button>
       </form>
     </div>
   </div>
@@ -573,15 +622,34 @@
       }
     };
 
+    // 프로필 토글
     function toggleProfile() {
       document.getElementById('profileDropdown').classList.toggle('show');
     }
 
+    // 모달 제어 함수
+    function openRegisterModal() {
+      document.getElementById('registerModal').classList.add('show');
+    }
+
+    function closeRegisterModal() {
+      document.getElementById('registerModal').classList.remove('show');
+      document.getElementById('registerForm').reset();
+    }
+
+    // 외부 클릭 감지 (프로필 드롭다운 및 게시판 등록 모달 통합)
     window.addEventListener('click', function(e) {
-      const container = document.querySelector('.profile-container');
+      // 프로필 닫기
+      const profileContainer = document.querySelector('.profile-container');
       const dropdown = document.getElementById('profileDropdown');
-      if (container && !container.contains(e.target) && dropdown.classList.contains('show')) {
+      if (profileContainer && !profileContainer.contains(e.target) && dropdown.classList.contains('show')) {
         dropdown.classList.remove('show');
+      }
+
+      // 모달 닫기
+      const modal = document.getElementById('registerModal');
+      if (e.target === modal) {
+        closeRegisterModal();
       }
     });
 
@@ -969,8 +1037,9 @@
 
         if (response.ok) {
           alert(`🎉 성공적으로 등록되었습니다!\n대학: ${univ}\n게시판: ${board}`);
-          document.getElementById("registerForm").reset();
-
+          
+          // 성공 시 팝업 자동으로 닫기 추가
+          closeRegisterModal();
           await loadUniversities(); 
         } else {
           const errorData = await response.json();
@@ -981,7 +1050,7 @@
         alert(`❌ 등록에 실패했습니다.\n사유: ${error.message}`);
       } finally {
         submitBtn.textContent = originalText;
-        submitBtn.style.background = "#10b981";
+        submitBtn.style.background = "#8b5cf6";
         submitBtn.disabled = false;
       }
     }
