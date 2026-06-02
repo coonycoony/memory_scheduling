@@ -856,7 +856,6 @@
   function updateSelectedDateUI() {
     if (!els.selectedDateBox) return;
 
-
     if (rangeStart && rangeEnd) {
       const { start, end } = normalizeRange(rangeStart, rangeEnd);
       els.selectedDateBox.textContent =
@@ -875,10 +874,29 @@
   // =========================
   // 9. 달력 렌더링
   // =========================
-  function getDotClass(mainCategory) {
-    if (mainCategory === "장학") return "scholarship";
-    if (mainCategory === "시설/행정") return "etc";
-    return "";
+  function getBadgeClass(mainCategory) {
+   switch (mainCategory) {
+    case "장학":
+      return "cat-scholarship";
+    case "학사":
+      return "cat-academic";
+    case "입학/등록":
+      return "cat-admission";
+    case "취업/채용":
+      return "cat-career";
+    case "공모전/대회":
+      return "cat-contest";
+    case "모집/봉사":
+      return "cat-volunteer";
+    case "시설/행정":
+      return "cat-facility";
+    case "안전":
+      return "cat-safety";
+    case "기타":
+      return "cat-etc";
+    default:
+      return "";
+    }  
   }
 
   function createDayCell(date, muted) {
@@ -892,16 +910,28 @@
     if (iso === todayIso()) cell.classList.add("today");
     if (isDateInSelectedRange(iso)) cell.classList.add("in-range");
     if (iso === rangeStart || iso === rangeEnd) cell.classList.add("range-edge");
-    
-    const dots = dayEvents
-      .slice(0, 3)
-      .map((ev) => `<span class="calendar-dot ${getDotClass(ev.mainCategory)}"></span>`)
-      .join("");
 
     cell.innerHTML = `
       <div class="calendar-day-number">${date.getDate()}</div>
-      <div class="calendar-day-dots">${dots}</div>
+      <div class="calendar-day-events"></div>
     `;
+
+    const eventsContainer = cell.querySelector(".calendar-day-events");
+
+    dayEvents.slice(0, 3).forEach((ev) => {
+      const badge = document.createElement("div");
+      badge.className = `calendar-event-badge ${getBadgeClass(ev.mainCategory)}`;
+      badge.textContent = ev.title;   
+
+      eventsContainer.appendChild(badge);
+    });
+
+    if (dayEvents.length > 3) {
+      const more = document.createElement("div");
+      more.className = "calendar-event-more";
+      more.textContent = `+${dayEvents.length - 3}`;
+      eventsContainer.appendChild(more);
+    }
 
     cell.addEventListener("click", () => {
       const clickedIso = iso;
