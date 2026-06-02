@@ -863,6 +863,15 @@
       paginationContainer.innerHTML = paginationHtml;
     }
 
+    // 데이터가 없거나 쓰레기값일 경우 렌더링하지 않는 헬퍼 함수
+    function safeMeta(label, value) {
+      if (value === undefined || value === null || String(value).trim() === '' || String(value).toLowerCase() === 'null' || String(value).toLowerCase() === 'none' || String(value).trim() === '전체') {
+        return '';
+      }
+      return `<span>${label}: ${escapeHtml(value)}</span>`;
+    }
+
+    // 💡 수정된 부분: 원본 분류에는 '학교 이름', 부서에는 '게시판 이름' 할당
     function renderNotices(notices) {
       const noticeList = document.getElementById("noticeList");
       
@@ -875,7 +884,16 @@
         return;
       }
 
-      noticeList.innerHTML = notices.map(notice => `
+      noticeList.innerHTML = notices.map(notice => {
+        // UI의 Select 요소에서 현재 선택된 게시판 가져오기 (미선택 시 '전체 공지')
+        let selectedBoard = document.getElementById("boardSelect").value;
+        
+        // 원본 분류 = 학교 이름 할당
+        let sourceCat = notice.university;
+        // 부서 = 게시판 이름 할당 (API의 board_name 우선, 없으면 UI 선택값 활용)
+        let dept = notice.board_name || notice.board || (selectedBoard ? selectedBoard : "전체 공지");
+        
+        return `
         <div class="notice-card">
           <div class="notice-top">
             <span class="badge">${escapeHtml(notice.category || "기타")}</span>
@@ -888,15 +906,16 @@
             ${isNew(notice.date) ? '<span class="new-badge">NEW</span>' : ''} 
           </div>
           <div class="meta">
-            <span>원본 분류: ${escapeHtml(notice.source_category || "없음")}</span>
-            <span>부서: ${escapeHtml(notice.department || "없음")}</span>
-            <span>작성일: ${escapeHtml(notice.date || "없음")}</span>
+            ${safeMeta('원본 분류', sourceCat)}
+            ${safeMeta('부서', dept)}
+            <span>작성일: ${escapeHtml(notice.date || "작성일 없음")}</span>
           </div>
           <button class="add-schedule-btn" onclick="sendToSchedule('${escapeAttribute(notice.title || "")}', '${escapeAttribute(notice.category || "기타")}', '${escapeAttribute(notice.url || "")}')">
             📅 내 스케줄러에 추가하기
           </button>
         </div>
-      `).join("");
+        `;
+      }).join("");
     }
 
     function escapeHtml(value) {
@@ -940,6 +959,7 @@
       return diffDays <= 2 && diffDays >= 0;
     }
 
+    // 💡 수정된 부분: 원본 분류에는 '학교 이름', 부서에는 '게시판 이름' 할당 (추천 공지 카드)
     function renderRecommendations() {
       const recommendSection = document.getElementById("recommendSection");
       const recommendList = document.getElementById("recommendList");
@@ -984,7 +1004,12 @@
 
       recommendTitle.textContent = `${user.name}님(${user.year}학년)을 위한 오늘의 추천 공지`;
       
-      recommendList.innerHTML = topPicks.map(notice => `
+      recommendList.innerHTML = topPicks.map(notice => {
+        let selectedBoard = document.getElementById("boardSelect").value;
+        let sourceCat = notice.university;
+        let dept = notice.board_name || notice.board || (selectedBoard ? selectedBoard : "전체 공지");
+
+        return `
         <div class="recommend-card">
           <div class="notice-top" style="margin-bottom: 8px;">
             <span class="badge" style="background: #dbeafe;">${escapeHtml(notice.category || "기타")}</span>
@@ -995,11 +1020,16 @@
               ${escapeHtml(notice.title || "제목 없음")}
             </a>
           </div>
+          <div class="meta" style="margin-bottom: 12px;">
+            ${safeMeta('원본 분류', sourceCat)}
+            ${safeMeta('부서', dept)}
+          </div>
           <button class="add-schedule-btn" onclick="sendToSchedule('${escapeAttribute(notice.title || "")}', '${escapeAttribute(notice.category || "기타")}', '${escapeAttribute(notice.url || "")}')">
             📅 스케줄 추가
           </button>
         </div>
-      `).join("");
+        `;
+      }).join("");
 
       recommendSection.style.display = "block";
     }
@@ -1038,7 +1068,6 @@
         if (response.ok) {
           alert(`🎉 성공적으로 등록되었습니다!\n대학: ${univ}\n게시판: ${board}`);
           
-          // 성공 시 팝업 자동으로 닫기 추가
           closeRegisterModal();
           await loadUniversities(); 
         } else {
