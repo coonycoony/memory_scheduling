@@ -16,7 +16,7 @@
       background: #f5f7fb;
       color: #222;
       padding: 40px 20px;
-      position: relative; /* 프로필 버튼 위치 기준점 */
+      position: relative;
     }
 
     .container {
@@ -296,7 +296,6 @@
       border-left: 4px solid #3b82f6;
     }
     
-    /* 스케줄 추가 버튼 CSS 추가 */
     .add-schedule-btn {
       margin-top: 12px;
       padding: 8px 12px;
@@ -320,7 +319,6 @@
       border-color: #9ca3af;
     }
 
-    /* 프로필 버튼 및 드롭다운 CSS */
     .profile-container {
       position: absolute;
       top: 20px;
@@ -453,13 +451,20 @@
       <button class="logout-btn" onclick="handleLogout()">로그아웃 (정보 초기화)</button>
     </div>
   </div>
+
   <div class="container">
     <div class="header">
       <h1>대학교 공지사항 검색</h1>
       <p>학교와 게시판을 선택하여 공지를 불러오고 카테고리별로 확인할 수 있습니다.</p>
-      <button onclick="location.href='schedule_page.html'" style="margin-top: 16px; padding: 12px 24px; background: #10b981; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
-        📅 내 스케줄러 관리하기
-      </button>
+      
+      <div style="display: flex; gap: 12px; justify-content: center; margin-top: 16px; flex-wrap: wrap;">
+        <button onclick="location.href='schedule_page.html'" style="padding: 12px 24px; background: #10b981; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); transition: 0.2s;">
+          📅 내 스케줄러 관리하기
+        </button>
+        <button onclick="location.href='my_notice_archive.html'" style="padding: 12px 24px; background: #3b82f6; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2); transition: 0.2s;">
+          🗂️ 내 공지 보관함
+        </button>
+      </div>
     </div>
 
     <div class="search-box">
@@ -536,7 +541,7 @@
     let currentSort = 'desc';
 
     window.onload = async function() {
-      loadProfileData(); // 화면 로드 시 프로필 정보 업데이트
+      loadProfileData(); 
       await loadUniversities();
       
       const savedSession = localStorage.getItem("userSession");
@@ -567,12 +572,10 @@
       }
     };
 
-    // 프로필 팝업 토글
     function toggleProfile() {
       document.getElementById('profileDropdown').classList.toggle('show');
     }
 
-    // 바깥 영역 클릭 시 팝업 닫기
     window.addEventListener('click', function(e) {
       const container = document.querySelector('.profile-container');
       const dropdown = document.getElementById('profileDropdown');
@@ -581,23 +584,19 @@
       }
     });
 
-    // 로컬스토리지에서 프로필 정보 불러오기
     function loadProfileData() {
       const savedSession = localStorage.getItem("userSession");
       if (savedSession) {
         try {
           const user = JSON.parse(savedSession);
           
-          // 상단 버튼 이름 변경
           document.getElementById('profileNameBtn').textContent = `${user.name} 님`;
           
-          // 팝업 내부 정보 변경
           document.getElementById('profileName').textContent = user.name;
           document.getElementById('profileSchool').textContent = user.school;
           document.getElementById('profileMajor').textContent = user.major;
           document.getElementById('profileYear').textContent = `${user.year}학년`;
           
-          // 관심 분야 뱃지 렌더링
           const interestsContainer = document.getElementById('profileInterests');
           if (user.interests && user.interests.length > 0) {
             interestsContainer.innerHTML = user.interests.map(interest => 
@@ -612,11 +611,10 @@
       }
     }
 
-    // 로그아웃 처리
     function handleLogout() {
       if(confirm('로그아웃 시 입력하신 사용자 정보가 초기화됩니다.\n계속하시겠습니까?')) {
         localStorage.removeItem('userSession');
-        location.href = 'login.html'; // 로그인 페이지로 돌아가기
+        location.href = 'login.html'; 
       }
     }
 
