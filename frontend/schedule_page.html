@@ -339,19 +339,15 @@
       background: #bfdbfe;
     }
 
-    .calendar-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #2563eb;
+    .calendar-day-events {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
-
-    .calendar-dot.scholarship {
-      background: #ea580c;
-    }
-
-    .calendar-dot.etc {
-      background: #16a34a;
+    
+    .calendar-event-more {
+      font-size: 10px;
+      color: #6b7280;
     }
 
     .status-text {
@@ -367,6 +363,55 @@
     .status-text.success {
       color: #15803d;
     }
+
+    .calendar-event-badge {
+      display: inline-flex;
+      max-width: 100%;
+      padding: 2px 6px;
+      border-radius: 999px;
+      font-size: 11px;
+      color: #fff;
+      background: #4b5563;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .calendar-event-badge.scholarship {
+      background: #f5da3f;
+    }
+
+    .calendar-event-badge.cat-academic {
+      background: #2563eb; 
+    }
+
+    .calendar-event-badge.cat-admission {
+      background: #7c3aed; 
+    }
+
+    .calendar-event-badge.cat-career {
+      background: #f97316; 
+    }
+
+    .calendar-event-badge.cat-contest {
+      background: #e11d48; 
+    }
+
+    .calendar-event-badge.cat-volunteer {
+      background: #0d9488; 
+    }
+
+    .calendar-event-badge.cat-facility {
+      background: #0ea5e9;
+    }
+
+    .calendar-event-badge.cat-safety {
+      background: #22f58b; 
+    }
+
+    .calendar-event-badge.cat-etc {
+      background: #6b7280; 
+    }
     </style>
 </head>
 
@@ -377,8 +422,11 @@
           <div class="header-top">
             <h1>공지 · 장학 스케줄러</h1>
 		    <button type="button" onclick="location.href='frontend.html'" class="btn-primary back-to-search-btn">
-   	          🔍 공지 검색으로 돌아가기
+   	          🔍 공지 검색하러 가기
   	        </button>
+            <button type="button" onclick="location.href='notice_archive.html'" class="btn-primary back-to-search-btn">
+               공지 보관함으로 가기
+            </button>
           </div>
         </div>
 
@@ -826,10 +874,29 @@
   // =========================
   // 9. 달력 렌더링
   // =========================
-  function getDotClass(mainCategory) {
-    if (mainCategory === "장학") return "scholarship";
-    if (mainCategory === "시설/행정") return "etc";
-    return "";
+  function getBadgeClass(mainCategory) {
+     switch (mainCategory) {
+    case "장학":
+      return "cat-scholarship";
+    case "학사":
+      return "cat-academic";
+    case "입학/등록":
+      return "cat-admission";
+    case "취업/채용":
+      return "cat-career";
+    case "공모전/대회":
+      return "cat-contest";
+    case "모집/봉사":
+      return "cat-volunteer";
+    case "시설/행정":
+      return "cat-facility";
+    case "안전":
+      return "cat-safety";
+    case "기타":
+      return "cat-etc";
+    default:
+      return "";
+  }
   }
 
   function createDayCell(date, muted) {
@@ -844,15 +911,27 @@
     if (isDateInSelectedRange(iso)) cell.classList.add("in-range");
     if (iso === rangeStart || iso === rangeEnd) cell.classList.add("range-edge");
     
-    const dots = dayEvents
-      .slice(0, 3)
-      .map((ev) => `<span class="calendar-dot ${getDotClass(ev.mainCategory)}"></span>`)
-      .join("");
-
     cell.innerHTML = `
       <div class="calendar-day-number">${date.getDate()}</div>
-      <div class="calendar-day-dots">${dots}</div>
+      <div class="calendar-day-events"></div>
     `;
+
+    const eventsContainer = cell.querySelector(".calendar-day-events");
+
+    dayEvents.slice(0, 3).forEach((ev) => {
+      const badge = document.createElement("div");
+      badge.className = `calendar-event-badge ${getBadgeClass(ev.mainCategory)}`;
+      badge.textContent = ev.title; 
+
+      eventsContainer.appendChild(badge);
+    });
+
+    if (dayEvents.length > 3) {
+      const more = document.createElement("div");
+      more.className = "calendar-event-more";
+      more.textContent = `+${dayEvents.length - 3}`;
+      eventsContainer.appendChild(more);
+    }
 
     cell.addEventListener("click", () => {
       const clickedIso = iso;
