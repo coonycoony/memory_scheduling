@@ -382,23 +382,23 @@
     }
 
     .calendar-event-badge.cat-academic {
-      background: #2563eb; 
+      background: #2563eb;
     }
 
     .calendar-event-badge.cat-admission {
-      background: #7c3aed; 
+      background: #7c3aed;
     }
 
     .calendar-event-badge.cat-career {
-      background: #f97316; 
+      background: #f97316;
     }
 
     .calendar-event-badge.cat-contest {
-      background: #e11d48; 
+      background: #e11d48;
     }
 
     .calendar-event-badge.cat-volunteer {
-      background: #0d9488; 
+      background: #0d9488;
     }
 
     .calendar-event-badge.cat-facility {
@@ -406,11 +406,11 @@
     }
 
     .calendar-event-badge.cat-safety {
-      background: #22f58b; 
+      background: #22f58b;
     }
 
     .calendar-event-badge.cat-etc {
-      background: #6b7280; 
+      background: #6b7280;
     }
     </style>
 </head>
@@ -875,7 +875,7 @@
   // 9. 달력 렌더링
   // =========================
   function getBadgeClass(mainCategory) {
-     switch (mainCategory) {
+   switch (mainCategory) {
     case "장학":
       return "cat-scholarship";
     case "학사":
@@ -896,7 +896,7 @@
       return "cat-etc";
     default:
       return "";
-  }
+    }  
   }
 
   function createDayCell(date, muted) {
@@ -910,7 +910,7 @@
     if (iso === todayIso()) cell.classList.add("today");
     if (isDateInSelectedRange(iso)) cell.classList.add("in-range");
     if (iso === rangeStart || iso === rangeEnd) cell.classList.add("range-edge");
-    
+
     cell.innerHTML = `
       <div class="calendar-day-number">${date.getDate()}</div>
       <div class="calendar-day-events"></div>
@@ -921,7 +921,7 @@
     dayEvents.slice(0, 3).forEach((ev) => {
       const badge = document.createElement("div");
       badge.className = `calendar-event-badge ${getBadgeClass(ev.mainCategory)}`;
-      badge.textContent = ev.title; 
+      badge.textContent = ev.title;   
 
       eventsContainer.appendChild(badge);
     });
