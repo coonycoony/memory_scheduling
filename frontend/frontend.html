@@ -52,7 +52,7 @@
 
     .search-box select {
       flex: 1;
-      min-width: 200px;
+      min-width: 160px;
       padding: 14px;
       border: 1px solid #d0d7e2;
       border-radius: 10px;
@@ -522,6 +522,13 @@
       <select id="boardSelect" disabled>
         <option value="">게시판 선택 (전체)</option>
       </select>
+
+      <select id="searchDays">
+        <option value="30">최근 30일 (기본)</option>
+        <option value="15">최근 15일</option>
+        <option value="7">최근 7일</option>
+        <option value="3">최근 3일</option>
+      </select>
       
       <button onclick="searchNotices()">검색</button>
     </div>
@@ -622,12 +629,10 @@
       }
     };
 
-    // 프로필 토글
     function toggleProfile() {
       document.getElementById('profileDropdown').classList.toggle('show');
     }
 
-    // 모달 제어 함수
     function openRegisterModal() {
       document.getElementById('registerModal').classList.add('show');
     }
@@ -637,16 +642,13 @@
       document.getElementById('registerForm').reset();
     }
 
-    // 외부 클릭 감지 (프로필 드롭다운 및 게시판 등록 모달 통합)
     window.addEventListener('click', function(e) {
-      // 프로필 닫기
       const profileContainer = document.querySelector('.profile-container');
       const dropdown = document.getElementById('profileDropdown');
       if (profileContainer && !profileContainer.contains(e.target) && dropdown.classList.contains('show')) {
         dropdown.classList.remove('show');
       }
 
-      // 모달 닫기
       const modal = document.getElementById('registerModal');
       if (e.target === modal) {
         closeRegisterModal();
@@ -741,6 +743,7 @@
     async function searchNotices() {
       const university = document.getElementById("universitySelect").value;
       const board = document.getElementById("boardSelect").value;
+      const searchDays = document.getElementById("searchDays").value; // 💡 변경된 드롭다운 값을 가져옴
       const status = document.getElementById("status");
       const noticeList = document.getElementById("noticeList");
       const pagination = document.getElementById("pagination");
@@ -759,7 +762,7 @@
       currentPage = 1;
 
       try {
-        let url = `${API_BASE_URL}/notices?university=${encodeURIComponent(university)}`;
+        let url = `${API_BASE_URL}/notices?university=${encodeURIComponent(university)}&days=${searchDays}`;
         if (board) {
           url += `&board=${encodeURIComponent(board)}`;
         }
@@ -863,7 +866,6 @@
       paginationContainer.innerHTML = paginationHtml;
     }
 
-    // 데이터가 없거나 쓰레기값일 경우 렌더링하지 않는 헬퍼 함수
     function safeMeta(label, value) {
       if (value === undefined || value === null || String(value).trim() === '' || String(value).toLowerCase() === 'null' || String(value).toLowerCase() === 'none' || String(value).trim() === '전체') {
         return '';
@@ -871,26 +873,21 @@
       return `<span>${label}: ${escapeHtml(value)}</span>`;
     }
 
-    // 💡 수정된 부분: 원본 분류에는 '학교 이름', 부서에는 '게시판 이름' 할당
     function renderNotices(notices) {
       const noticeList = document.getElementById("noticeList");
       
       if (notices.length === 0) {
         noticeList.innerHTML = `
           <div class="empty">
-            해당 카테고리의 공지사항이 없습니다.
+            해당 조건의 공지사항이 없습니다.
           </div>
         `;
         return;
       }
 
       noticeList.innerHTML = notices.map(notice => {
-        // UI의 Select 요소에서 현재 선택된 게시판 가져오기 (미선택 시 '전체 공지')
         let selectedBoard = document.getElementById("boardSelect").value;
-        
-        // 원본 분류 = 학교 이름 할당
         let sourceCat = notice.university;
-        // 부서 = 게시판 이름 할당 (API의 board_name 우선, 없으면 UI 선택값 활용)
         let dept = notice.board_name || notice.board || (selectedBoard ? selectedBoard : "전체 공지");
         
         return `
@@ -959,7 +956,6 @@
       return diffDays <= 2 && diffDays >= 0;
     }
 
-    // 💡 수정된 부분: 원본 분류에는 '학교 이름', 부서에는 '게시판 이름' 할당 (추천 공지 카드)
     function renderRecommendations() {
       const recommendSection = document.getElementById("recommendSection");
       const recommendList = document.getElementById("recommendList");
