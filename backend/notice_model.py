@@ -249,7 +249,6 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
             app_logger.debug(f"[{university}/{board.board_name}] selector '{selector}' 찾음: {len(rows)}개 행")
             break
 
-    # 만약 정형화된 태그를 못 찾았다면, 게시판 링크(a 태그)를 직접 찾아 부모를 행(row)으로 간주
     if not rows:
         app_logger.debug(f"[{university}/{board.board_name}] 표준 selector 실패, a 태그로 폴백 시도")
         links = soup.find_all("a", href=True)
@@ -284,14 +283,15 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
         if not raw_href:
             continue
         url = urljoin(board.list_url, raw_href)
-        
+
         notice_date = _extract_date_from_row(row)
-        
+
         if until_date and notice_date and notice_date > until_date:
             continue
         if since_date and notice_date and notice_date < since_date:
+            should_stop = True
             continue
-            
+
         valid_post_count += 1
         notice = make_notice(
             university=university,
@@ -335,7 +335,7 @@ def crawl_notice_board(university: str, board: NoticeBoard,
         if html is None:
             app_logger.error(f"3회 재시도 모두 실패, 크롤링 중단: {university} / {board.board_name}")
             break
-            
+
         notices, should_stop = parse_notice_rows(html, university, board, until_date, since_date)
 
         for notice in notices:
@@ -343,7 +343,7 @@ def crawl_notice_board(university: str, board: NoticeBoard,
                 seen_urls.add(notice.url)
                 all_notices.append(notice)
 
-        if should_stop or not notices:
+        if page > 1 and (should_stop or not notices):
             break
 
     logger.info("수집 완료: %s / %s 총 %d건", university, board.board_name, len(all_notices))
@@ -359,9 +359,9 @@ def load_notices(request: SearchRequest) -> List[Notice]:
         return []
 
     results: List[Notice] = []
+    seen_keys: set = set()
 
     if request.board_name:
-        # 특정 게시판만 크롤링
         for board in source.boards:
             if board.board_name == request.board_name:
                 board_notices = crawl_notice_board(
@@ -373,7 +373,6 @@ def load_notices(request: SearchRequest) -> List[Notice]:
                 results.extend(board_notices)
                 break
     else:
-        # 모든 게시판 크롤링 (전체 공지 조회)
         logger.info(f"[전체 게시판 조회] {source.name} - {len(source.boards)}개 게시판 크롤링 시작")
         for i, board in enumerate(source.boards, 1):
             logger.info(f"[{i}/{len(source.boards)}] {board.board_name} 크롤링 중...")
@@ -381,9 +380,13 @@ def load_notices(request: SearchRequest) -> List[Notice]:
                 source.name, board,
                 until_date=request.until_date,
                 since_date=request.since_date,
-                max_pages=request.max_pages or board.max_pages,  # request.max_pages 없으면 board 기본값 사용
+                max_pages=request.max_pages or board.max_pages,
             )
-            results.extend(board_notices)
+            for notice in board_notices:
+                key = (notice.university, notice.title.strip(), notice.url)
+                if key not in seen_keys:
+                    seen_keys.add(key)
+                    results.append(notice)
             logger.info(f"[{i}/{len(source.boards)}] {board.board_name} 완료: {len(board_notices)}개 수집")
 
     results = filter_by_date_range(
@@ -578,3 +581,4 @@ def add_board_source(
     save_sources_to_json(sources)
     global UNIVERSITY_SOURCES
     UNIVERSITY_SOURCES = sources
+
