@@ -1,16 +1,14 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import date, timedelta
 from typing import Optional
-from notice_model import load_notices, SearchRequest, add_board_source, analyze_page_urls
+from notice_model import load_notices, SearchRequest, add_board_source, analyze_page_urls, Notice
 
 from middleware import log_requests_middleware
 from logger import app_logger
 
 from database import engine, Base
 import models
-
-from fastapi import Depends
 from sqlalchemy.orm import Session
 from database import get_db
 import crud
@@ -34,7 +32,7 @@ async def shutdown_event():
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,  # 🚨 CORS 에러 방지를 위해 무조건 False여야 합니다!
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -58,6 +56,10 @@ def get_boards(university: str):
 
 @app.get("/notices")
 def get_notices(university: str, board: Optional[str] = None, category: Optional[str] = None, db: Session = Depends(get_db)):
+    # ✅ (유지됨) 새로 추가된 파라미터 검증 로직
+    if board and category:
+        raise HTTPException(status_code=400, detail="board와 category 파라미터는 동시에 사용할 수 없습니다.")
+
     actual_category = board if board else category
     thirty_days_ago = (date.today() - timedelta(days=30)).isoformat()
     today_str = date.today().isoformat()
@@ -71,8 +73,19 @@ def get_notices(university: str, board: Optional[str] = None, category: Optional
 
     db_results = crud.get_notices(db, university=university, category=actual_category)
 
-    if len(db_results) > 20 and db_results[0].date >= thirty_days_ago:
-        return db_results
+    # ✅ (유지됨) 새로 추가된 Notice 객체 반환 로직
+    if (len(db_results) > 20 and db_results[0].date
+        and db_results[0].date >= thirty_days_ago):
+        return [
+            Notice(
+                university=n.university,
+                title=n.title,
+                url=n.url,
+                category=n.category,
+                date=n.date,
+            )
+            for n in db_results
+        ]
 
     results = load_notices(request_data)
     if results:
@@ -89,7 +102,6 @@ class AddSourceRequest(BaseModel):
     url1: str
     url2: Optional[str] = None
     max_pages: int = 50
-
 
 @app.post("/sources/url")
 def add_source(req: AddSourceRequest):
@@ -113,3 +125,61 @@ def add_source(req: AddSourceRequest):
 @app.get("/health")
 def health_check():
     return {"status": "ok", "message": "Server is running smoothly."}
+
+
+# ==========================================
+# 🚨 복구된 Schedule API (이슈 #56)
+# ==========================================
+class ScheduleCreate(BaseModel):
+    date: str
+    main_category: str
+    title: str
+    sub_category: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    memo: Optional[str] = None
+    url: Optional[str] = None
+
+class ScheduleUpdate(BaseModel):
+    date: Optional[str] = None
+    main_category: Optional[str] = None
+    title: Optional[str] = None
+    sub_category: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    memo: Optional[str] = None
+    url: Optional[str] = None
+
+@app.post("/schedules")
+def create_schedule_api(req: ScheduleCreate, db: Session = Depends(get_db)):
+    return crud.create_schedule(
+        db=db,
+        date=req.date,
+        main_category=req.main_category,
+        title=req.title,
+        sub_category=req.sub_category,
+        start_date=req.start_date,
+        end_date=req.end_date,
+        memo=req.memo,
+        url=req.url
+    )
+
+@app.get("/schedules")
+def get_schedules_api(main_category: Optional[str] = None, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    return crud.get_schedules(db=db, main_category=main_category, skip=skip, limit=limit)
+
+@app.put("/schedules/{schedule_id}")
+def update_schedule_api(schedule_id: int, req: ScheduleUpdate, db: Session = Depends(get_db)):
+    update_data = req.model_dump(exclude_unset=True) 
+    updated_schedule = crud.update_schedule(db=db, schedule_id=schedule_id, update_data=update_data)
+    
+    if not updated_schedule:
+        raise HTTPException(status_code=404, detail="해당 일정을 찾을 수 없습니다.")
+    return updated_schedule
+
+@app.delete("/schedules/{schedule_id}")
+def delete_schedule_api(schedule_id: int, db: Session = Depends(get_db)):
+    deleted = crud.delete_schedule(db=db, schedule_id=schedule_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="해당 일정을 찾을 수 없거나 이미 삭제되었습니다.")
+    return {"message": "일정이 성공적으로 삭제되었습니다."}
