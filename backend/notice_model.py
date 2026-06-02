@@ -289,6 +289,7 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
         if until_date and notice_date and notice_date > until_date:
             continue
         if since_date and notice_date and notice_date < since_date:
+            should_stop = True
             continue
 
         valid_post_count += 1
@@ -342,7 +343,7 @@ def crawl_notice_board(university: str, board: NoticeBoard,
                 seen_urls.add(notice.url)
                 all_notices.append(notice)
 
-        if should_stop or not notices:
+        if page > 1 and (should_stop or not notices):
             break
 
     logger.info("수집 완료: %s / %s 총 %d건", university, board.board_name, len(all_notices))
