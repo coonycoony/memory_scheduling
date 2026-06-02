@@ -22,6 +22,7 @@ class NoticeBoard(BaseModel):
     max_pages: int = 50
     enc_inner_path: Optional[str] = None
     enc_query_template: Optional[str] = None
+    selector: str = "table tbody tr"
 
 
 class UniversitySource(BaseModel):
@@ -82,7 +83,6 @@ def is_valid_category(category: str) -> bool:
     return category in VALID_CATEGORIES
 
 
-# [fix] 긴 키워드 우선 매칭으로 짧은 키워드 오탐 개선
 def classify_notice(title: str, board_name: Optional[str] = None) -> str:
     if board_name:
         board_lower = board_name.lower()
@@ -141,7 +141,6 @@ def make_notice(
 SOURCES_PATH = Path(__file__).parent / "sources.json"
 
 
-# [fix] key/name 불일치 시 warning 로그 추가
 def _load_university_sources(path: Path = SOURCES_PATH) -> dict[str, UniversitySource]:
     if not path.exists():
         logger.warning("sources.json 파일이 없습니다: %s", path)
@@ -177,14 +176,13 @@ def _parse_date(raw: str) -> Optional[date]:
 
 
 def _extract_date_from_row(row) -> Optional[date]:
-    for td in row.find_all("td"):
-        parsed = _parse_date(td.get_text(strip=True))
-        if parsed:
-            return parsed
+    text = row.get_text(separator=" ", strip=True)
+    parsed = _parse_date(text)
+    if parsed:
+        return parsed
     return None
 
 
-# [fix] enc_query_template None 시 warning 로그 추가
 def _build_page_url(base_url: str, page_param: str, page: int,
                     enc_inner_path: Optional[str] = None,
                     enc_query_template: Optional[str] = None) -> str:
@@ -231,27 +229,69 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
     results: List[Notice] = []
     should_stop = False
     valid_post_count = 0
-    rows = soup.select("table tbody tr")
 
+    selectors = [board.selector] + [
+        "table tbody tr",
+        "table tr",
+        "ul.bd_lst li",
+        ".board-list li",
+        ".notice-list li",
+        "div.list_table tr",
+        "table.type01 tbody tr",
+    ]
+
+    rows = []
+    used_selector = None
+    for selector in selectors:
+        rows = soup.select(selector)
+        if rows:
+            used_selector = selector
+            app_logger.debug(f"[{university}/{board.board_name}] selector '{selector}' 찾음: {len(rows)}개 행")
+            break
+
+    # 만약 정형화된 태그를 못 찾았다면, 게시판 링크(a 태그)를 직접 찾아 부모를 행(row)으로 간주
+    if not rows:
+        app_logger.debug(f"[{university}/{board.board_name}] 표준 selector 실패, a 태그로 폴백 시도")
+        links = soup.find_all("a", href=True)
+        valid_rows = []
+        for a in links:
+            href = a.get('href', '').lower()
+            text = a.get_text(strip=True)
+            if len(text) > 5 and ('board' in href or 'read' in href or 'article' in href or 'document_srl' in href):
+                parent_row = a.find_parent(['tr', 'li', 'div'])
+                if parent_row and parent_row not in valid_rows:
+                    valid_rows.append(parent_row)
+        rows = valid_rows
+        if rows:
+            app_logger.debug(f"[{university}/{board.board_name}] a 태그 폴백 성공: {len(rows)}개 행")
+
+    app_logger.debug(f"[{university}/{board.board_name}] 파싱 시작: 총 {len(rows)}개 행 검토 중")
+
+    extracted_count = 0
+    skipped_count = 0
     for row in rows:
-        cells = row.find_all("td")
-        if not cells:
-            continue
         link_tag = row.find("a", href=True)
-        if link_tag is None:
+        if not link_tag:
+            skipped_count += 1
             continue
+
         title = link_tag.get_text(" ", strip=True)
-        if not title:
+        if not title or len(title) < 2:
+            skipped_count += 1
             continue
+
         raw_href = link_tag["href"].strip()
         if not raw_href:
             continue
         url = urljoin(board.list_url, raw_href)
+        
         notice_date = _extract_date_from_row(row)
+        
         if until_date and notice_date and notice_date > until_date:
             continue
         if since_date and notice_date and notice_date < since_date:
             continue
+            
         valid_post_count += 1
         notice = make_notice(
             university=university,
@@ -263,6 +303,7 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
         )
         results.append(notice)
 
+    # 파싱은 했지만 기간 내의 유효한 게시글이 0개라면 다음 페이지 탐색 중단
     if valid_post_count == 0 and len(rows) > 0:
         should_stop = True
 
@@ -294,6 +335,7 @@ def crawl_notice_board(university: str, board: NoticeBoard,
         if html is None:
             app_logger.error(f"3회 재시도 모두 실패, 크롤링 중단: {university} / {board.board_name}")
             break
+            
         notices, should_stop = parse_notice_rows(html, university, board, until_date, since_date)
 
         for notice in notices:
@@ -318,16 +360,31 @@ def load_notices(request: SearchRequest) -> List[Notice]:
 
     results: List[Notice] = []
 
-    for board in source.boards:
-        if request.board_name and request.board_name != board.board_name:
-            continue
-        board_notices = crawl_notice_board(
-            source.name, board,
-            until_date=request.until_date,
-            since_date=request.since_date,
-            max_pages=request.max_pages,
-        )
-        results.extend(board_notices)
+    if request.board_name:
+        # 특정 게시판만 크롤링
+        for board in source.boards:
+            if board.board_name == request.board_name:
+                board_notices = crawl_notice_board(
+                    source.name, board,
+                    until_date=request.until_date,
+                    since_date=request.since_date,
+                    max_pages=request.max_pages,
+                )
+                results.extend(board_notices)
+                break
+    else:
+        # 모든 게시판 크롤링 (전체 공지 조회)
+        logger.info(f"[전체 게시판 조회] {source.name} - {len(source.boards)}개 게시판 크롤링 시작")
+        for i, board in enumerate(source.boards, 1):
+            logger.info(f"[{i}/{len(source.boards)}] {board.board_name} 크롤링 중...")
+            board_notices = crawl_notice_board(
+                source.name, board,
+                until_date=request.until_date,
+                since_date=request.since_date,
+                max_pages=request.max_pages or board.max_pages,  # request.max_pages 없으면 board 기본값 사용
+            )
+            results.extend(board_notices)
+            logger.info(f"[{i}/{len(source.boards)}] {board.board_name} 완료: {len(board_notices)}개 수집")
 
     results = filter_by_date_range(
         results,
@@ -424,12 +481,10 @@ def save_sources_to_json(sources: dict[str, UniversitySource], path: Path = SOUR
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-# [feat] analyze_page_urls 잘못된 URL 입력 검증 추가
 def analyze_page_urls(url1: str, url2: Optional[str] = None) -> dict:
     if url2 is None:
         return {"page_param": "page", "enc_inner_path": None, "enc_query_template": None}
 
-    # 도메인 다른 경우 거부
     domain1 = urlparse(url1).netloc
     domain2 = urlparse(url2).netloc
     if domain1 != domain2:
@@ -494,7 +549,6 @@ def analyze_page_urls(url1: str, url2: Optional[str] = None) -> dict:
     raise ValueError("두 URL에서 페이지 파라미터를 찾을 수 없습니다. URL을 다시 확인해주세요.")
 
 
-# [fix] 중복 board 추가 방지 + enc 파라미터 추가
 def add_board_source(
     university: str,
     board_name: str,
@@ -524,4 +578,3 @@ def add_board_source(
     save_sources_to_json(sources)
     global UNIVERSITY_SOURCES
     UNIVERSITY_SOURCES = sources
-
