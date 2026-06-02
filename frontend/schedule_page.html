@@ -340,6 +340,7 @@
     }
 
     .calendar-day-events {
+      display: flex;
       flex-direction: column;
       gap: 4px;
     }
@@ -381,7 +382,6 @@
     }
 
     .calendar-event-badge.cat-academic {
-<<<<<<< HEAD
       background: #2563eb;
     }
 
@@ -399,25 +399,6 @@
 
     .calendar-event-badge.cat-volunteer {
       background: #0d9488;
-=======
-      background: #2563eb; 
-    }
-
-    .calendar-event-badge.cat-admission {
-      background: #7c3aed; 
-    }
-
-    .calendar-event-badge.cat-career {
-      background: #f97316; 
-    }
-
-    .calendar-event-badge.cat-contest {
-      background: #e11d48; 
-    }
-
-    .calendar-event-badge.cat-volunteer {
-      background: #0d9488; 
->>>>>>> main
     }
 
     .calendar-event-badge.cat-facility {
@@ -425,19 +406,11 @@
     }
 
     .calendar-event-badge.cat-safety {
-<<<<<<< HEAD
       background: #22f58b;
     }
 
     .calendar-event-badge.cat-etc {
       background: #6b7280;
-=======
-      background: #22f58b; 
-    }
-
-    .calendar-event-badge.cat-etc {
-      background: #6b7280; 
->>>>>>> main
     }
     </style>
 </head>
@@ -452,11 +425,7 @@
    	          🔍 공지 검색하러 가기
   	        </button>
             <button type="button" onclick="location.href='my_notice_archive.html'" class="btn-primary back-to-search-btn">
-<<<<<<< HEAD
-              🔍 공지 보관함으로 가기
-=======
                공지 보관함으로 가기
->>>>>>> main
             </button>
           </div>
         </div>
@@ -825,41 +794,6 @@
     }
   }
 
-   function applyQueryToForm() {
-    const params = new URLSearchParams(window.location.search);
-    const title = params.get('title');
-    const category = params.get('category');
-    const subCategory = params.get('subCategory');
-    const url = params.get('url');
-    const memo = params.get('memo');
-
-      if (title) {
-        els.eventTitle.value = title;
-      }
-
-      if (memo || url) {
-        const memoParts = [];
-        if (memo) memoParts.push(memo);
-        if (url) memoParts.push(`원문 링크: ${url}`);
-        els.eventMemo.value = memoParts.join('\n');
-      }
-
-      if (category && categoryMap[category]) {
-        els.mainCategory.value = category;
-        renderSubCategories(category);
-      } else {
-        renderSubCategories(els.mainCategory.value);
-      }
-
-      if (subCategory) {
-        Array.from(els.subCategory.options).forEach((opt) => {
-          if (opt.value === subCategory) {
-            els.subCategory.value = subCategory;
-          }
-      });
-    }
-  }
-
   // =========================
   // 8. 일정 목록 렌더링
   // =========================
@@ -941,11 +875,7 @@
   // 9. 달력 렌더링
   // =========================
   function getBadgeClass(mainCategory) {
-<<<<<<< HEAD
    switch (mainCategory) {
-=======
-     switch (mainCategory) {
->>>>>>> main
     case "장학":
       return "cat-scholarship";
     case "학사":
@@ -966,11 +896,7 @@
       return "cat-etc";
     default:
       return "";
-<<<<<<< HEAD
     }  
-=======
-  }
->>>>>>> main
   }
 
   function createDayCell(date, muted) {
@@ -984,11 +910,7 @@
     if (iso === todayIso()) cell.classList.add("today");
     if (isDateInSelectedRange(iso)) cell.classList.add("in-range");
     if (iso === rangeStart || iso === rangeEnd) cell.classList.add("range-edge");
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> main
     cell.innerHTML = `
       <div class="calendar-day-number">${date.getDate()}</div>
       <div class="calendar-day-events"></div>
@@ -999,11 +921,7 @@
     dayEvents.slice(0, 3).forEach((ev) => {
       const badge = document.createElement("div");
       badge.className = `calendar-event-badge ${getBadgeClass(ev.mainCategory)}`;
-<<<<<<< HEAD
       badge.textContent = ev.title;   
-=======
-      badge.textContent = ev.title; 
->>>>>>> main
 
       eventsContainer.appendChild(badge);
     });
@@ -1184,7 +1102,6 @@
     renderSubCategories(els.mainCategory.value);
     applyQueryToForm();
     updateSelectedDateUI();
-    applyQueryToForm();
     renderCalendar();
     await loadSchedulesFromServer();
   }
