@@ -692,8 +692,13 @@
         Object.keys(events).forEach((key) => delete events[key]);
 
         data.forEach((item) => {
-          if (!events[item.date]) events[item.date] = [];
-          events[item.date].push({
+          const rawDate = item.date;
+          if (!rawDate) return;
+
+          const dateKey = String(rawDate).slice(0, 10);  
+
+          if (!events[dateKey]) events[dateKey] = [];
+          events[dateKey].push({
             id: item.id,
             mainCategory: item.main_category,
             subCategory: item.sub_category,
