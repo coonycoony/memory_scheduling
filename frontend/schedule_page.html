@@ -739,6 +739,40 @@
       });
   } 
 
+  async function deleteRangeUsingSingleDelete(startIso, endIso) {
+  const { start, end } = normalizeRange(startIso, endIso);
+  const dates = getDatesInRange(start, end);
+
+  const targets = [];
+  dates.forEach((iso) => {
+    (events[iso] || []).forEach((ev) => targets.push({ iso, ev }));
+  });
+
+  if (!targets.length) {
+    setStatus("선택한 범위에 삭제할 스케줄이 없습니다.");
+    return;
+  }
+
+  for (const { iso, ev } of targets) {
+    try {
+      await deleteScheduleOnServer(ev.id);
+      const list = events[iso];
+      const idx = list.findIndex((x) => x.id === ev.id);
+      if (idx !== -1) {
+        list.splice(idx, 1);
+        if (!list.length) {
+          delete events[iso];
+        }
+      }
+    } catch (error) {
+      console.error("범위 삭제 중 에러:", error);
+    }
+  }
+
+  renderEventList();
+  renderCalendar();
+}
+
   // =========================
   // 7. 카테고리 렌더링
   // =========================
@@ -1062,7 +1096,16 @@
     const targetDates = getCurrentTargetDates();
     const hasAnyEvent = targetDates.some((dateIso) => events[dateIso]?.length);
     
-    if (!targetDates.length || !hasAnyEvent) return;
+     if (!targetDates.length) {
+      alert("먼저 삭제할 날짜(또는 날짜 범위)를 선택해 주세요.");
+      return;
+    }
+
+    if (!hasAnyEvent) {
+      alert("선택한 범위에 저장된 스케줄이 없습니다.");
+      return;
+    }
+
     if (!confirm("선택된 날짜의 스케줄을 모두 삭제할까요?")) return;
 
     const start = targetDates[0];
@@ -1070,8 +1113,7 @@
 
     try {
       setStatus("스케줄을 삭제하는 중입니다...");
-      await deleteSchedulesOnServer(start, end);
-      await loadSchedulesFromServer();
+      await deleteRangeUsingSingleDelete(start, end);  // ★ 편법 사용
       setStatus("선택 범위의 스케줄이 삭제되었습니다.", "success");
     } catch (error) {
       console.error(error);
