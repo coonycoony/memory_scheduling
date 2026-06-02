@@ -33,7 +33,7 @@ async def shutdown_event():
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=False,  # CORS 에러 방지 (필수 유지)
+    allow_credentials=False,  
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -55,14 +55,14 @@ def get_boards(university: str):
             return [board["board_name"] for board in data[university]["boards"]]
     return []
 
+
 @app.get("/notices")
 def get_notices(
     university: str,
-    board: Optional[str] = None,       # board_name으로 사용될 게시판 이름
-    category: Optional[str] = None,    # notice_category로 사용될 분류 (장학, 학사 등)
-    since: Optional[str] = None,       # 시작 날짜 파라미터 추가
-    until: Optional[str] = None,       # 종료 날짜 파라미터 추가
-    limit: int = 500,                  # 조회 건수 제한 (기본값 500, 전체 게시판은 각 게시판당 50페이지)
+    board: Optional[str] = None,       
+    category: Optional[str] = None,    
+    days: int = 30,                    # 프론트엔드가 보내는 days 파라미터 (기본값 30)
+    limit: int = 500,                  
     db: Session = Depends(get_db)
 ):
     
@@ -71,42 +71,33 @@ def get_notices(
 
     if category and not is_valid_category(category):
         raise HTTPException(status_code=400, detail=f"허용되지 않는 카테고리입니다: '{category}'")
-
     
     try:
+        # days 값을 바탕으로 자동으로 since 와 until 을 계산
+        if days < 1:
+            raise ValueError("조회 기간(days)은 1일 이상이어야 합니다.")
+            
         today_str = date.today().isoformat()
-        thirty_days_ago = (date.today() - timedelta(days=30)).isoformat()
-
-        since_str = since if since else thirty_days_ago
-        until_str = until if until else today_str
-
-        # YYYY-MM-DD 날짜 포맷 검증
-        date.fromisoformat(since_str)
-        date.fromisoformat(until_str)
-
-        # 논리적 오류 차단
-        if since_str > until_str:
-            raise ValueError("시작일(since)이 종료일(until)보다 늦을 수 없습니다.")
+        since_str = (date.today() - timedelta(days=days)).isoformat()
+        
     except ValueError as e:
-        error_msg = str(e) if "시작일" in str(e) else "날짜 형식이 올바르지 않습니다. (YYYY-MM-DD 형식으로 입력해주세요)"
-        raise HTTPException(status_code=400, detail=error_msg)
+        raise HTTPException(status_code=400, detail=str(e))
 
     request_data = SearchRequest(
         university=university,
-        board_name=board,           # 정확히 board_name으로 매핑
-        notice_category=category,   # 정확히 notice_category로 매핑
+        board_name=board,           
+        notice_category=category,   
         since=since_str,
-        until=until_str
+        until=today_str
     )
 
-    
     try:
         results = load_notices(request_data)
     except Exception as e:
         app_logger.error(f"공지사항 크롤링 중 치명적 에러 발생: {e}")
         raise HTTPException(status_code=500, detail="서버에서 공지사항을 수집하는 중 오류가 발생했습니다.")
 
-    # DB 동기화 (크롤링 결과만)
+    # DB 동기화
     if results:
         inserted_count = crud.bulk_insert_notices(db, results)
         app_logger.info(f"새로운 공지사항 {inserted_count}건을 DB에 동기화했습니다.")
@@ -145,7 +136,6 @@ def add_source(req: AddSourceRequest):
 @app.get("/health")
 def health_check():
     return {"status": "ok", "message": "Server is running smoothly."}
-
 
 
 class ScheduleCreate(BaseModel):
