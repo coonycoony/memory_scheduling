@@ -447,6 +447,7 @@
             <option value="all">전체</option>
             <option value="with-date">날짜 있는 공지</option>
             <option value="urgent">오늘 이후 공지</option>
+            <option value="expired">마감된 공지</option>
           </select>
         </div>
 
@@ -475,6 +476,7 @@
           <div class="summary-item">장학 공지<strong id="summaryScholarship">0</strong></div>
           <div class="summary-item">날짜 있는 공지<strong id="summaryWithDate">0</strong></div>
           <div class="summary-item">오늘 이후 공지<strong id="summaryUpcoming">0</strong></div>
+          <div class="summary-item">마감된 공지<strong id="summaryExpired">0</strong></div>
         </div>
       </div>
     </div>
@@ -520,7 +522,8 @@
     summaryTotal: document.getElementById('summaryTotal'),
     summaryScholarship: document.getElementById('summaryScholarship'),
     summaryWithDate: document.getElementById('summaryWithDate'),
-    summaryUpcoming: document.getElementById('summaryUpcoming')
+    summaryUpcoming: document.getElementById('summaryUpcoming'),
+    summaryExpired: document.getElementById('summaryExpired')
   };
 
   // =========================
@@ -629,6 +632,7 @@
     if (mode === 'all') return true;
     if (mode === 'with-date') return Boolean(dateObj);
     if (mode === 'urgent') return Boolean(dateObj && dateObj >= today);
+    if (mode === 'expired') return Boolean(dateObj && dateObj < today);
     return true;
   }
 
@@ -685,10 +689,16 @@
       return dateObj && dateObj >= today;
     }).length;
 
+    const expiredCount = items.filter((item) => {
+      const dateObj = parseLocalDate(item.date);
+      return dateObj && dateObj < today;
+    }).length;
+
     els.summaryTotal.textContent = String(items.length);
     els.summaryScholarship.textContent = String(scholarshipCount);
     els.summaryWithDate.textContent = String(withDateCount);
     els.summaryUpcoming.textContent = String(upcomingCount);
+    els.summaryExpired.textContent = String(expiredCount);
   }
 
   function renderSavedList(items) {
