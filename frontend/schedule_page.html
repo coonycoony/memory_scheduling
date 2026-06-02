@@ -733,6 +733,46 @@
       );
     }
 
+  async function deleteScheduleOnServer(id) {
+      return await fetchJson(`${API_BASE}/schedules/${id}`, {
+        method: "DELETE",
+      });
+  } 
+
+  async function deleteRangeUsingSingleDelete(startIso, endIso) {
+  const { start, end } = normalizeRange(startIso, endIso);
+  const dates = getDatesInRange(start, end);
+
+  const targets = [];
+  dates.forEach((iso) => {
+    (events[iso] || []).forEach((ev) => targets.push({ iso, ev }));
+  });
+
+  if (!targets.length) {
+    setStatus("선택한 범위에 삭제할 스케줄이 없습니다.");
+    return;
+  }
+
+  for (const { iso, ev } of targets) {
+    try {
+      await deleteScheduleOnServer(ev.id);
+      const list = events[iso];
+      const idx = list.findIndex((x) => x.id === ev.id);
+      if (idx !== -1) {
+        list.splice(idx, 1);
+        if (!list.length) {
+          delete events[iso];
+        }
+      }
+    } catch (error) {
+      console.error("범위 삭제 중 에러:", error);
+    }
+  }
+
+  renderEventList();
+  renderCalendar();
+}
+
   // =========================
   // 7. 카테고리 렌더링
   // =========================
@@ -837,15 +877,28 @@
       deleteBtn.type = "button";
       deleteBtn.textContent = "삭제";
 
-      deleteBtn.addEventListener("click", () => {
-        events[selectedDate].splice(index, 1);
+      deleteBtn.addEventListener("click", async () => {
+        const ev = list[index];  // 현재 이벤트 객체 (id 포함)
 
-        if (!events[selectedDate].length) {
-          delete events[selectedDate];
+        if (!confirm("이 스케줄을 삭제할까요?")) return;
+
+        try {
+          setStatus("스케줄을 삭제하는 중입니다...");
+          await deleteScheduleOnServer(ev.id);   // 1) 서버에서 삭제
+
+          // 2) 로컬 상태 반영
+          events[selectedDate].splice(index, 1);
+          if (!events[selectedDate].length) {
+            delete events[selectedDate];
+          }
+
+          renderEventList();
+          renderCalendar();
+          setStatus("스케줄이 삭제되었습니다.", "success");
+        } catch (error) {
+          console.error(error);
+          setStatus("스케줄 삭제 중 오류가 발생했습니다.", "error");
         }
-
-        renderEventList();
-        renderCalendar();
       });
 
       item.appendChild(deleteBtn);
@@ -1043,7 +1096,16 @@
     const targetDates = getCurrentTargetDates();
     const hasAnyEvent = targetDates.some((dateIso) => events[dateIso]?.length);
     
-    if (!targetDates.length || !hasAnyEvent) return;
+     if (!targetDates.length) {
+      alert("먼저 삭제할 날짜(또는 날짜 범위)를 선택해 주세요.");
+      return;
+    }
+
+    if (!hasAnyEvent) {
+      alert("선택한 범위에 저장된 스케줄이 없습니다.");
+      return;
+    }
+
     if (!confirm("선택된 날짜의 스케줄을 모두 삭제할까요?")) return;
 
     const start = targetDates[0];
@@ -1051,8 +1113,7 @@
 
     try {
       setStatus("스케줄을 삭제하는 중입니다...");
-      await deleteSchedulesOnServer(start, end);
-      await loadSchedulesFromServer();
+      await deleteRangeUsingSingleDelete(start, end);  // ★ 편법 사용
       setStatus("선택 범위의 스케줄이 삭제되었습니다.", "success");
     } catch (error) {
       console.error(error);
