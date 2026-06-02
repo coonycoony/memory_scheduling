@@ -2,7 +2,8 @@ from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import date, timedelta
 from typing import Optional
-from notice_model import load_notices, SearchRequest, add_board_source, analyze_page_urls, Notice
+
+from notice_model import load_notices, SearchRequest, add_board_source, analyze_page_urls, Notice, is_valid_category
 
 from middleware import log_requests_middleware
 from logger import app_logger
@@ -32,7 +33,7 @@ async def shutdown_event():
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=False,  # 🚨 CORS 에러 방지를 위해 무조건 False여야 합니다!
+    allow_credentials=False,  # CORS 에러 방지 (필수 유지)
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -55,44 +56,63 @@ def get_boards(university: str):
     return []
 
 @app.get("/notices")
-def get_notices(university: str, board: Optional[str] = None, category: Optional[str] = None, db: Session = Depends(get_db)):
-    # ✅ (유지됨) 새로 추가된 파라미터 검증 로직
+def get_notices(
+    university: str,
+    board: Optional[str] = None,       # board_name으로 사용될 게시판 이름
+    category: Optional[str] = None,    # notice_category로 사용될 분류 (장학, 학사 등)
+    since: Optional[str] = None,       # 시작 날짜 파라미터 추가
+    until: Optional[str] = None,       # 종료 날짜 파라미터 추가
+    limit: int = 500,                  # 조회 건수 제한 (기본값 500, 전체 게시판은 각 게시판당 50페이지)
+    db: Session = Depends(get_db)
+):
+    
     if board and category:
         raise HTTPException(status_code=400, detail="board와 category 파라미터는 동시에 사용할 수 없습니다.")
 
-    actual_category = board if board else category
-    thirty_days_ago = (date.today() - timedelta(days=30)).isoformat()
-    today_str = date.today().isoformat()
+    if category and not is_valid_category(category):
+        raise HTTPException(status_code=400, detail=f"허용되지 않는 카테고리입니다: '{category}'")
+
+    
+    try:
+        today_str = date.today().isoformat()
+        thirty_days_ago = (date.today() - timedelta(days=30)).isoformat()
+
+        since_str = since if since else thirty_days_ago
+        until_str = until if until else today_str
+
+        # YYYY-MM-DD 날짜 포맷 검증
+        date.fromisoformat(since_str)
+        date.fromisoformat(until_str)
+
+        # 논리적 오류 차단
+        if since_str > until_str:
+            raise ValueError("시작일(since)이 종료일(until)보다 늦을 수 없습니다.")
+    except ValueError as e:
+        error_msg = str(e) if "시작일" in str(e) else "날짜 형식이 올바르지 않습니다. (YYYY-MM-DD 형식으로 입력해주세요)"
+        raise HTTPException(status_code=400, detail=error_msg)
 
     request_data = SearchRequest(
         university=university,
-        notice_category=actual_category,
-        since=thirty_days_ago,
-        until=today_str
+        board_name=board,           # 정확히 board_name으로 매핑
+        notice_category=category,   # 정확히 notice_category로 매핑
+        since=since_str,
+        until=until_str
     )
 
-    db_results = crud.get_notices(db, university=university, category=actual_category)
+    
+    try:
+        results = load_notices(request_data)
+    except Exception as e:
+        app_logger.error(f"공지사항 크롤링 중 치명적 에러 발생: {e}")
+        raise HTTPException(status_code=500, detail="서버에서 공지사항을 수집하는 중 오류가 발생했습니다.")
 
-    # ✅ (유지됨) 새로 추가된 Notice 객체 반환 로직
-    if (len(db_results) > 20 and db_results[0].date
-        and db_results[0].date >= thirty_days_ago):
-        return [
-            Notice(
-                university=n.university,
-                title=n.title,
-                url=n.url,
-                category=n.category,
-                date=n.date,
-            )
-            for n in db_results
-        ]
-
-    results = load_notices(request_data)
+    # DB 동기화 (크롤링 결과만)
     if results:
         inserted_count = crud.bulk_insert_notices(db, results)
         app_logger.info(f"새로운 공지사항 {inserted_count}건을 DB에 동기화했습니다.")
     else:
         app_logger.warning("크롤링된 새 데이터가 없어 DB 동기화를 생략합니다.")
+
     return results
 
 
@@ -127,9 +147,7 @@ def health_check():
     return {"status": "ok", "message": "Server is running smoothly."}
 
 
-# ==========================================
-# 🚨 복구된 Schedule API (이슈 #56)
-# ==========================================
+
 class ScheduleCreate(BaseModel):
     date: str
     main_category: str
