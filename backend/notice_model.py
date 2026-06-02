@@ -22,6 +22,7 @@ class NoticeBoard(BaseModel):
     max_pages: int = 50
     enc_inner_path: Optional[str] = None
     enc_query_template: Optional[str] = None
+    selector: str = "table tbody tr"
 
 
 class UniversitySource(BaseModel):
@@ -81,22 +82,28 @@ logger = logging.getLogger(__name__)
 def is_valid_category(category: str) -> bool:
     return category in VALID_CATEGORIES
 
+
 def classify_notice(title: str, board_name: Optional[str] = None) -> str:
     if board_name:
         board_lower = board_name.lower()
         for category, keywords in CATEGORY_KEYWORDS.items():
-            if any(kw in board_lower for kw in keywords):
-                return category
+            for kw in sorted(keywords, key=len, reverse=True):
+                if kw in board_lower:
+                    return category
 
     text = title.strip().lower()
     best_category = None
     best_pos = len(text)
+    best_kw_len = 0
 
     for category, keywords in CATEGORY_KEYWORDS.items():
-        for kw in keywords:
+        for kw in sorted(keywords, key=len, reverse=True):
             pos = text.find(kw)
-            if pos != -1 and pos < best_pos:
+            if pos == -1:
+                continue
+            if pos < best_pos or (pos == best_pos and len(kw) > best_kw_len):
                 best_pos = pos
+                best_kw_len = len(kw)
                 best_category = category
 
     return best_category if best_category else "기타"
@@ -133,17 +140,27 @@ def make_notice(
 
 SOURCES_PATH = Path(__file__).parent / "sources.json"
 
+
 def _load_university_sources(path: Path = SOURCES_PATH) -> dict[str, UniversitySource]:
     if not path.exists():
         logger.warning("sources.json 파일이 없습니다: %s", path)
         return {}
     raw: dict = json.loads(path.read_text(encoding="utf-8"))
-    return {k: UniversitySource(**v) for k, v in raw.items()}
+    result: dict[str, UniversitySource] = {}
+    for k, v in raw.items():
+        source = UniversitySource(**v)
+        if source.name != k:
+            logger.warning(
+                "sources.json key/name 불일치: key='%s', name='%s' — key 기준으로 등록됩니다", k, source.name
+            )
+        result[k] = source
+    return result
+
 
 UNIVERSITY_SOURCES: dict[str, UniversitySource] = _load_university_sources()
 
-
 _DATE_PATTERN = re.compile(r"(\d{2,4})[.\-/](\d{1,2})[.\-/](\d{1,2})")
+
 
 def _parse_date(raw: str) -> Optional[date]:
     m = _DATE_PATTERN.search(raw.strip())
@@ -157,17 +174,24 @@ def _parse_date(raw: str) -> Optional[date]:
     except ValueError:
         return None
 
+
 def _extract_date_from_row(row) -> Optional[date]:
-    for td in row.find_all("td"):
-        parsed = _parse_date(td.get_text(strip=True))
-        if parsed:
-            return parsed
+    text = row.get_text(separator=" ", strip=True)
+    parsed = _parse_date(text)
+    if parsed:
+        return parsed
     return None
+
 
 def _build_page_url(base_url: str, page_param: str, page: int,
                     enc_inner_path: Optional[str] = None,
                     enc_query_template: Optional[str] = None) -> str:
     if enc_inner_path:
+        if enc_query_template is None:
+            logger.warning(
+                "_build_page_url: enc_inner_path 있지만 enc_query_template 없음 "
+                "(base_url=%s, page=%d), 'page={page}' 폴백 적용", base_url, page
+            )
         query = enc_query_template.format(page=page) if enc_query_template else f"page={page}"
         inner = f"{enc_inner_path}?{query}"
         enc_value = base64.b64encode(("fnct1|@@|" + quote(inner)).encode()).decode()
@@ -178,6 +202,7 @@ def _build_page_url(base_url: str, page_param: str, page: int,
     params[page_param] = [str(page)]
     new_query = urlencode({k: v[0] for k, v in params.items()})
     return urlunparse(parsed._replace(query=new_query))
+
 
 def fetch_board_html(list_url: str) -> str:
     session = requests.Session()
@@ -196,6 +221,7 @@ def fetch_board_html(list_url: str) -> str:
         response.encoding = response.apparent_encoding
     return response.text
 
+
 def parse_notice_rows(html: str, university: str, board: NoticeBoard,
                       until_date: Optional[date] = None,
                       since_date: Optional[date] = None):
@@ -203,27 +229,69 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
     results: List[Notice] = []
     should_stop = False
     valid_post_count = 0
-    rows = soup.select("table tbody tr")
 
+    selectors = [board.selector] + [
+        "table tbody tr",
+        "table tr",
+        "ul.bd_lst li",
+        ".board-list li",
+        ".notice-list li",
+        "div.list_table tr",
+        "table.type01 tbody tr",
+    ]
+
+    rows = []
+    used_selector = None
+    for selector in selectors:
+        rows = soup.select(selector)
+        if rows:
+            used_selector = selector
+            app_logger.debug(f"[{university}/{board.board_name}] selector '{selector}' 찾음: {len(rows)}개 행")
+            break
+
+    if not rows:
+        app_logger.debug(f"[{university}/{board.board_name}] 표준 selector 실패, a 태그로 폴백 시도")
+        links = soup.find_all("a", href=True)
+        valid_rows = []
+        for a in links:
+            href = a.get('href', '').lower()
+            text = a.get_text(strip=True)
+            if len(text) > 5 and ('board' in href or 'read' in href or 'article' in href or 'document_srl' in href):
+                parent_row = a.find_parent(['tr', 'li', 'div'])
+                if parent_row and parent_row not in valid_rows:
+                    valid_rows.append(parent_row)
+        rows = valid_rows
+        if rows:
+            app_logger.debug(f"[{university}/{board.board_name}] a 태그 폴백 성공: {len(rows)}개 행")
+
+    app_logger.debug(f"[{university}/{board.board_name}] 파싱 시작: 총 {len(rows)}개 행 검토 중")
+
+    extracted_count = 0
+    skipped_count = 0
     for row in rows:
-        cells = row.find_all("td")
-        if not cells:
-            continue
         link_tag = row.find("a", href=True)
-        if link_tag is None:
+        if not link_tag:
+            skipped_count += 1
             continue
+
         title = link_tag.get_text(" ", strip=True)
-        if not title:
+        if not title or len(title) < 2:
+            skipped_count += 1
             continue
+
         raw_href = link_tag["href"].strip()
         if not raw_href:
             continue
         url = urljoin(board.list_url, raw_href)
+
         notice_date = _extract_date_from_row(row)
+
         if until_date and notice_date and notice_date > until_date:
             continue
         if since_date and notice_date and notice_date < since_date:
+            should_stop = True
             continue
+
         valid_post_count += 1
         notice = make_notice(
             university=university,
@@ -235,10 +303,12 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
         )
         results.append(notice)
 
+    # 파싱은 했지만 기간 내의 유효한 게시글이 0개라면 다음 페이지 탐색 중단
     if valid_post_count == 0 and len(rows) > 0:
         should_stop = True
 
     return results, should_stop
+
 
 def crawl_notice_board(university: str, board: NoticeBoard,
                        until_date: Optional[date] = None,
@@ -265,6 +335,7 @@ def crawl_notice_board(university: str, board: NoticeBoard,
         if html is None:
             app_logger.error(f"3회 재시도 모두 실패, 크롤링 중단: {university} / {board.board_name}")
             break
+
         notices, should_stop = parse_notice_rows(html, university, board, until_date, since_date)
 
         for notice in notices:
@@ -272,7 +343,7 @@ def crawl_notice_board(university: str, board: NoticeBoard,
                 seen_urls.add(notice.url)
                 all_notices.append(notice)
 
-        if should_stop or not notices:
+        if page > 1 and (should_stop or not notices):
             break
 
     logger.info("수집 완료: %s / %s 총 %d건", university, board.board_name, len(all_notices))
@@ -288,17 +359,35 @@ def load_notices(request: SearchRequest) -> List[Notice]:
         return []
 
     results: List[Notice] = []
+    seen_keys: set = set()
 
-    for board in source.boards:
-        if request.board_name and request.board_name != board.board_name:
-            continue
-        board_notices = crawl_notice_board(
-            source.name, board,
-            until_date=request.until_date,
-            since_date=request.since_date,
-            max_pages=request.max_pages,
-        )
-        results.extend(board_notices)
+    if request.board_name:
+        for board in source.boards:
+            if board.board_name == request.board_name:
+                board_notices = crawl_notice_board(
+                    source.name, board,
+                    until_date=request.until_date,
+                    since_date=request.since_date,
+                    max_pages=request.max_pages,
+                )
+                results.extend(board_notices)
+                break
+    else:
+        logger.info(f"[전체 게시판 조회] {source.name} - {len(source.boards)}개 게시판 크롤링 시작")
+        for i, board in enumerate(source.boards, 1):
+            logger.info(f"[{i}/{len(source.boards)}] {board.board_name} 크롤링 중...")
+            board_notices = crawl_notice_board(
+                source.name, board,
+                until_date=request.until_date,
+                since_date=request.since_date,
+                max_pages=request.max_pages or board.max_pages,
+            )
+            for notice in board_notices:
+                key = (notice.university, notice.title.strip(), notice.url)
+                if key not in seen_keys:
+                    seen_keys.add(key)
+                    results.append(notice)
+            logger.info(f"[{i}/{len(source.boards)}] {board.board_name} 완료: {len(board_notices)}개 수집")
 
     results = filter_by_date_range(
         results,
@@ -395,12 +484,82 @@ def save_sources_to_json(sources: dict[str, UniversitySource], path: Path = SOUR
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def analyze_page_urls(url1: str, url2: Optional[str] = None) -> dict:
+    if url2 is None:
+        return {"page_param": "page", "enc_inner_path": None, "enc_query_template": None}
+
+    domain1 = urlparse(url1).netloc
+    domain2 = urlparse(url2).netloc
+    if domain1 != domain2:
+        raise ValueError(f"두 URL의 도메인이 다릅니다: {domain1} vs {domain2}")
+
+    parsed1 = urlparse(url1)
+    parsed2 = urlparse(url2)
+    params1 = parse_qs(parsed1.query, keep_blank_values=True)
+    params2 = parse_qs(parsed2.query, keep_blank_values=True)
+
+    if "enc" in params1 and "enc" in params2:
+        try:
+            def decode_enc(enc_val: str) -> str:
+                decoded = base64.b64decode(enc_val).decode()
+                if "|@@|" in decoded:
+                    decoded = decoded.split("|@@|", 1)[1]
+                return decoded
+
+            inner1 = decode_enc(params1["enc"][0])
+            inner2 = decode_enc(params2["enc"][0])
+
+            parsed_inner1 = urlparse(inner1)
+            parsed_inner2 = urlparse(inner2)
+
+            inner_params1 = parse_qs(parsed_inner1.query, keep_blank_values=True)
+            inner_params2 = parse_qs(parsed_inner2.query, keep_blank_values=True)
+
+            enc_inner_path = parsed_inner1.path
+
+            page_key = None
+            for key in inner_params1:
+                if key in inner_params2 and inner_params1[key] != inner_params2[key]:
+                    page_key = key
+                    break
+
+            if page_key is None:
+                raise ValueError("enc URL에서 페이지 파라미터를 찾을 수 없습니다. URL을 다시 확인해주세요.")
+
+            template_parts = []
+            for key in inner_params1:
+                if key == page_key:
+                    template_parts.append(f"{key}={{page}}")
+                else:
+                    template_parts.append(f"{key}={inner_params1[key][0]}")
+            enc_query_template = "&".join(template_parts)
+
+            return {
+                "page_param": page_key,
+                "enc_inner_path": enc_inner_path,
+                "enc_query_template": enc_query_template,
+            }
+        except ValueError:
+            raise
+        except Exception as e:
+            logger.warning("enc 파라미터 분석 실패: %s", e)
+            raise ValueError(f"enc URL 분석에 실패했습니다. URL을 다시 확인해주세요.")
+
+    for key in params1:
+        if key in params2 and params1[key] != params2[key]:
+            return {"page_param": key, "enc_inner_path": None, "enc_query_template": None}
+
+    raise ValueError("두 URL에서 페이지 파라미터를 찾을 수 없습니다. URL을 다시 확인해주세요.")
+
+
 def add_board_source(
     university: str,
     board_name: str,
     list_url: str,
     page_param: str = "page",
     max_pages: int = 50,
+    enc_inner_path: Optional[str] = None,
+    enc_query_template: Optional[str] = None,
 ) -> None:
     sources = _load_university_sources()
     board = NoticeBoard(
@@ -408,11 +567,18 @@ def add_board_source(
         list_url=list_url,
         page_param=page_param,
         max_pages=max_pages,
+        enc_inner_path=enc_inner_path,
+        enc_query_template=enc_query_template,
     )
     if university in sources:
+        existing_names = [b.board_name for b in sources[university].boards]
+        if board_name in existing_names:
+            logger.warning("이미 존재하는 board, 추가 생략: %s / %s", university, board_name)
+            return
         sources[university].boards.append(board)
     else:
         sources[university] = UniversitySource(name=university, boards=[board])
     save_sources_to_json(sources)
     global UNIVERSITY_SOURCES
     UNIVERSITY_SOURCES = sources
+
