@@ -2,7 +2,8 @@ from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import date, timedelta
 from typing import Optional
-from notice_model import load_notices, SearchRequest, add_board_source, analyze_page_urls, Notice
+
+from notice_model import load_notices, SearchRequest, add_board_source, analyze_page_urls, Notice, is_valid_category
 
 from middleware import log_requests_middleware
 from logger import app_logger
@@ -32,7 +33,7 @@ async def shutdown_event():
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=False,  # 🚨 CORS 에러 방지를 위해 무조건 False여야 합니다!
+    allow_credentials=False,  
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -54,45 +55,55 @@ def get_boards(university: str):
             return [board["board_name"] for board in data[university]["boards"]]
     return []
 
+
 @app.get("/notices")
-def get_notices(university: str, board: Optional[str] = None, category: Optional[str] = None, db: Session = Depends(get_db)):
-    # ✅ (유지됨) 새로 추가된 파라미터 검증 로직
+def get_notices(
+    university: str,
+    board: Optional[str] = None,       
+    category: Optional[str] = None,    
+    days: int = 30,                    # 프론트엔드가 보내는 days 파라미터 (기본값 30)
+    limit: int = 500,                  
+    db: Session = Depends(get_db)
+):
+    
     if board and category:
         raise HTTPException(status_code=400, detail="board와 category 파라미터는 동시에 사용할 수 없습니다.")
 
-    actual_category = board if board else category
-    thirty_days_ago = (date.today() - timedelta(days=30)).isoformat()
-    today_str = date.today().isoformat()
+    if category and not is_valid_category(category):
+        raise HTTPException(status_code=400, detail=f"허용되지 않는 카테고리입니다: '{category}'")
+    
+    try:
+        # days 값을 바탕으로 자동으로 since 와 until 을 계산
+        if days < 1:
+            raise ValueError("조회 기간(days)은 1일 이상이어야 합니다.")
+            
+        today_str = date.today().isoformat()
+        since_str = (date.today() - timedelta(days=days)).isoformat()
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     request_data = SearchRequest(
         university=university,
-        notice_category=actual_category,
-        since=thirty_days_ago,
+        board_name=board,           
+        notice_category=category,   
+        since=since_str,
         until=today_str
     )
 
-    db_results = crud.get_notices(db, university=university, category=actual_category)
+    try:
+        results = load_notices(request_data)
+    except Exception as e:
+        app_logger.error(f"공지사항 크롤링 중 치명적 에러 발생: {e}")
+        raise HTTPException(status_code=500, detail="서버에서 공지사항을 수집하는 중 오류가 발생했습니다.")
 
-    # ✅ (유지됨) 새로 추가된 Notice 객체 반환 로직
-    if (len(db_results) > 20 and db_results[0].date
-        and db_results[0].date >= thirty_days_ago):
-        return [
-            Notice(
-                university=n.university,
-                title=n.title,
-                url=n.url,
-                category=n.category,
-                date=n.date,
-            )
-            for n in db_results
-        ]
-
-    results = load_notices(request_data)
+    # DB 동기화
     if results:
         inserted_count = crud.bulk_insert_notices(db, results)
         app_logger.info(f"새로운 공지사항 {inserted_count}건을 DB에 동기화했습니다.")
     else:
         app_logger.warning("크롤링된 새 데이터가 없어 DB 동기화를 생략합니다.")
+
     return results
 
 
@@ -127,9 +138,6 @@ def health_check():
     return {"status": "ok", "message": "Server is running smoothly."}
 
 
-# ==========================================
-# 🚨 복구된 Schedule API (이슈 #56)
-# ==========================================
 class ScheduleCreate(BaseModel):
     date: str
     main_category: str
