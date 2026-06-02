@@ -711,6 +711,41 @@
     });
   }
 
+   function applyQueryToForm() {
+    const params = new URLSearchParams(window.location.search);
+    const title = params.get('title');
+    const category = params.get('category');
+    const subCategory = params.get('subCategory');
+    const url = params.get('url');
+    const memo = params.get('memo');
+
+      if (title) {
+        els.eventTitle.value = title;
+      }
+
+      if (memo || url) {
+        const memoParts = [];
+        if (memo) memoParts.push(memo);
+        if (url) memoParts.push(`원문 링크: ${url}`);
+        els.eventMemo.value = memoParts.join('\n');
+      }
+
+      if (category && categoryMap[category]) {
+        els.mainCategory.value = category;
+        renderSubCategories(category);
+      } else {
+        renderSubCategories(els.mainCategory.value);
+      }
+
+      if (subCategory) {
+        Array.from(els.subCategory.options).forEach((opt) => {
+          if (opt.value === subCategory) {
+            els.subCategory.value = subCategory;
+          }
+      });
+    }
+  }
+
   // =========================
   // 8. 일정 목록 렌더링
   // =========================
@@ -987,6 +1022,7 @@
     renderMainCategories();
     renderSubCategories(els.mainCategory.value);
     updateSelectedDateUI();
+    applyQueryToForm();
     renderCalendar();
     await loadSchedulesFromServer();
   }
