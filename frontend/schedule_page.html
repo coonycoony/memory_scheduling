@@ -339,19 +339,15 @@
       background: #bfdbfe;
     }
 
-    .calendar-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #2563eb;
+    .calendar-day-events {
+      display: flex;
+      flex-direction: column;  
+      gap: 4px;
     }
 
-    .calendar-dot.scholarship {
-      background: #ea580c;
-    }
-
-    .calendar-dot.etc {
-      background: #16a34a;
+    .calendar-event-more {
+      font-size: 10px;
+      color: #6b7280;
     }
 
     .status-text {
@@ -366,6 +362,55 @@
 
     .status-text.success {
       color: #15803d;
+    }
+
+    .calendar-event-badge {
+      display: inline-flex;
+      max-width: 100%;
+      padding: 2px 6px;
+      border-radius: 999px;
+      font-size: 11px;
+      color: #fff;
+      background: #4b5563;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .calendar-event-badge.scholarship {
+      background: #f5da3f;
+    }
+
+    .calendar-event-badge.cat-academic {
+      background: #2563eb;
+    }
+
+    .calendar-event-badge.cat-admission {
+      background: #7c3aed;
+    }
+
+    .calendar-event-badge.cat-career {
+      background: #f97316;
+    }
+
+    .calendar-event-badge.cat-contest {
+      background: #e11d48;
+    }
+
+    .calendar-event-badge.cat-volunteer {
+      background: #0d9488;
+    }
+
+    .calendar-event-badge.cat-facility {
+      background: #0ea5e9;
+    }
+
+    .calendar-event-badge.cat-safety {
+      background: #22f58b;
+    }
+
+    .calendar-event-badge.cat-etc {
+      background: #6b7280;
     }
     </style>
 </head>
@@ -807,6 +852,7 @@
 
   function updateSelectedDateUI() {
     if (!els.selectedDateBox) return;
+
 
     if (rangeStart && rangeEnd) {
       const { start, end } = normalizeRange(rangeStart, rangeEnd);
