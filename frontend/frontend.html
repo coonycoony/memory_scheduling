@@ -712,7 +712,10 @@
       try {
         const response = await fetch(`${API_BASE_URL}/universities`);
         if (response.ok) {
-          const universities = await response.json();
+          let universities = await response.json();
+          // 💡 대학교 목록 가나다 순 오름차순 정렬 적용
+          universities.sort((a, b) => a.localeCompare(b, 'ko-KR'));
+          
           univSelect.innerHTML = `<option value="">학교를 선택하세요</option>` + 
             universities.map(u => `<option value="${escapeAttribute(u)}">${escapeHtml(u)}</option>`).join("");
         } else {
@@ -720,7 +723,10 @@
         }
       } catch (error) {
         console.error("대학교 목록을 불러오지 못했습니다.", error);
-        const fallbackList = ['충북대학교', '전남대학교', '충남대학교'];
+        let fallbackList = ['충북대학교', '전남대학교', '충남대학교', '서울대학교', '인천대학교', '경북대학교'];
+        // 💡 폴백(Fallback) 리스트도 가나다 순 오름차순 정렬 적용
+        fallbackList.sort((a, b) => a.localeCompare(b, 'ko-KR'));
+        
         univSelect.innerHTML = `<option value="">학교를 선택하세요</option>` + 
             fallbackList.map(u => `<option value="${escapeAttribute(u)}">${escapeHtml(u)}</option>`).join("");
       }
@@ -1110,7 +1116,6 @@
       }
     }
 
-    // 💡 버그 수정: localStorage 대신 URL 쿼리 파라미터로 데이터를 넘깁니다.
     function sendToSchedule(btnElement) {
       try {
         const notice = JSON.parse(btnElement.getAttribute('data-notice'));
@@ -1137,7 +1142,6 @@
       }
     }
 
-    // 💡 기능 추가: 클릭한 공지를 내 공지 보관함(localStorage)에 저장합니다.
     function saveToArchive(btnElement) {
       try {
         const notice = JSON.parse(btnElement.getAttribute('data-notice'));
@@ -1149,7 +1153,6 @@
           items = JSON.parse(raw);
         }
 
-        // 중복 저장 방지
         const isDuplicate = items.some(item => item.url === notice.url && item.title === notice.title);
         if (isDuplicate) {
           alert('이미 보관함에 저장된 공지입니다.');
