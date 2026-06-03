@@ -211,6 +211,13 @@ def _build_page_url(base_url: str, page_param: str, page: int,
     return urlunparse(parsed._replace(query=new_query))
 
 
+def check_js_pagination(url: str) -> bool:
+    parsed = urlparse(url)
+    if parsed.fragment and re.match(r'page\d+', parsed.fragment):
+        return True
+    return False
+
+
 SSO_PATTERNS = [
     "ssologin", "sso/login", "failureCause", "redirectPostForm",
     "login.do", "loginForm", "Please login",
@@ -628,4 +635,25 @@ def add_board_source(
     UNIVERSITY_SOURCES = sources
 
 
+def delete_board_source(university: str, board_name: str) -> bool:
+    sources = _load_university_sources()
+
+    if university not in sources:
+        return False
+
+    original_count = len(sources[university].boards)
+    sources[university].boards = [
+        b for b in sources[university].boards if b.board_name != board_name
+    ]
+
+    if len(sources[university].boards) == original_count:
+        return False
+
+    if len(sources[university].boards) == 0:
+        del sources[university]
+
+    save_sources_to_json(sources)
+    global UNIVERSITY_SOURCES
+    UNIVERSITY_SOURCES = sources
+    return True
 
