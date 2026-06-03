@@ -780,21 +780,6 @@
     bindRemoveButtons();
     bindAddScheduleButtons();
   }
-  
-  // =========================
-  // 7. 서버 스케줄 저장 API (기존 /schedules 사용)
-  // =========================
-  async function createScheduleOnServer(payload) {
-    const res = await fetch(`${API_BASE}/schedules`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) {
-      throw new Error(`스케줄 저장 실패: ${res.status}`);
-    }
-    return await res.json();
-  }
 
   // =========================
   // 8. 핸들러
@@ -807,48 +792,35 @@
     renderArchive();
   }
 
-  async function handleAddScheduleFromArchive(id) {
-    const items = getAllItems();
-    const item = items.find((x) => x.id === id);
-    if (!item) {
-      alert("해당 공지를 찾을 수 없습니다.");
-      return;
-    }
-
-    const mainCategory = item.category || "기타";        // 장학/학사/취업/채용/기타
-    const subCategory = item.source_category || "기타";  // 세부항목
-    const title = item.title || "제목 없음";
-
-    const memoLines = [];
-    if (item.memo) memoLines.push(item.memo);
-    if (item.url) memoLines.push(`원문 링크: ${item.url}`);
-    if (item.university) memoLines.push(`학교: ${item.university}`);
-    if (item.department) memoLines.push(`부서: ${item.department}`);
-    const memo = memoLines.join("\n") || null;
-
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const dateStr = item.date || todayStr;
-
-    const payload = {
-      date: dateStr,
-      main_category: mainCategory,
-      sub_category: subCategory,
-      title: title,
-      start_date: dateStr,
-      end_date: dateStr,
-      memo: memo,
-      url: item.url || null
-    };
-
-    try {
-      await createScheduleOnServer(payload);
-      alert("달력 스케줄로 저장했습니다.");
-    } catch (e) {
-      console.error(e);
-      alert("스케줄 저장 중 오류가 발생했습니다. 콘솔을 확인하세요.");
-    }
+// 새 버전: 스케줄러 페이지로 정보만 넘기고 이동
+function handleAddScheduleFromArchive(id) {
+  const items = getAllItems();
+  const item = items.find((x) => x.id === id);
+  if (!item) {
+    alert("해당 공지를 찾을 수 없습니다.");
+    return;
   }
 
+  // 스케줄 페이지에 넘길 정보만 추려서 URL 쿼리로 구성
+  const params = new URLSearchParams({
+    title: item.title || '',
+    category: item.category || '기타',
+    subCategory: item.source_category || '기타',
+    url: item.url || '',
+    memo: (function () {
+      const memoLines = [];
+      if (item.memo) memoLines.push(item.memo);
+      if (item.url) memoLines.push(`원문 링크: ${item.url}`);
+      if (item.university) memoLines.push(`학교: ${item.university}`);
+      if (item.department) memoLines.push(`부서: ${item.department}`);
+      return memoLines.join('\n');
+    })(),
+    date: item.date || ''   // 필요하면 날짜도 같이 넘기기
+  });
+
+  // 스케줄러 페이지로 이동
+  location.href = `schedule_page.html?${params.toString()}`;
+}
   function handleClearArchive() {
     if (!confirm('보관함을 모두 비울까요?')) return;
     setStoredItems([]);
