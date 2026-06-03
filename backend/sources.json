@@ -410,20 +410,6 @@
       }
     ]
   },
-  "서울과학기술대학교": {
-    "name": "서울과학기술대학교",
-    "boards": [
-      {
-        "board_name": "대학교 전체 공지",
-        "list_url": "https://www.seoultech.ac.kr/service/info/notice?bidx=4691&bnum=4691&allboard=false&size=15&searchtype=1&searchtext=",
-        "page_param": "page",
-        "max_pages": 50,
-        "enc_inner_path": null,
-        "enc_query_template": null,
-        "selector": "table tbody tr"
-      }
-    ]
-  },
   "광운대학교": {
     "name": "광운대학교",
     "boards": [
@@ -467,4 +453,5 @@
     ]
   }
 }
+
 
