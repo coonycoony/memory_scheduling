@@ -805,25 +805,31 @@ function handleAddScheduleFromArchive(id) {
     return;
   }
 
-  // 스케줄 페이지에 넘길 정보만 추려서 URL 쿼리로 구성
+  const mainCategory = item.category || "기타";
+  const subCategory = item.source_category || "기타";
+  const title = item.title || "제목 없음";
+
+  const memoLines = [];
+  if (item.memo) memoLines.push(item.memo);
+  if (item.url) memoLines.push(`원문 링크: ${item.url}`);
+  if (item.university) memoLines.push(`학교: ${item.university}`);
+  if (item.department) memoLines.push(`부서: ${item.department}`);
+  const memo = memoLines.join("\n") || "";
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const dateStr = item.date || todayStr;
+
   const params = new URLSearchParams({
-    title: item.title || '',
-    category: item.category || '기타',
-    subCategory: item.source_category || '기타',
-    url: item.url || '',
-    memo: (function () {
-      const memoLines = [];
-      if (item.memo) memoLines.push(item.memo);
-      if (item.url) memoLines.push(`원문 링크: ${item.url}`);
-      if (item.university) memoLines.push(`학교: ${item.university}`);
-      if (item.department) memoLines.push(`부서: ${item.department}`);
-      return memoLines.join('\n');
-    })(),
-    date: item.date || ''   // 필요하면 날짜도 같이 넘기기
+    title,
+    category: mainCategory,
+    subCategory,
+    url: item.url || "",
+    memo,
+    date: dateStr
   });
 
-  // 스케줄러 페이지로 이동
-  location.href = `schedule_page.html?${params.toString()}`;
+  // 같은 탭에서 스케줄 페이지로 이동
+  window.location.href = `schedule_page.html?${params.toString()}`;
 }
   function handleClearArchive() {
     if (!confirm('보관함을 모두 비울까요?')) return;
