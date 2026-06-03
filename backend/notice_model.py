@@ -211,13 +211,6 @@ def _build_page_url(base_url: str, page_param: str, page: int,
     return urlunparse(parsed._replace(query=new_query))
 
 
-def check_js_pagination(url: str) -> bool:
-    parsed = urlparse(url)
-    if parsed.fragment and re.match(r'page\d+', parsed.fragment):
-        return True
-    return False
-
-
 SSO_PATTERNS = [
     "ssologin", "sso/login", "failureCause", "redirectPostForm",
     "login.do", "loginForm", "Please login",
@@ -633,5 +626,6 @@ def add_board_source(
     save_sources_to_json(sources)
     global UNIVERSITY_SOURCES
     UNIVERSITY_SOURCES = sources
+
 
 
