@@ -172,5 +172,84 @@
         "selector": "table tbody tr"
       }
     ]
+  },
+  "연세대학교": {
+    "name": "연세대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체공지",
+        "list_url": "https://www.yonsei.ac.kr/sc/254/subview.do",
+        "page_param": "page",
+        "max_pages": 100,
+        "enc_inner_path": "/bbs/sc/58/artclList.do",
+        "enc_query_template": "page={page}&findType=&findWord=&findClSeq=&findOpnwrd=&rgsBgndeStr=&rgsEnddStr=&",
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "인하대학교": {
+    "name": "인하대학교",
+    "boards": [
+      {
+        "board_name": "문과대학 공지",
+        "list_url": "https://hacollege.inha.ac.kr/hacollege/5178/subview.do",
+        "page_param": "page",
+        "max_pages": 50,
+        "enc_inner_path": "/bbs/hacollege/1186/artclList.do",
+        "enc_query_template": "page={page}&srchColumn=&srchWrd=&bbsClSeq=&bbsOpenWrdSeq=&rgsBgndeStr=&rgsEnddeStr=&isViewMine=false&",
+        "selector": "table tbody tr"
+      },
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.inha.ac.kr/kr/950/subview.do",
+        "page_param": "page",
+        "max_pages": 50,
+        "enc_inner_path": "/bbs/kr/8/artclList.do",
+        "enc_query_template": "page={page}&srchColumn=&srchWrd=&bbsClSeq=&bbsOpenWrdSeq=&rgsBgndeStr=&rgsEnddeStr=&isViewMine=false&",
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "부산대학교": {
+    "name": "부산대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.pusan.ac.kr/kor/CMS/Board/Board.do?robot=Y&mCode=MN095&mgr_seq=3",
+        "page_param": "page",
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "고려대학교": {
+    "name": "고려대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.korea.ac.kr/ko/566/subview.do",
+        "page_param": "page",
+        "max_pages": 50,
+        "enc_inner_path": "/portalBoard/ko/1/portalBoardList.do",
+        "enc_query_template": "siteId=ko&findType=&findWord=&startDate=&endDate=&page={page}",
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "강원대학교": {
+    "name": "강원대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.kangwon.ac.kr/ko/bbs/504/list.do?pageItm=10&searchOrderSort=0&searchGbn=0",
+        "page_param": "pageIndex",
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
   }
 }
