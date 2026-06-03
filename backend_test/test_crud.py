@@ -98,6 +98,15 @@ class TestBulkInsertNotices:
         total = db.query(models.NoticeModel).count()
         assert total == 3
 
+    def test_bulk_insert_rollback_on_error(self, db):
+        from unittest.mock import patch
+        notices = [
+            models.NoticeModel(university="테스트대학교", title="공지0", url="http://example.com/0", category="기타", date="2024-06-01")
+        ]
+        with patch("crud.create_notice", side_effect=Exception("DB 에러")):
+            count = crud.bulk_insert_notices(db, notices)
+        assert count == 0
+
 
 class TestGetUniversityList:
     def test_returns_distinct_universities(self, db):

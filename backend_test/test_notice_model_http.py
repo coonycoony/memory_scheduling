@@ -214,6 +214,30 @@ class TestParseNoticeRows:
         results, _ = parse_notice_rows(html, "테스트대학교", board)
         assert len(results) >= 1
 
+    def test_skips_short_title(self):
+        html = """
+        <html><body>
+        <table><tbody>
+          <tr><td><a href="/notice/1">A</a></td></tr>
+        </tbody></table>
+        </body></html>
+        """
+        board = _make_board()
+        results, _ = parse_notice_rows(html, "테스트대학교", board)
+        assert results == []
+
+    def test_skips_empty_href(self):
+        html = """
+        <html><body>
+        <table><tbody>
+          <tr><td><a href="">공지사항 제목입니다</a></td></tr>
+        </tbody></table>
+        </body></html>
+        """
+        board = _make_board()
+        results, _ = parse_notice_rows(html, "테스트대학교", board)
+        assert results == []
+
 
 # ─── crawl_notice_board ───────────────────────────────────────────────────────
 
@@ -518,5 +542,11 @@ class TestAnalyzePageUrls:
         enc2 = _encode("/inner/path", "size=10")
         url1 = f"http://example.com/board?enc={enc1}"
         url2 = f"http://example.com/board?enc={enc2}"
+        with pytest.raises(ValueError):
+            analyze_page_urls(url1, url2)
+
+    def test_enc_url_invalid_base64_raises(self):
+        url1 = "http://example.com/board?enc=NOT_VALID_BASE64!!!"
+        url2 = "http://example.com/board?enc=ALSO_NOT_VALID!!!"
         with pytest.raises(ValueError):
             analyze_page_urls(url1, url2)
