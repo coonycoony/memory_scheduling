@@ -443,7 +443,7 @@
       background: #fee2e2;
     }
 
-    /* 게시판 추가 모달 CSS */
+    /* 게시판 관리(추가/삭제) 모달 CSS */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -463,10 +463,12 @@
       background: white;
       padding: 24px;
       border-radius: 16px;
-      width: 90%; max-width: 500px;
+      width: 90%; max-width: 550px;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
       position: relative;
       animation: modalFadeIn 0.2s ease-out;
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
     @keyframes modalFadeIn {
@@ -484,6 +486,47 @@
 
     .modal-close:hover {
       color: #374151;
+    }
+
+    .manage-section {
+      background: #f9fafb;
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      margin-bottom: 16px;
+    }
+
+    .board-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      background: white;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .board-list-item span {
+      font-size: 14px;
+      font-weight: bold;
+      color: #374151;
+    }
+
+    .btn-delete {
+      padding: 6px 12px;
+      background: #fee2e2;
+      color: #dc2626;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .btn-delete:hover {
+      background: #fecaca;
     }
 
     @media (max-width: 640px) {
@@ -526,8 +569,8 @@
         <button onclick="location.href='my_notice_archive.html'" style="padding: 12px 24px; background: #3b82f6; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2); transition: 0.2s;">
           🗂️ 내 공지 보관함
         </button>
-        <button onclick="openRegisterModal()" style="padding: 12px 24px; background: #8b5cf6; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2); transition: 0.2s;">
-          ➕ 새 게시판 등록
+        <button onclick="openManageModal()" style="padding: 12px 24px; background: #8b5cf6; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2); transition: 0.2s;">
+          ⚙️ 게시판 관리 (추가/삭제)
         </button>
       </div>
     </div>
@@ -584,23 +627,39 @@
     <div class="pagination" id="pagination"></div>
   </div>
 
-  <div class="modal-overlay" id="registerModal">
+  <div class="modal-overlay" id="manageModal">
     <div class="modal-content">
-      <button class="modal-close" onclick="closeRegisterModal()">✖</button>
-      <h2 style="font-size: 18px; margin-bottom: 16px; color: #111827;">➕ 새로운 크롤링 소스(게시판) 등록</h2>
-      <p style="font-size: 14px; color: #6b7280; margin-bottom: 20px;">2페이지와 3페이지 URL을 모두 입력하면 시스템이 페이징 패턴을 자동 분석합니다.</p>
+      <button class="modal-close" onclick="closeManageModal()">✖</button>
+      <h2 style="font-size: 20px; margin-bottom: 20px; color: #111827;">⚙️ 크롤링 소스 관리</h2>
       
-      <form id="registerForm" onsubmit="handleRegisterSource(event)" style="display: flex; flex-direction: column; gap: 12px;">
-        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <input type="text" id="regUniv" placeholder="대학명 (예: OO대학교)" required style="flex: 1; min-width: 150px; padding: 12px; border: 1px solid #d0d7e2; border-radius: 8px; outline: none;" />
-          <input type="text" id="regBoard" placeholder="게시판명 (예: 공지사항)" required style="flex: 1; min-width: 150px; padding: 12px; border: 1px solid #d0d7e2; border-radius: 8px; outline: none;" />
+      <div class="manage-section">
+        <h3 style="font-size: 16px; margin-bottom: 12px; color: #374151;">➕ 새 게시판 등록</h3>
+        <p style="font-size: 13px; color: #6b7280; margin-bottom: 16px;">2페이지와 3페이지 URL을 모두 입력하면 시스템이 페이징 패턴을 자동 분석합니다.</p>
+        
+        <form id="registerForm" onsubmit="handleRegisterSource(event)" style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <input type="text" id="regUniv" placeholder="대학명 (예: OO대학교)" required style="flex: 1; min-width: 150px; padding: 10px; border: 1px solid #d0d7e2; border-radius: 8px; outline: none;" />
+            <input type="text" id="regBoard" placeholder="게시판명 (예: 공지사항)" required style="flex: 1; min-width: 150px; padding: 10px; border: 1px solid #d0d7e2; border-radius: 8px; outline: none;" />
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; flex-direction: column;">
+            <input type="url" id="regUrl1" placeholder="2페이지 URL (예: https://...?page=2)" required style="flex: 1; padding: 10px; border: 1px solid #d0d7e2; border-radius: 8px; outline: none;" />
+            <input type="url" id="regUrl2" placeholder="3페이지 URL (예: https://...?page=3)" required style="flex: 1; padding: 10px; border: 1px solid #d0d7e2; border-radius: 8px; outline: none;" />
+          </div>
+          <button type="submit" style="padding: 12px; background: #8b5cf6; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 4px;">등록하기</button>
+        </form>
+      </div>
+
+      <div class="manage-section" style="margin-bottom: 0;">
+        <h3 style="font-size: 16px; margin-bottom: 12px; color: #374151;">🗑️ 등록된 게시판 삭제</h3>
+        <select id="manageUnivSelect" onchange="loadManageBoards()" style="width: 100%; padding: 10px; margin-bottom: 12px; border-radius: 8px; border: 1px solid #d0d7e2; outline: none; font-size: 14px;">
+          <option value="">학교를 선택하세요</option>
+        </select>
+        
+        <div id="manageBoardList" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column;">
+          <div style="font-size: 13px; color: #9ca3af; text-align: center; padding: 16px;">학교를 선택하면 등록된 게시판이 표시됩니다.</div>
         </div>
-        <div style="display: flex; gap: 12px; flex-wrap: wrap; flex-direction: column;">
-          <input type="url" id="regUrl1" placeholder="2페이지 URL (예: https://...?page=2)" required style="flex: 1; padding: 12px; border: 1px solid #d0d7e2; border-radius: 8px; outline: none;" />
-          <input type="url" id="regUrl2" placeholder="3페이지 URL (예: https://...?page=3)" required style="flex: 1; padding: 12px; border: 1px solid #d0d7e2; border-radius: 8px; outline: none;" />
-        </div>
-        <button type="submit" style="padding: 14px; background: #8b5cf6; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 8px;">등록하기</button>
-      </form>
+      </div>
+
     </div>
   </div>
 
@@ -651,13 +710,16 @@
       document.getElementById('profileDropdown').classList.toggle('show');
     }
 
-    function openRegisterModal() {
-      document.getElementById('registerModal').classList.add('show');
+    async function openManageModal() {
+      document.getElementById('manageModal').classList.add('show');
+      await loadManageUniversities(); 
     }
 
-    function closeRegisterModal() {
-      document.getElementById('registerModal').classList.remove('show');
+    function closeManageModal() {
+      document.getElementById('manageModal').classList.remove('show');
       document.getElementById('registerForm').reset();
+      document.getElementById('manageBoardList').innerHTML = `<div style="font-size: 13px; color: #9ca3af; text-align: center; padding: 16px;">학교를 선택하면 등록된 게시판이 표시됩니다.</div>`;
+      document.getElementById('manageUnivSelect').value = "";
     }
 
     window.addEventListener('click', function(e) {
@@ -667,9 +729,9 @@
         dropdown.classList.remove('show');
       }
 
-      const modal = document.getElementById('registerModal');
+      const modal = document.getElementById('manageModal');
       if (e.target === modal) {
-        closeRegisterModal();
+        closeManageModal();
       }
     });
 
@@ -680,7 +742,6 @@
           const user = JSON.parse(savedSession);
           
           document.getElementById('profileNameBtn').textContent = `${user.name} 님`;
-          
           document.getElementById('profileName').textContent = user.name;
           document.getElementById('profileSchool').textContent = user.school;
           document.getElementById('profileMajor').textContent = user.major;
@@ -712,7 +773,9 @@
       try {
         const response = await fetch(`${API_BASE_URL}/universities`);
         if (response.ok) {
-          const universities = await response.json();
+          let universities = await response.json();
+          universities.sort((a, b) => a.localeCompare(b, 'ko-KR'));
+          
           univSelect.innerHTML = `<option value="">학교를 선택하세요</option>` + 
             universities.map(u => `<option value="${escapeAttribute(u)}">${escapeHtml(u)}</option>`).join("");
         } else {
@@ -720,9 +783,97 @@
         }
       } catch (error) {
         console.error("대학교 목록을 불러오지 못했습니다.", error);
-        const fallbackList = ['충북대학교', '전남대학교', '충남대학교'];
+        let fallbackList = ['충북대학교', '전남대학교', '충남대학교', '서울대학교', '인천대학교', '경북대학교'];
+        fallbackList.sort((a, b) => a.localeCompare(b, 'ko-KR'));
+        
         univSelect.innerHTML = `<option value="">학교를 선택하세요</option>` + 
             fallbackList.map(u => `<option value="${escapeAttribute(u)}">${escapeHtml(u)}</option>`).join("");
+      }
+    }
+
+    async function loadManageUniversities() {
+      const manageUnivSelect = document.getElementById("manageUnivSelect");
+      manageUnivSelect.innerHTML = `<option value="">목록을 불러오는 중...</option>`;
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/universities`);
+        if (response.ok) {
+          let universities = await response.json();
+          universities.sort((a, b) => a.localeCompare(b, 'ko-KR'));
+          
+          manageUnivSelect.innerHTML = `<option value="">학교를 선택하세요</option>` + 
+            universities.map(u => `<option value="${escapeAttribute(u)}">${escapeHtml(u)}</option>`).join("");
+        }
+      } catch (error) {
+        manageUnivSelect.innerHTML = `<option value="">학교 목록을 불러올 수 없습니다.</option>`;
+      }
+    }
+
+    async function loadManageBoards() {
+      const selectedUniv = document.getElementById("manageUnivSelect").value;
+      const boardListDiv = document.getElementById("manageBoardList");
+
+      if (!selectedUniv) {
+        boardListDiv.innerHTML = `<div style="font-size: 13px; color: #9ca3af; text-align: center; padding: 16px;">학교를 선택하면 등록된 게시판이 표시됩니다.</div>`;
+        return;
+      }
+
+      boardListDiv.innerHTML = `<div style="font-size: 13px; color: #6b7280; text-align: center; padding: 16px;">게시판 목록을 불러오는 중...</div>`;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/boards?university=${encodeURIComponent(selectedUniv)}`);
+        if (response.ok) {
+          const boards = await response.json();
+          if (boards.length === 0) {
+            boardListDiv.innerHTML = `<div style="font-size: 13px; color: #ef4444; text-align: center; padding: 16px;">등록된 게시판이 없습니다.</div>`;
+            return;
+          }
+
+          boardListDiv.innerHTML = boards.map(b => `
+            <div class="board-list-item">
+              <span>${escapeHtml(b)}</span>
+              <button class="btn-delete" onclick="deleteSource('${escapeAttribute(selectedUniv)}', '${escapeAttribute(b)}')">🗑️ 삭제</button>
+            </div>
+          `).join("");
+        } else {
+          throw new Error("게시판 조회 실패");
+        }
+      } catch (error) {
+        boardListDiv.innerHTML = `<div style="font-size: 13px; color: #ef4444; text-align: center; padding: 16px;">게시판 목록을 불러오지 못했습니다.</div>`;
+      }
+    }
+
+    // 💡 특정 학교의 특정 게시판만 안전하게 지우는 URL 쿼리 파라미터 기반 삭제 로직
+    async function deleteSource(univ, board) {
+      if (!confirm(`⚠️ 정말 '${univ}'의 '${board}' 게시판을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) {
+        return;
+      }
+
+      try {
+        // DELETE 요청의 경우 body를 지원하지 않는 프레임워크가 있을 수 있으므로 URL Parameter로 명확하게 대상 지정
+        const url = `${API_BASE_URL}/sources?university=${encodeURIComponent(univ)}&board_name=${encodeURIComponent(board)}`;
+        const response = await fetch(url, {
+          method: "DELETE"
+        });
+
+        if (response.ok) {
+          alert(`🗑️ '${univ} - ${board}' 게시판이 성공적으로 삭제되었습니다.`);
+          
+          await loadManageBoards(); 
+          await loadUniversities(); 
+          
+          const mainUnivSelect = document.getElementById("universitySelect");
+          if (mainUnivSelect.value === univ) {
+            handleUniversityChange();
+          }
+
+        } else {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || "삭제 중 오류가 발생했습니다.");
+        }
+      } catch (error) {
+        console.error("삭제 실패:", error);
+        alert(`❌ 삭제에 실패했습니다.\n사유: ${error.message}`);
       }
     }
 
@@ -1094,7 +1245,7 @@
         if (response.ok) {
           alert(`🎉 성공적으로 등록되었습니다!\n대학: ${univ}\n게시판: ${board}`);
           
-          closeRegisterModal();
+          closeManageModal();
           await loadUniversities(); 
         } else {
           const errorData = await response.json();
@@ -1110,7 +1261,6 @@
       }
     }
 
-    // 💡 버그 수정: localStorage 대신 URL 쿼리 파라미터로 데이터를 넘깁니다.
     function sendToSchedule(btnElement) {
       try {
         const notice = JSON.parse(btnElement.getAttribute('data-notice'));
@@ -1137,7 +1287,6 @@
       }
     }
 
-    // 💡 기능 추가: 클릭한 공지를 내 공지 보관함(localStorage)에 저장합니다.
     function saveToArchive(btnElement) {
       try {
         const notice = JSON.parse(btnElement.getAttribute('data-notice'));
@@ -1149,7 +1298,6 @@
           items = JSON.parse(raw);
         }
 
-        // 중복 저장 방지
         const isDuplicate = items.some(item => item.url === notice.url && item.title === notice.title);
         if (isDuplicate) {
           alert('이미 보관함에 저장된 공지입니다.');

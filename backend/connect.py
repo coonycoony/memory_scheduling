@@ -3,7 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from datetime import date, timedelta
 from typing import Optional
 
-from notice_model import load_notices, SearchRequest, add_board_source, analyze_page_urls, Notice, is_valid_category
+from notice_model import (
+    load_notices, SearchRequest, add_board_source, analyze_page_urls, Notice, 
+    is_valid_category, check_sso_required, check_js_pagination, 
+    UNIVERSITY_SOURCES, save_sources_to_json
+)
 
 from middleware import log_requests_middleware
 from logger import app_logger
@@ -121,10 +125,20 @@ def add_source(req: AddSourceRequest):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+    from urllib.parse import urlparse, urlunparse
+    parsed = urlparse(req.url1)
+    base_url = urlunparse(parsed._replace(query="", fragment=""))
+
+    if check_js_pagination(req.url1):
+        raise HTTPException(status_code=400, detail="해당 URL은 JavaScript 기반 페이지네이션을 사용하여 크롤링이 불가능합니다.")
+
+    if check_sso_required(req.url1):
+        raise HTTPException(status_code=403, detail="해당 URL은 로그인(SSO)이 필요한 페이지입니다. 공개 접근 가능한 URL을 사용해주세요.")
+
     add_board_source(
         university=req.university,
         board_name=req.board_name,
-        list_url=req.url1,
+        list_url=base_url,
         page_param=params["page_param"],
         max_pages=req.max_pages,
         enc_inner_path=params["enc_inner_path"],
@@ -132,6 +146,34 @@ def add_source(req: AddSourceRequest):
     )
     return {"message": f"{req.university} - {req.board_name} 추가 완료"}
 
+@app.delete("/sources")
+def delete_source(university: str, board_name: str):
+    # 1. 학교가 메모리에 존재하는지 확인
+    if university not in UNIVERSITY_SOURCES:
+        raise HTTPException(status_code=404, detail="해당 학교를 찾을 수 없습니다.")
+
+    source = UNIVERSITY_SOURCES[university]
+    
+    # 2. 지우려는 게시판이 존재하는지 확인
+    board_exists = any(b.board_name == board_name for b in source.boards)
+    if not board_exists:
+        raise HTTPException(status_code=404, detail="해당 게시판을 찾을 수 없습니다.")
+
+    # 3. 게시판 리스트에서 해당 게시판만 쏙 빼고 재구성
+    source.boards = [b for b in source.boards if b.board_name != board_name]
+
+    # 4. 만약 이 게시판을 지워서 해당 학교의 게시판이 0개가 된다면, 학교 카테고리 자체를 삭제
+    if len(source.boards) == 0:
+        del UNIVERSITY_SOURCES[university]
+
+    # 5. sources.json 파일에 변경사항 덮어쓰기
+    try:
+        save_sources_to_json(UNIVERSITY_SOURCES)
+        app_logger.info(f"크롤링 소스 삭제 완료: {university} - {board_name}")
+        return {"message": f"'{university}'의 '{board_name}' 게시판이 성공적으로 삭제되었습니다."}
+    except Exception as e:
+        app_logger.error(f"소스 삭제 중 JSON 저장 오류: {str(e)}")
+        raise HTTPException(status_code=500, detail="게시판 정보를 갱신하는 중 서버 오류가 발생했습니다.")
 
 @app.get("/health")
 def health_check():
@@ -191,3 +233,4 @@ def delete_schedule_api(schedule_id: int, db: Session = Depends(get_db)):
     if not deleted:
         raise HTTPException(status_code=404, detail="해당 일정을 찾을 수 없거나 이미 삭제되었습니다.")
     return {"message": "일정이 성공적으로 삭제되었습니다."}
+

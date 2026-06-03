@@ -98,15 +98,19 @@
       margin-bottom: 4px;
   }
 
+  .form-control {
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 13px;
+    background: #fff;
+  }
+
   select,
   input[type="text"],
   textarea {
       width: 100%;
-      padding: 8px 10px;
-      border-radius: 8px;
-      border: 1px solid #d1d5db;
-      font-size: 13px;
-      background: #fff;
+      box-sizing: border-box;
   }
 
   textarea {
@@ -412,12 +416,12 @@
 
         <div class="form-group">
           <label class="form-label" for="keywordInput">검색어</label>
-          <input type="text" id="keywordInput" placeholder="제목, 메모, 부서" />
+          <input type="text" id="keywordInput" class="form-control" placeholder="제목, 메모, 부서" />
         </div>
 
         <div class="form-group">
           <label class="form-label" for="categoryFilter">종류</label>
-          <select id="categoryFilter">
+          <select id="categoryFilter" class="form-control">
             <option value="전체">전체</option>
             <option value="장학">장학</option>
             <option value="학사">학사</option>
@@ -430,7 +434,7 @@
 
         <div class="form-group">
           <label class="form-label" for="savedOnlyFilter">상태</label>
-          <select id="savedOnlyFilter">
+          <select id="savedOnlyFilter" class="form-control">
             <option value="all">전체</option>
             <option value="with-date">날짜 있는 공지</option>
             <option value="urgent">오늘 이후 공지</option>
@@ -440,7 +444,7 @@
 
         <div class="form-group">
           <label class="form-label" for="sortFilter">정렬</label>
-          <select id="sortFilter">
+          <select id="sortFilter" class="form-control">
             <option value="saved-desc">최근 저장순</option>
             <option value="saved-asc">오래된 저장순</option>
             <option value="date-asc">날짜 빠른순</option>
@@ -801,25 +805,31 @@ function handleAddScheduleFromArchive(id) {
     return;
   }
 
-  // 스케줄 페이지에 넘길 정보만 추려서 URL 쿼리로 구성
+  const mainCategory = item.category || "기타";
+  const subCategory = item.source_category || "기타";
+  const title = item.title || "제목 없음";
+
+  const memoLines = [];
+  if (item.memo) memoLines.push(item.memo);
+  if (item.url) memoLines.push(`원문 링크: ${item.url}`);
+  if (item.university) memoLines.push(`학교: ${item.university}`);
+  if (item.department) memoLines.push(`부서: ${item.department}`);
+  const memo = memoLines.join("\n") || "";
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const dateStr = item.date || todayStr;
+
   const params = new URLSearchParams({
-    title: item.title || '',
-    category: item.category || '기타',
-    subCategory: item.source_category || '기타',
-    url: item.url || '',
-    memo: (function () {
-      const memoLines = [];
-      if (item.memo) memoLines.push(item.memo);
-      if (item.url) memoLines.push(`원문 링크: ${item.url}`);
-      if (item.university) memoLines.push(`학교: ${item.university}`);
-      if (item.department) memoLines.push(`부서: ${item.department}`);
-      return memoLines.join('\n');
-    })(),
-    date: item.date || ''   // 필요하면 날짜도 같이 넘기기
+    title,
+    category: mainCategory,
+    subCategory,
+    url: item.url || "",
+    memo,
+    date: dateStr
   });
 
-  // 스케줄러 페이지로 이동
-  location.href = `schedule_page.html?${params.toString()}`;
+  // 같은 탭에서 스케줄 페이지로 이동
+  window.location.href = `schedule_page.html?${params.toString()}`;
 }
   function handleClearArchive() {
     if (!confirm('보관함을 모두 비울까요?')) return;

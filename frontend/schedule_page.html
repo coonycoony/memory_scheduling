@@ -16,6 +16,7 @@
       padding: 40px 20px;
       background: #f5f7fb;
       color: #222;
+      overflow: hidden;
     }
 
     .schedule-container {
@@ -38,8 +39,20 @@
     }
 
     .left-panel {
-      display: grid;
+      display: flex;
+      flex-direction: column;
       gap: 15px;
+      height: calc(100vh - 80px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      width: 340px;
+      max-width: 340px;
+    }
+    
+    .left-panel .card:nth-child(2) {
+      flex: 1 1 auto;    /* 남은 세로 공간을 채움 */
+      display: flex;
+      flex-direction: column;
     }
 
     .right-panel { 
@@ -187,14 +200,18 @@
 
     .event-list {
       margin-top: 14px;
-      max-height: 260px;
+      flex: 1 1 auto;
       overflow-y: auto;
+      overflow-x: hidden;
       padding-right: 4px;
+      width: 100%;           
+      max-width: 100%;       
+      box-sizing: border-box;
     }
 
     .event-item {
-      padding: 8px 10px;
-      border-radius: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
       background: #f9fafb;
       border: 1px solid #e5e7eb;
       margin-bottom: 6px;
@@ -203,10 +220,17 @@
       align-items: flex-start;
       justify-content: space-between;
       gap: 8px;
-    }   
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }  
 
     .event-main {
       flex: 1;
+      min-width: 0;
+      width: 250px; 
+      max-width: 250px;
+      box-sizing: border-box;
     }
 
     .event-type-pill {
@@ -234,17 +258,28 @@
     .event-title {
       font-weight: 700;
       margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .event-time {
       font-size: 11px;
       color: #6b7280;
       margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }   
 
     .event-memo {
       font-size: 12px;
       color: #4b5563;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;    
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
 
     .empty-text {
@@ -252,6 +287,23 @@
       color: #9ca3af;
       text-align: center;
       padding: 16px 4px;
+    }
+
+    .event-link {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 12px;
+      color: #2563eb;
+      text-decoration: underline;
+      cursor: pointer;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .event-link:hover {
+      color: #1d4ed8;
     }
 
     .calendar-card {
@@ -293,6 +345,7 @@
 
     .calendar-day {
       min-height: 120px;
+      max-height: 120px;
       border: 1px solid #e5e7eb;
       border-radius: 12px;
       background: #fff;
@@ -301,6 +354,10 @@
       cursor: pointer;
       position: relative;
       transition: 0.2s;
+      overflow: hidden;
+      box-sizing: border-box;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
     }
 
     .calendar-day:hover {
@@ -516,6 +573,7 @@
 
   let rangeStart = null;
   let rangeEnd = null;
+  let initialUrlFromQuery = null;
 
   // =========================
   // 2. 상수(Constants)
@@ -826,6 +884,10 @@
       els.eventMemo.value = memoParts.join('\n');
     }
 
+    if (url) {
+      initialUrlFromQuery = url;
+    }
+
     if (category && categoryMap[category]) {
       els.mainCategory.value = category;
       renderSubCategories(category);
@@ -871,12 +933,14 @@
             ${ev.mainCategory}
           </div>
           <div class="event-title">${ev.title}</div>
+
           <div class="event-time">
             ${ev.subCategory ? `세부항목: ${ev.subCategory}` : ""}
             ${ev.startDate ? ` · 시작: ${ev.startDate}` : ""}
             ${ev.endDate ? ` · 종료: ${ev.endDate}` : ""}
           </div>
           ${ev.memo ? `<div class="event-memo">${ev.memo}</div>` : ""}
+          ${ev.url ? `<a class="event-link" href="${ev.url}" target="_blank" rel="noopener noreferrer"> 원문 바로가기 </a>` : ""}
         </div>
       `;
 
@@ -1085,12 +1149,13 @@
             start_date: rangeStart,
             end_date: rangeEnd,
             memo: memo,
-            url: null
+            url: initialUrlFromQuery || null
           });
         }
 
       els.eventTitle.value = "";
       els.eventMemo.value = "";
+      initialUrlFromQuery = null;
 
       await loadSchedulesFromServer();
       setStatus("스케줄이 저장되었습니다.", "success");
