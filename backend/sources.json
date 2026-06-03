@@ -420,5 +420,50 @@
         "selector": "table tbody tr"
       }
     ]
+  },
+  "아주대학교": {
+    "name": "아주대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.ajou.ac.kr/kr/ajou/notice.do?mode=list&articleLimit=10",
+        "page_param": "article.offset",
+        "page_size": 10,
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "세종대학교": {
+    "name": "세종대학교",
+    "boards": [
+      {
+        "board_name": "학사공지",
+        "list_url": "https://www.sejong.ac.kr/kor/intro/notice3.do?mode=list&articleLimit=10",
+        "page_param": "article.offset",
+        "page_size": 10,
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "가톨릭대학교": {
+    "name": "가톨릭대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.catholic.ac.kr/ko/campuslife/notice.do?mode=list&articleLimit=10",
+        "page_param": "article.offset",
+        "page_size": 10,
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
   }
 }
