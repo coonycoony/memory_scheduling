@@ -296,8 +296,15 @@
       border-left: 4px solid #3b82f6;
     }
     
-    .add-schedule-btn {
+    .action-buttons {
+      display: flex;
+      gap: 8px;
       margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .add-schedule-btn {
+      flex: 1;
       padding: 8px 12px;
       background: #f3f4f6;
       color: #374151;
@@ -309,14 +316,25 @@
       transition: all 0.2s;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      width: 100%;
       justify-content: center;
+      gap: 6px;
+      min-width: 120px;
     }
 
     .add-schedule-btn:hover {
       background: #e5e7eb;
       border-color: #9ca3af;
+    }
+
+    .archive-btn {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border-color: #bfdbfe;
+    }
+
+    .archive-btn:hover {
+      background: #dbeafe;
+      border-color: #93c5fd;
     }
 
     /* 프로필 영역 CSS */
@@ -743,7 +761,7 @@
     async function searchNotices() {
       const university = document.getElementById("universitySelect").value;
       const board = document.getElementById("boardSelect").value;
-      const searchDays = document.getElementById("searchDays").value; // 💡 변경된 드롭다운 값을 가져옴
+      const searchDays = document.getElementById("searchDays").value; 
       const status = document.getElementById("status");
       const noticeList = document.getElementById("noticeList");
       const pagination = document.getElementById("pagination");
@@ -889,6 +907,7 @@
         let selectedBoard = document.getElementById("boardSelect").value;
         let sourceCat = notice.university;
         let dept = notice.board_name || notice.board || (selectedBoard ? selectedBoard : "전체 공지");
+        let noticeJson = escapeAttribute(JSON.stringify(notice));
         
         return `
         <div class="notice-card">
@@ -907,9 +926,14 @@
             ${safeMeta('부서', dept)}
             <span>작성일: ${escapeHtml(notice.date || "작성일 없음")}</span>
           </div>
-          <button class="add-schedule-btn" onclick="sendToSchedule('${escapeAttribute(notice.title || "")}', '${escapeAttribute(notice.category || "기타")}', '${escapeAttribute(notice.url || "")}')">
-            📅 내 스케줄러에 추가하기
-          </button>
+          <div class="action-buttons">
+            <button class="add-schedule-btn" onclick="sendToSchedule(this)" data-notice="${noticeJson}">
+              📅 스케줄 추가
+            </button>
+            <button class="add-schedule-btn archive-btn" onclick="saveToArchive(this)" data-notice="${noticeJson}">
+              🗂️ 보관함 저장
+            </button>
+          </div>
         </div>
         `;
       }).join("");
@@ -1004,6 +1028,7 @@
         let selectedBoard = document.getElementById("boardSelect").value;
         let sourceCat = notice.university;
         let dept = notice.board_name || notice.board || (selectedBoard ? selectedBoard : "전체 공지");
+        let noticeJson = escapeAttribute(JSON.stringify(notice));
 
         return `
         <div class="recommend-card">
@@ -1020,9 +1045,14 @@
             ${safeMeta('원본 분류', sourceCat)}
             ${safeMeta('부서', dept)}
           </div>
-          <button class="add-schedule-btn" onclick="sendToSchedule('${escapeAttribute(notice.title || "")}', '${escapeAttribute(notice.category || "기타")}', '${escapeAttribute(notice.url || "")}')">
-            📅 스케줄 추가
-          </button>
+          <div class="action-buttons">
+            <button class="add-schedule-btn" onclick="sendToSchedule(this)" data-notice="${noticeJson}">
+              📅 스케줄 추가
+            </button>
+            <button class="add-schedule-btn archive-btn" onclick="saveToArchive(this)" data-notice="${noticeJson}">
+              🗂️ 보관함 저장
+            </button>
+          </div>
         </div>
         `;
       }).join("");
@@ -1080,10 +1110,76 @@
       }
     }
 
-    function sendToSchedule(title, category, url) {
-      const pendingData = { title, category, url };
-      localStorage.setItem('pendingSchedule', JSON.stringify(pendingData));
-      location.href = 'schedule_page.html';
+    // 💡 버그 수정: localStorage 대신 URL 쿼리 파라미터로 데이터를 넘깁니다.
+    function sendToSchedule(btnElement) {
+      try {
+        const notice = JSON.parse(btnElement.getAttribute('data-notice'));
+        let selectedBoard = document.getElementById("boardSelect").value;
+        let dept = notice.board_name || notice.board || (selectedBoard ? selectedBoard : "전체 공지");
+        let sourceCat = notice.source_category || notice.sourceCategory || notice.subCategory || "기타";
+        
+        let memoText = "";
+        if(notice.university) memoText += `학교: ${notice.university}\n`;
+        if(dept) memoText += `부서: ${dept}\n`;
+
+        const params = new URLSearchParams({
+          title: notice.title || '',
+          category: notice.category || '기타',
+          subCategory: sourceCat,
+          url: notice.url || '',
+          memo: memoText.trim()
+        });
+        
+        location.href = `schedule_page.html?${params.toString()}`;
+      } catch(e) {
+        console.error("스케줄 이동 중 오류:", e);
+        alert("오류가 발생했습니다.");
+      }
+    }
+
+    // 💡 기능 추가: 클릭한 공지를 내 공지 보관함(localStorage)에 저장합니다.
+    function saveToArchive(btnElement) {
+      try {
+        const notice = JSON.parse(btnElement.getAttribute('data-notice'));
+        const STORAGE_KEY = 'noticeArchiveItems';
+        let items = [];
+        
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          items = JSON.parse(raw);
+        }
+
+        // 중복 저장 방지
+        const isDuplicate = items.some(item => item.url === notice.url && item.title === notice.title);
+        if (isDuplicate) {
+          alert('이미 보관함에 저장된 공지입니다.');
+          return;
+        }
+
+        let selectedBoard = document.getElementById("boardSelect").value;
+        let sourceCat = notice.source_category || notice.sourceCategory || notice.subCategory || '기타';
+        let dept = notice.department || notice.author || notice.board_name || notice.board || (selectedBoard ? selectedBoard : "전체 공지");
+
+        const newItem = {
+          id: `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+          title: notice.title || '제목 없음',
+          url: notice.url || '#',
+          category: notice.category || '기타',
+          source_category: sourceCat,
+          department: dept,
+          university: notice.university || '',
+          date: notice.date || '',
+          memo: '',
+          savedAt: new Date().toISOString()
+        };
+
+        items.push(newItem);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+        alert('🗂️ 공지가 보관함에 성공적으로 저장되었습니다!');
+      } catch(e) {
+        console.error("보관함 저장 중 오류:", e);
+        alert('저장 중 오류가 발생했습니다.');
+      }
     }
   </script>
 </body>
