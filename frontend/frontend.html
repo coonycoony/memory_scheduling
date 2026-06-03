@@ -496,17 +496,33 @@
       margin-bottom: 16px;
     }
 
+    .board-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      background: white;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .board-list-item span {
+      font-size: 14px;
+      font-weight: bold;
+      color: #374151;
+    }
+
     .btn-delete {
-      padding: 10px 16px;
+      padding: 6px 12px;
       background: #fee2e2;
       color: #dc2626;
       border: none;
-      border-radius: 8px;
-      font-size: 14px;
+      border-radius: 6px;
+      font-size: 12px;
       font-weight: bold;
       cursor: pointer;
       transition: 0.2s;
-      white-space: nowrap;
     }
 
     .btn-delete:hover {
@@ -634,13 +650,13 @@
       </div>
 
       <div class="manage-section" style="margin-bottom: 0;">
-        <h3 style="font-size: 16px; margin-bottom: 12px; color: #374151;">🗑️ 등록된 학교 삭제</h3>
-        <p style="font-size: 13px; color: #6b7280; margin-bottom: 12px;">선택한 학교에 등록된 모든 게시판 크롤링 소스가 함께 삭제됩니다.</p>
-        <div style="display: flex; gap: 8px;">
-          <select id="manageUnivSelect" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #d0d7e2; outline: none; font-size: 14px;">
-            <option value="">학교를 선택하세요</option>
-          </select>
-          <button class="btn-delete" onclick="deleteUniversity()">학교 삭제</button>
+        <h3 style="font-size: 16px; margin-bottom: 12px; color: #374151;">🗑️ 등록된 게시판 삭제</h3>
+        <select id="manageUnivSelect" onchange="loadManageBoards()" style="width: 100%; padding: 10px; margin-bottom: 12px; border-radius: 8px; border: 1px solid #d0d7e2; outline: none; font-size: 14px;">
+          <option value="">학교를 선택하세요</option>
+        </select>
+        
+        <div id="manageBoardList" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column;">
+          <div style="font-size: 13px; color: #9ca3af; text-align: center; padding: 16px;">학교를 선택하면 등록된 게시판이 표시됩니다.</div>
         </div>
       </div>
 
@@ -702,6 +718,7 @@
     function closeManageModal() {
       document.getElementById('manageModal').classList.remove('show');
       document.getElementById('registerForm').reset();
+      document.getElementById('manageBoardList').innerHTML = `<div style="font-size: 13px; color: #9ca3af; text-align: center; padding: 16px;">학교를 선택하면 등록된 게시판이 표시됩니다.</div>`;
       document.getElementById('manageUnivSelect').value = "";
     }
 
@@ -792,33 +809,61 @@
       }
     }
 
-    // 💡 선택한 특정 학교의 모든 소스를 삭제하는 기능
-    async function deleteUniversity() {
+    async function loadManageBoards() {
       const selectedUniv = document.getElementById("manageUnivSelect").value;
+      const boardListDiv = document.getElementById("manageBoardList");
+
       if (!selectedUniv) {
-        alert("삭제할 학교를 선택해주세요.");
+        boardListDiv.innerHTML = `<div style="font-size: 13px; color: #9ca3af; text-align: center; padding: 16px;">학교를 선택하면 등록된 게시판이 표시됩니다.</div>`;
         return;
       }
 
-      if (!confirm(`⚠️ 정말 '${selectedUniv}'에 등록된 모든 게시판을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) {
+      boardListDiv.innerHTML = `<div style="font-size: 13px; color: #6b7280; text-align: center; padding: 16px;">게시판 목록을 불러오는 중...</div>`;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/boards?university=${encodeURIComponent(selectedUniv)}`);
+        if (response.ok) {
+          const boards = await response.json();
+          if (boards.length === 0) {
+            boardListDiv.innerHTML = `<div style="font-size: 13px; color: #ef4444; text-align: center; padding: 16px;">등록된 게시판이 없습니다.</div>`;
+            return;
+          }
+
+          boardListDiv.innerHTML = boards.map(b => `
+            <div class="board-list-item">
+              <span>${escapeHtml(b)}</span>
+              <button class="btn-delete" onclick="deleteSource('${escapeAttribute(selectedUniv)}', '${escapeAttribute(b)}')">🗑️ 삭제</button>
+            </div>
+          `).join("");
+        } else {
+          throw new Error("게시판 조회 실패");
+        }
+      } catch (error) {
+        boardListDiv.innerHTML = `<div style="font-size: 13px; color: #ef4444; text-align: center; padding: 16px;">게시판 목록을 불러오지 못했습니다.</div>`;
+      }
+    }
+
+    // 💡 특정 학교의 특정 게시판만 안전하게 지우는 URL 쿼리 파라미터 기반 삭제 로직
+    async function deleteSource(univ, board) {
+      if (!confirm(`⚠️ 정말 '${univ}'의 '${board}' 게시판을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) {
         return;
       }
 
       try {
-        const url = `${API_BASE_URL}/sources?university=${encodeURIComponent(selectedUniv)}`;
+        // DELETE 요청의 경우 body를 지원하지 않는 프레임워크가 있을 수 있으므로 URL Parameter로 명확하게 대상 지정
+        const url = `${API_BASE_URL}/sources?university=${encodeURIComponent(univ)}&board_name=${encodeURIComponent(board)}`;
         const response = await fetch(url, {
           method: "DELETE"
         });
 
         if (response.ok) {
-          alert(`🗑️ '${selectedUniv}' 데이터가 성공적으로 삭제되었습니다.`);
+          alert(`🗑️ '${univ} - ${board}' 게시판이 성공적으로 삭제되었습니다.`);
           
-          await loadManageUniversities(); 
+          await loadManageBoards(); 
           await loadUniversities(); 
           
           const mainUnivSelect = document.getElementById("universitySelect");
-          if (mainUnivSelect.value === selectedUniv || mainUnivSelect.value === "") {
-            mainUnivSelect.value = "";
+          if (mainUnivSelect.value === univ) {
             handleUniversityChange();
           }
 
