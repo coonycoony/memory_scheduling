@@ -1023,7 +1023,6 @@
   const url = params.get('url');
   const memo = params.get('memo');
 
-    const [y, m, d] = dateStr.split("-");
     if (title) {
       els.eventTitle.value = title;
     }
@@ -1063,7 +1062,6 @@
     els.eventList.innerHTML = "";
 
     if (!list.length) {
-    const [y, m, d] = dateStr.split("-");
       els.eventList.innerHTML = '<div class="empty-text">이 날짜에는 저장된 스케줄이 없습니다.</div>';
       return;
     }
@@ -1088,7 +1086,6 @@
 
           <div class="event-time">
             ${ev.subCategory ? `세부항목: ${ev.subCategory}` : ""}
-    const [y, m, d] = dateStr.split("-");
             ${ev.startDate ? ` · 시작: ${ev.startDate}` : ""}
             ${ev.endDate ? ` · 종료: ${ev.endDate}` : ""}
           </div>
