@@ -573,6 +573,7 @@
 
   let rangeStart = null;
   let rangeEnd = null;
+  let initialUrlFromQuery = null;
 
   // =========================
   // 2. 상수(Constants)
@@ -883,6 +884,10 @@
       els.eventMemo.value = memoParts.join('\n');
     }
 
+    if (url) {
+      initialUrlFromQuery = url;
+    }
+
     if (category && categoryMap[category]) {
       els.mainCategory.value = category;
       renderSubCategories(category);
@@ -1144,12 +1149,13 @@
             start_date: rangeStart,
             end_date: rangeEnd,
             memo: memo,
-            url: null
+            url: initialUrlFromQuery || null
           });
         }
 
       els.eventTitle.value = "";
       els.eventMemo.value = "";
+      initialUrlFromQuery = null;
 
       await loadSchedulesFromServer();
       setStatus("스케줄이 저장되었습니다.", "success");
