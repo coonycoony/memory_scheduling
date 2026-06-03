@@ -246,10 +246,14 @@ def fetch_board_html(list_url: str) -> str:
         "Accept-Language": "ko-KR,ko;q=0.9",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     })
-    response = session.get(list_url, timeout=20)
+    response = session.get(list_url, timeout=20, verify=False)
     response.raise_for_status()
-    if response.apparent_encoding:
-        response.encoding = response.apparent_encoding
+    try:
+        response.content.decode('utf-8')
+        response.encoding = 'utf-8'
+    except UnicodeDecodeError:
+        if response.apparent_encoding:
+            response.encoding = response.apparent_encoding
     return response.text
 
 
@@ -287,7 +291,7 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
         for a in links:
             href = a.get('href', '').lower()
             text = a.get_text(strip=True)
-            if len(text) > 5 and ('board' in href or 'read' in href or 'article' in href or 'document_srl' in href):
+            if len(text) > 5 and ('board' in href or 'read' in href or 'article' in href or 'document_srl' in href or 'task=view' in href or 'view' in href):
                 parent_row = a.find_parent(['tr', 'li', 'div'])
                 if parent_row and parent_row not in valid_rows:
                     valid_rows.append(parent_row)
