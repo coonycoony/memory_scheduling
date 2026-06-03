@@ -583,8 +583,8 @@
       </select>
 
       <select id="searchDays">
-        <option value="30">최근 30일 (기본)</option>
-        <option value="15">최근 15일</option>
+        <option value="15" selected>최근 15일 (기본)</option>
+        <option value="30">최근 30일</option>
         <option value="7">최근 7일</option>
         <option value="3">최근 3일</option>
       </select>
@@ -701,13 +701,13 @@
           const boardSelect = document.getElementById("boardSelect");
           
           univSelect.value = state.university;
-          await handleUniversityChange();
+          await handleUniversityChange(); 
           
           if (state.board) {
             boardSelect.value = state.board;
           }
           
-          document.getElementById("searchDays").value = state.searchDays || "30";
+          document.getElementById("searchDays").value = state.searchDays || "15";
           document.getElementById("sortSelect").value = state.sort || "desc";
 
           allNotices = state.allNotices || [];
@@ -1000,7 +1000,7 @@
               선택한 학교 또는 게시판에 데이터가 있는지 확인해주세요.
             </div>
           `;
-          saveSearchState();
+          saveSearchState(); 
           return;
         }
 
