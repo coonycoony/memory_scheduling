@@ -223,7 +223,7 @@
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
-    }   
+    }  
 
     .event-main {
       flex: 1;
@@ -287,6 +287,23 @@
       color: #9ca3af;
       text-align: center;
       padding: 16px 4px;
+    }
+
+    .event-link {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 12px;
+      color: #2563eb;
+      text-decoration: underline;
+      cursor: pointer;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .event-link:hover {
+      color: #1d4ed8;
     }
 
     .calendar-card {
@@ -918,6 +935,7 @@
             ${ev.endDate ? ` · 종료: ${ev.endDate}` : ""}
           </div>
           ${ev.memo ? `<div class="event-memo">${ev.memo}</div>` : ""}
+          ${ev.url ? `<a class="event-link" href="${ev.url}" target="_blank" rel="noopener noreferrer"> 원문 바로가기 </a>` : ""}
         </div>
       `;
 
