@@ -143,14 +143,6 @@
       justify-content: center;
   }
 
-  .btn-primary,
-  .btn-secondary,
-  .btn-danger {
-      border: none;
-      border-radius: 999px;
-      cursor: pointer;
-  }
-
   .btn-primary {
       background: #2563eb;
       color: #fff;
@@ -499,6 +491,7 @@
   // 2. 상수(Constants)
   // =========================
   const STORAGE_KEY = 'noticeArchiveItems';
+  const API_BASE = "http://127.0.0.1:8000";
 
   // =========================
   // 3. DOM 유틸 / DOM 참조
@@ -742,7 +735,8 @@
 
         <div class="notice-actions">
           <a class="btn-primary" href="${escapeAttribute(item.url)}" target="_blank" rel="noopener noreferrer">원문 보기</a>
-          <a class="btn-secondary" href="${escapeAttribute(buildScheduleUrl(item))}">달력에 가져가기</a>
+          <button type="button"
+          class="btn-secondary" data-add-schedule-id="${escapeAttribute(item.id)}"> 달력에 가져가기</button>
           <button type="button" class="btn-danger" data-remove-id="${escapeAttribute(item.id)}">보관함에서 제거</button>
         </div>
       </div>
@@ -765,6 +759,15 @@
       button.addEventListener('click', () => handleRemoveItem(button.dataset.removeId));
     });
   }
+ 
+ function bindAddScheduleButtons() {
+    document.querySelectorAll('[data-add-schedule-id]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const id = button.dataset.addScheduleId;
+        handleAddScheduleFromArchive(id);
+      });
+    });
+  }
 
   function renderArchive() {
     const allItems = getAllItems();
@@ -775,10 +778,26 @@
     renderNoticeGrid(filteredItems);
     renderStatus(allItems, filteredItems);
     bindRemoveButtons();
+    bindAddScheduleButtons();
   }
   
   // =========================
-  // 7. 핸들러
+  // 7. 서버 스케줄 저장 API (기존 /schedules 사용)
+  // =========================
+  async function createScheduleOnServer(payload) {
+    const res = await fetch(`${API_BASE}/schedules`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      throw new Error(`스케줄 저장 실패: ${res.status}`);
+    }
+    return await res.json();
+  }
+
+  // =========================
+  // 8. 핸들러
   // =========================
 
   function handleRemoveItem(id) {
@@ -786,6 +805,48 @@
     setStoredItems(nextItems);
     els.status.textContent = '선택한 공지를 삭제했습니다.';
     renderArchive();
+  }
+
+  async function handleAddScheduleFromArchive(id) {
+    const items = getAllItems();
+    const item = items.find((x) => x.id === id);
+    if (!item) {
+      alert("해당 공지를 찾을 수 없습니다.");
+      return;
+    }
+
+    const mainCategory = item.category || "기타";        // 장학/학사/취업/채용/기타
+    const subCategory = item.source_category || "기타";  // 세부항목
+    const title = item.title || "제목 없음";
+
+    const memoLines = [];
+    if (item.memo) memoLines.push(item.memo);
+    if (item.url) memoLines.push(`원문 링크: ${item.url}`);
+    if (item.university) memoLines.push(`학교: ${item.university}`);
+    if (item.department) memoLines.push(`부서: ${item.department}`);
+    const memo = memoLines.join("\n") || null;
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const dateStr = item.date || todayStr;
+
+    const payload = {
+      date: dateStr,
+      main_category: mainCategory,
+      sub_category: subCategory,
+      title: title,
+      start_date: dateStr,
+      end_date: dateStr,
+      memo: memo,
+      url: item.url || null
+    };
+
+    try {
+      await createScheduleOnServer(payload);
+      alert("달력 스케줄로 저장했습니다.");
+    } catch (e) {
+      console.error(e);
+      alert("스케줄 저장 중 오류가 발생했습니다. 콘솔을 확인하세요.");
+    }
   }
 
   function handleClearArchive() {
@@ -810,7 +871,7 @@
   }
 
   // =========================
-  // 8. 이벤트
+  // 9. 이벤트
   // =========================
   function bindEvents() {
     els.keywordInput.addEventListener('input', renderArchive);
@@ -825,7 +886,7 @@
   }
 
   // =========================
-  // 9. 초기화
+  // 10. 초기화
   // =========================
   function init() {
     bindEvents();
