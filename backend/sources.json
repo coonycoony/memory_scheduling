@@ -172,5 +172,382 @@
         "selector": "table tbody tr"
       }
     ]
+  },
+  "연세대학교": {
+    "name": "연세대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체공지",
+        "list_url": "https://www.yonsei.ac.kr/sc/254/subview.do",
+        "page_param": "page",
+        "max_pages": 100,
+        "enc_inner_path": "/bbs/sc/58/artclList.do",
+        "enc_query_template": "page={page}&findType=&findWord=&findClSeq=&findOpnwrd=&rgsBgndeStr=&rgsEnddStr=&",
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "인하대학교": {
+    "name": "인하대학교",
+    "boards": [
+      {
+        "board_name": "문과대학 공지",
+        "list_url": "https://hacollege.inha.ac.kr/hacollege/5178/subview.do",
+        "page_param": "page",
+        "max_pages": 50,
+        "enc_inner_path": "/bbs/hacollege/1186/artclList.do",
+        "enc_query_template": "page={page}&srchColumn=&srchWrd=&bbsClSeq=&bbsOpenWrdSeq=&rgsBgndeStr=&rgsEnddeStr=&isViewMine=false&",
+        "selector": "table tbody tr"
+      },
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.inha.ac.kr/kr/950/subview.do",
+        "page_param": "page",
+        "max_pages": 50,
+        "enc_inner_path": "/bbs/kr/8/artclList.do",
+        "enc_query_template": "page={page}&srchColumn=&srchWrd=&bbsClSeq=&bbsOpenWrdSeq=&rgsBgndeStr=&rgsEnddeStr=&isViewMine=false&",
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "부산대학교": {
+    "name": "부산대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.pusan.ac.kr/kor/CMS/Board/Board.do?robot=Y&mCode=MN095&mgr_seq=3",
+        "page_param": "page",
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "고려대학교": {
+    "name": "고려대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.korea.ac.kr/ko/566/subview.do",
+        "page_param": "page",
+        "max_pages": 50,
+        "enc_inner_path": "/portalBoard/ko/1/portalBoardList.do",
+        "enc_query_template": "siteId=ko&findType=&findWord=&startDate=&endDate=&page={page}",
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "강원대학교": {
+    "name": "강원대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.kangwon.ac.kr/ko/bbs/504/list.do?pageItm=10&searchOrderSort=0&searchGbn=0",
+        "page_param": "pageIndex",
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "경남대학교": {
+    "name": "경남대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.kyungnam.ac.kr/ko/8461/subview.do",
+        "page_param": "page",
+        "max_pages": 50,
+        "enc_inner_path": "/bbs/ko/1408/artclList.do",
+        "enc_query_template": "page={page}&srchColumn=&srchWrd=&bbsClSeq=&bbsOpenWrdSeq=&rgsBgndeStr=&rgsEnddeStr=&isViewMine=false&",
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "전북대학교": {
+    "name": "전북대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.jbnu.ac.kr/web/news/notice/sub01.do?menu=2377",
+        "page_param": "pageIndex",
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "성균관대학교": {
+    "name": "성균관대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.skku.edu/skku/campus/skk_comm/notice01.do?mode=list&articleLimit=10",
+        "page_param": "article.offset",
+        "page_size": 10,
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "서강대학교": {
+    "name": "서강대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.sogang.ac.kr/ko/story/notification-general?option=TITLE",
+        "page_param": "page",
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "한양대학교": {
+    "name": "한양대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.hanyang.ac.kr/web/www/notice_all?p_p_id=kr_ac_hanyang_noticeBoard_web_portlet_NoticeBoardPortlet&p_p_lifecycle=0&p_p_state=normal&p_p_mode=view&_kr_ac_hanyang_noticeBoard_web_portlet_NoticeBoardPortlet_action=view",
+        "page_param": "_kr_ac_hanyang_noticeBoard_web_portlet_NoticeBoardPortlet_cur",
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "경희대학교": {
+    "name": "경희대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.khu.ac.kr/kor/user/bbs/BMSR00040/list.do?menuNo=200316&catId=&searchCondition=&searchKeyword=",
+        "page_param": "pageIndex",
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "한국외국어대학교": {
+    "name": "한국외국어대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.hufs.ac.kr/hufs/11281/subview.do",
+        "page_param": "page",
+        "max_pages": 50,
+        "enc_inner_path": "/bbs/hufs/2180/artclList.do",
+        "enc_query_template": "page={page}&srchColumn=&srchWrd=&bbsClSeq=&bbsOpenWrdSeq=&rgsBgndeStr=&rgsEnddeStr=&isViewMine=false&",
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "동국대학교": {
+    "name": "동국대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.dongguk.edu/article/GENERALNOTICES/list",
+        "page_param": "pageIndex",
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "건국대학교": {
+    "name": "건국대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.konkuk.ac.kr/konkuk/2244/subview.do",
+        "page_param": "page",
+        "max_pages": 50,
+        "enc_inner_path": "/bbs/konkuk/240/artclList.do",
+        "enc_query_template": "page={page}&srchColumn=&srchWrd=&bbsClSeq=&bbsOpenWrdSeq=&rgsBgndeStr=&rgsEnddeStr=&isViewMine=false&",
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "가천대학교": {
+    "name": "가천대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.gachon.ac.kr/kor/7986/subview.do",
+        "page_param": "page",
+        "max_pages": 50,
+        "enc_inner_path": "/commonNotice/kor/artclList.do",
+        "enc_query_template": "page={page}&srchColumn=&srchWord=&",
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "명지대학교": {
+    "name": "명지대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.mju.ac.kr/mjukr/257/subview.do",
+        "page_param": "page",
+        "max_pages": 50,
+        "enc_inner_path": "/bbs/mjukr/143/artclList.do",
+        "enc_query_template": "page={page}&srchColumn=&srchWrd=&bbsClSeq=&bbsOpenWrdSeq=&rgsBgndeStr=&rgsEnddeStr=&isViewMine=false&isView=true&",
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "한국공학대학교": {
+    "name": "한국공학대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.tukorea.ac.kr/tukorea/7607/subview.do",
+        "page_param": "page",
+        "max_pages": 50,
+        "enc_inner_path": "/bbs/tukorea/1303/artclList.do",
+        "enc_query_template": "page={page}&srchColumn=&srchWrd=&bbsClSeq=&bbsOpenWrdSeq=&rgsBgndeStr=&rgsEnddeStr=&isViewMine=false&",
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "아주대학교": {
+    "name": "아주대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.ajou.ac.kr/kr/ajou/notice.do?mode=list&articleLimit=10",
+        "page_param": "article.offset",
+        "page_size": 10,
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "세종대학교": {
+    "name": "세종대학교",
+    "boards": [
+      {
+        "board_name": "학사공지",
+        "list_url": "https://www.sejong.ac.kr/kor/intro/notice3.do?mode=list&articleLimit=10",
+        "page_param": "article.offset",
+        "page_size": 10,
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "가톨릭대학교": {
+    "name": "가톨릭대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.catholic.ac.kr/ko/campuslife/notice.do?mode=list&articleLimit=10",
+        "page_param": "article.offset",
+        "page_size": 10,
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "서울과학기술대학교": {
+    "name": "서울과학기술대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.seoultech.ac.kr/service/info/notice?bidx=4691&bnum=4691&allboard=false&size=15&searchtype=1&searchtext=",
+        "page_param": "page",
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "국민대학교": {
+    "name": "국민대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.kookmin.ac.kr/user/kmuNews/notice/index.do?notcLwprtCatgrCd=&searchTy=1&noticeCondition=",
+        "page_param": "currentPageNo",
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "광운대학교": {
+    "name": "광운대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.kw.ac.kr/ko/life/notice.jsp?MaxRows=10&searchKey=1&searchVal=&srCategoryId=",
+        "page_param": "tpage",
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "부경대학교": {
+    "name": "부경대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.pknu.ac.kr/main/163?bbsId=2&searchCondition=title&searchKeyword=&cd=",
+        "page_param": "pageIndex",
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "경기대학교": {
+    "name": "경기대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.kyonggi.ac.kr/www/selectBbsNttList.do?key=7520&bbsNo=1073&pageUnit=10&searchCnd=all",
+        "page_param": "pageIndex",
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "단국대학교": {
+    "name": "단국대학교",
+    "boards": [
+      {
+        "board_name": "일반공지",
+        "list_url": "https://www.dankook.ac.kr/web/kor/-390?p_p_id=dku_bbs_web_BbsPortlet&p_p_lifecycle=0&p_p_state=normal&p_p_mode=view&_dku_bbs_web_BbsPortlet_sKeyType=title&_dku_bbs_web_BbsPortlet_action=view&_dku_bbs_web_BbsPortlet_orderBy=createDate",
+        "page_param": "_dku_bbs_web_BbsPortlet_cur",
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
   }
 }

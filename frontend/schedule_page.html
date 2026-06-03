@@ -339,19 +339,17 @@
       background: #bfdbfe;
     }
 
-    .calendar-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #2563eb;
+    .calendar-day-events {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 90px;     
+      overflow: hidden;
     }
-
-    .calendar-dot.scholarship {
-      background: #ea580c;
-    }
-
-    .calendar-dot.etc {
-      background: #16a34a;
+    
+    .calendar-event-more {
+      font-size: 10px;
+      color: #6b7280;
     }
 
     .status-text {
@@ -367,6 +365,56 @@
     .status-text.success {
       color: #15803d;
     }
+
+    .calendar-event-badge {
+      display: block;
+      max-width: 100%;
+      padding: 2px 6px;
+      border-radius: 999px;
+      font-size: 11px;
+      color: #fff;
+      background: #4b5563;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-sizing: border-box;
+    }
+
+    .calendar-event-badge.scholarship {
+      background: #f5da3f;
+    }
+
+    .calendar-event-badge.cat-academic {
+      background: #2563eb;
+    }
+
+    .calendar-event-badge.cat-admission {
+      background: #7c3aed;
+    }
+
+    .calendar-event-badge.cat-career {
+      background: #f97316;
+    }
+
+    .calendar-event-badge.cat-contest {
+      background: #e11d48;
+    }
+
+    .calendar-event-badge.cat-volunteer {
+      background: #0d9488;
+    }
+
+    .calendar-event-badge.cat-facility {
+      background: #0ea5e9;
+    }
+
+    .calendar-event-badge.cat-safety {
+      background: #22f58b;
+    }
+
+    .calendar-event-badge.cat-etc {
+      background: #6b7280;
+    }
     </style>
 </head>
 
@@ -377,8 +425,11 @@
           <div class="header-top">
             <h1>공지 · 장학 스케줄러</h1>
 		    <button type="button" onclick="location.href='frontend.html'" class="btn-primary back-to-search-btn">
-   	          🔍 공지 검색으로 돌아가기
+   	          🔍 공지 검색하러 가기
   	        </button>
+            <button type="button" onclick="location.href='my_notice_archive.html'" class="btn-primary back-to-search-btn">
+               공지 보관함으로 가기
+            </button>
           </div>
         </div>
 
@@ -644,8 +695,13 @@
         Object.keys(events).forEach((key) => delete events[key]);
 
         data.forEach((item) => {
-          if (!events[item.date]) events[item.date] = [];
-          events[item.date].push({
+          const rawDate = item.date;
+          if (!rawDate) return;
+
+          const dateKey = String(rawDate).slice(0, 10);  
+
+          if (!events[dateKey]) events[dateKey] = [];
+          events[dateKey].push({
             id: item.id,
             mainCategory: item.main_category,
             subCategory: item.sub_category,
@@ -685,6 +741,46 @@
       );
     }
 
+  async function deleteScheduleOnServer(id) {
+      return await fetchJson(`${API_BASE}/schedules/${id}`, {
+        method: "DELETE",
+      });
+  } 
+
+  async function deleteRangeUsingSingleDelete(startIso, endIso) {
+  const { start, end } = normalizeRange(startIso, endIso);
+  const dates = getDatesInRange(start, end);
+
+  const targets = [];
+  dates.forEach((iso) => {
+    (events[iso] || []).forEach((ev) => targets.push({ iso, ev }));
+  });
+
+  if (!targets.length) {
+    setStatus("선택한 범위에 삭제할 스케줄이 없습니다.");
+    return;
+  }
+
+  for (const { iso, ev } of targets) {
+    try {
+      await deleteScheduleOnServer(ev.id);
+      const list = events[iso];
+      const idx = list.findIndex((x) => x.id === ev.id);
+      if (idx !== -1) {
+        list.splice(idx, 1);
+        if (!list.length) {
+          delete events[iso];
+        }
+      }
+    } catch (error) {
+      console.error("범위 삭제 중 에러:", error);
+    }
+  }
+
+  renderEventList();
+  renderCalendar();
+}
+
   // =========================
   // 7. 카테고리 렌더링
   // =========================
@@ -709,6 +805,41 @@
       option.textContent = sub;
       els.subCategory.appendChild(option);
     });
+  }
+  
+  function applyQueryToForm() {
+  const params = new URLSearchParams(window.location.search);
+  const title = params.get('title');
+  const category = params.get('category');
+  const subCategory = params.get('subCategory');
+  const url = params.get('url');
+  const memo = params.get('memo');
+
+    if (title) {
+      els.eventTitle.value = title;
+    }
+
+    if (memo || url) {
+      const memoParts = [];
+      if (memo) memoParts.push(memo);
+      if (url) memoParts.push(`원문 링크: ${url}`);
+      els.eventMemo.value = memoParts.join('\n');
+    }
+
+    if (category && categoryMap[category]) {
+      els.mainCategory.value = category;
+      renderSubCategories(category);
+    } else {
+      renderSubCategories(els.mainCategory.value);
+    } 
+
+    if (subCategory) {
+      Array.from(els.subCategory.options).forEach((opt) => {
+        if (opt.value === subCategory) {
+          els.subCategory.value = subCategory;
+        }
+      });
+    }
   }
 
   // =========================
@@ -754,15 +885,28 @@
       deleteBtn.type = "button";
       deleteBtn.textContent = "삭제";
 
-      deleteBtn.addEventListener("click", () => {
-        events[selectedDate].splice(index, 1);
+      deleteBtn.addEventListener("click", async () => {
+        const ev = list[index];  // 현재 이벤트 객체 (id 포함)
 
-        if (!events[selectedDate].length) {
-          delete events[selectedDate];
+        if (!confirm("이 스케줄을 삭제할까요?")) return;
+
+        try {
+          setStatus("스케줄을 삭제하는 중입니다...");
+          await deleteScheduleOnServer(ev.id);   // 1) 서버에서 삭제
+
+          // 2) 로컬 상태 반영
+          events[selectedDate].splice(index, 1);
+          if (!events[selectedDate].length) {
+            delete events[selectedDate];
+          }
+
+          renderEventList();
+          renderCalendar();
+          setStatus("스케줄이 삭제되었습니다.", "success");
+        } catch (error) {
+          console.error(error);
+          setStatus("스케줄 삭제 중 오류가 발생했습니다.", "error");
         }
-
-        renderEventList();
-        renderCalendar();
       });
 
       item.appendChild(deleteBtn);
@@ -791,10 +935,29 @@
   // =========================
   // 9. 달력 렌더링
   // =========================
-  function getDotClass(mainCategory) {
-    if (mainCategory === "장학") return "scholarship";
-    if (mainCategory === "시설/행정") return "etc";
-    return "";
+  function getBadgeClass(mainCategory) {
+   switch (mainCategory) {
+    case "장학":
+      return "cat-scholarship";
+    case "학사":
+      return "cat-academic";
+    case "입학/등록":
+      return "cat-admission";
+    case "취업/채용":
+      return "cat-career";
+    case "공모전/대회":
+      return "cat-contest";
+    case "모집/봉사":
+      return "cat-volunteer";
+    case "시설/행정":
+      return "cat-facility";
+    case "안전":
+      return "cat-safety";
+    case "기타":
+      return "cat-etc";
+    default:
+      return "";
+    }  
   }
 
   function createDayCell(date, muted) {
@@ -808,16 +971,28 @@
     if (iso === todayIso()) cell.classList.add("today");
     if (isDateInSelectedRange(iso)) cell.classList.add("in-range");
     if (iso === rangeStart || iso === rangeEnd) cell.classList.add("range-edge");
-    
-    const dots = dayEvents
-      .slice(0, 3)
-      .map((ev) => `<span class="calendar-dot ${getDotClass(ev.mainCategory)}"></span>`)
-      .join("");
 
     cell.innerHTML = `
       <div class="calendar-day-number">${date.getDate()}</div>
-      <div class="calendar-day-dots">${dots}</div>
+      <div class="calendar-day-events"></div>
     `;
+
+    const eventsContainer = cell.querySelector(".calendar-day-events");
+
+    dayEvents.slice(0, 3).forEach((ev) => {
+      const badge = document.createElement("div");
+      badge.className = `calendar-event-badge ${getBadgeClass(ev.mainCategory)}`;
+      badge.textContent = ev.title;   
+
+      eventsContainer.appendChild(badge);
+    });
+
+    if (dayEvents.length > 3) {
+      const more = document.createElement("div");
+      more.className = "calendar-event-more";
+      more.textContent = `+${dayEvents.length - 3}`;
+      eventsContainer.appendChild(more);
+    }
 
     cell.addEventListener("click", () => {
       const clickedIso = iso;
@@ -929,7 +1104,16 @@
     const targetDates = getCurrentTargetDates();
     const hasAnyEvent = targetDates.some((dateIso) => events[dateIso]?.length);
     
-    if (!targetDates.length || !hasAnyEvent) return;
+     if (!targetDates.length) {
+      alert("먼저 삭제할 날짜(또는 날짜 범위)를 선택해 주세요.");
+      return;
+    }
+
+    if (!hasAnyEvent) {
+      alert("선택한 범위에 저장된 스케줄이 없습니다.");
+      return;
+    }
+
     if (!confirm("선택된 날짜의 스케줄을 모두 삭제할까요?")) return;
 
     const start = targetDates[0];
@@ -937,8 +1121,7 @@
 
     try {
       setStatus("스케줄을 삭제하는 중입니다...");
-      await deleteSchedulesOnServer(start, end);
-      await loadSchedulesFromServer();
+      await deleteRangeUsingSingleDelete(start, end);  // ★ 편법 사용
       setStatus("선택 범위의 스케줄이 삭제되었습니다.", "success");
     } catch (error) {
       console.error(error);
@@ -986,6 +1169,7 @@
 
     renderMainCategories();
     renderSubCategories(els.mainCategory.value);
+    applyQueryToForm();
     updateSelectedDateUI();
     renderCalendar();
     await loadSchedulesFromServer();
