@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>내 공지 보관함</title>
-  <style><LeftMouse>
+  <style>
   * {
       box-sizing: border-box;
       margin: 0;
@@ -29,6 +29,7 @@
       grid-template-columns: 340px minmax(0, 1fr);
       gap: 15px;
       align-items: start;
+      position: relative; /* 사용자 버튼·팝오버 기준 */
   }
 
   @media (max-width: 900px) {
@@ -40,7 +41,7 @@
   .left-panel {
       display: grid;
       gap: 15px;
-    }
+  }
 
   .right-panel {
       min-width: 0;
@@ -86,7 +87,7 @@
       font-size: 12px;
       margin-bottom: 12px;
   }
-  
+
   .form-group {
       margin-bottom: 10px;
   }
@@ -98,15 +99,19 @@
       margin-bottom: 4px;
   }
 
+  .form-control {
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 13px;
+    background: #fff;
+  }
+
   select,
   input[type="text"],
   textarea {
       width: 100%;
-      padding: 8px 10px;
-      border-radius: 8px;
-      border: 1px solid #d1d5db;
-      font-size: 13px;
-      background: #fff;
+      box-sizing: border-box;
   }
 
   textarea {
@@ -121,7 +126,7 @@
       border-color: #2563eb;
       box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);
   }
-  
+
   .button-row {
       display: flex;
       align-items: center;
@@ -195,7 +200,7 @@
       color: #111827;
       margin-top: 4px;
   }
-  
+
   .event-list {
       margin-top: 14px;
       max-height: 660px;
@@ -275,9 +280,11 @@
       text-align: center;
       padding: 16px 4px;
   }
-  
+
   .archive-board {
       padding: 16px;
+      max-height: calc(100vh - 160px);
+      overflow-y: scroll;
   }
 
   .archive-header {
@@ -306,7 +313,7 @@
         grid-template-columns: 1fr;
       }
   }
-  
+
   .notice-card {
       border: 1px solid #e5e7eb;
       border-radius: 14px;
@@ -389,11 +396,154 @@
       flex-wrap: wrap;
   }
 
+  /* 오른쪽 상단 사용자 버튼 */
+  .user-chip {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #ffffff;
+    border: 2px solid #111827;
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+  }
+
+  .user-chip-emoji {
+    font-size: 18px;
+  }
+
+  .user-chip-name {
+    font-weight: 600;
+  }
+
+  /* 버튼 바로 아래에 뜨는 프로필 팝오버 */
+  .profile-modal {
+    position: absolute;
+    top: 60px;  /* 버튼보다 조금 아래 */
+    right: 0;
+    display: none;
+    z-index: 50;
+  }
+
+  .profile-card {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 24px 26px;
+    width: 260px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+    text-align: center;
+  }
+
+  .profile-logo {
+    width: 60px;
+    height: 60px;
+    border-radius: 20px;
+    background: #eff6ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    margin: 0 auto 14px;
+  }
+
+  .profile-name {
+    font-size: 18px;
+    font-weight: 800;
+    color: #111827;
+    margin-bottom: 8px;
+  }
+
+  .profile-line-small {
+    width: 80%;
+    height: 1px;
+    background: transparent;
+    margin: 0 auto 4px;
+  }
+
+  .profile-text {
+    font-size: 13px;
+    color: #4b5563;
+    line-height: 1.5;
+  }
+
+  .profile-separator {
+    width: 80%;
+    height: 1px;
+    background: #e5e7eb;
+    margin: 14px auto 10px;
+  }
+
+  .profile-tags {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .profile-tag-pill {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .profile-logout {
+    margin-top: 4px;
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 999px;
+    border: none;
+    background: #fee2e2;
+    color: #b91c1c;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .profile-logout:hover {
+    background: #fecaca;
+  }
   </style>
 </head>
 
 <body>
   <div class="archive-container">
+    <!-- 오른쪽 상단 사용자 칩 버튼 -->
+    <button type="button" class="user-chip" id="userChipBtn">
+      <span class="user-chip-emoji">🎓</span>
+      <span class="user-chip-name" id="userChipName">사용자 님</span>
+    </button>
+
+    <!-- 사용자 버튼 아래 프로필 팝오버 -->
+    <div class="profile-modal" id="profileModal">
+      <div class="profile-card">
+        <div class="profile-logo">🎓</div>
+
+        <div class="profile-name" id="profileName">사용자명</div>
+        <div class="profile-line-small"></div>
+
+        <div class="profile-text" id="profileSchool">학교명</div>
+        <div class="profile-text" id="profileMajor">학과명</div>
+        <div class="profile-text" id="profileYear">학년</div>
+
+        <div class="profile-separator"></div>
+
+        <div class="profile-tags" id="profileTags"></div>
+
+        <button type="button" class="profile-logout" id="logoutBtn">
+          로그아웃 (정보 초기화)
+        </button>
+      </div>
+    </div>
+
     <div class="left-panel">
       <div class="card header">
         <h1>내 공지 보관함</h1>
@@ -412,12 +562,12 @@
 
         <div class="form-group">
           <label class="form-label" for="keywordInput">검색어</label>
-          <input type="text" id="keywordInput" placeholder="제목, 메모, 부서" />
+          <input type="text" id="keywordInput" class="form-control" placeholder="제목, 메모, 부서" />
         </div>
 
         <div class="form-group">
           <label class="form-label" for="categoryFilter">종류</label>
-          <select id="categoryFilter">
+          <select id="categoryFilter" class="form-control">
             <option value="전체">전체</option>
             <option value="장학">장학</option>
             <option value="학사">학사</option>
@@ -430,7 +580,7 @@
 
         <div class="form-group">
           <label class="form-label" for="savedOnlyFilter">상태</label>
-          <select id="savedOnlyFilter">
+          <select id="savedOnlyFilter" class="form-control">
             <option value="all">전체</option>
             <option value="with-date">날짜 있는 공지</option>
             <option value="urgent">오늘 이후 공지</option>
@@ -440,7 +590,7 @@
 
         <div class="form-group">
           <label class="form-label" for="sortFilter">정렬</label>
-          <select id="sortFilter">
+          <select id="sortFilter" class="form-control">
             <option value="saved-desc">최근 저장순</option>
             <option value="saved-asc">오래된 저장순</option>
             <option value="date-asc">날짜 빠른순</option>
@@ -478,24 +628,17 @@
       </div>
     </div>
   </div>
-  
-  <script>
-  // =========================
-  // 1. 상태(State)     
-  // =========================
-  const state = {
-    fallbackItems: []
-  };
-  
-  // =========================
-  // 2. 상수(Constants)
-  // =========================
-  const STORAGE_KEY = 'noticeArchiveItems';
-  const API_BASE = "http://127.0.0.1:8000";
 
-  // =========================
-  // 3. DOM 유틸 / DOM 참조
-  // =========================
+  <script>
+  // 상태
+  const state = { fallbackItems: [] };
+
+  // 상수
+  const STORAGE_KEY  = 'noticeArchiveItems';
+  const SESSION_KEY  = 'userSession';
+  const SCHEDULE_KEY = 'scheduleEvents';   // localStorage에 스케줄을 캐시하고 있다면
+
+  // DOM
   const els = {
     keywordInput: document.getElementById('keywordInput'),
     categoryFilter: document.getElementById('categoryFilter'),
@@ -511,18 +654,26 @@
     summaryScholarship: document.getElementById('summaryScholarship'),
     summaryWithDate: document.getElementById('summaryWithDate'),
     summaryUpcoming: document.getElementById('summaryUpcoming'),
-    summaryExpired: document.getElementById('summaryExpired')
+    summaryExpired: document.getElementById('summaryExpired'),
+
+    userChipBtn: document.getElementById('userChipBtn'),
+    userChipName: document.getElementById('userChipName'),
+    profileModal: document.getElementById('profileModal'),
+    profileName: document.getElementById('profileName'),
+    profileSchool: document.getElementById('profileSchool'),
+    profileMajor: document.getElementById('profileMajor'),
+    profileYear: document.getElementById('profileYear'),
+    profileTags: document.getElementById('profileTags'),
+    logoutBtn: document.getElementById('logoutBtn'),
   };
 
-  // =========================
-  // 4. 유틸 함수
-  // =========================
+  // 유틸
   function parseLocalDate(dateStr) {
     if (!dateStr || typeof dateStr !== 'string') return null;
-    const match = dateStr.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!match) return null;
-    const [, y, m, d] = match;
-    return new Date(Number(y), Number(m) - 1, Number(d));
+    const m = dateStr.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return null;
+    const [, y, mo, d] = m;
+    return new Date(Number(y), Number(mo) - 1, Number(d));
   }
 
   function getTodayStart() {
@@ -530,8 +681,8 @@
     return new Date(now.getFullYear(), now.getMonth(), now.getDate());
   }
 
-  function escapeHtml(value) {
-    return String(value ?? '')
+  function escapeHtml(v) {
+    return String(v ?? '')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
@@ -539,20 +690,18 @@
       .replace(/'/g, '&#039;');
   }
 
-  function escapeAttribute(value) {
-    return String(value ?? '').replace(/"/g, '&quot;');
+  function escapeAttribute(v) {
+    return String(v ?? '').replace(/"/g, '&quot;');
   }
-  
-  // =========================
-  // 5. Data Helpers
-  // =========================
+
+  // 데이터 헬퍼
   function getStoredItems() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return state.fallbackItems;
       const parsed = JSON.parse(raw);
       return Array.isArray(parsed) ? parsed : state.fallbackItems;
-    } catch (error) {
+    } catch {
       return state.fallbackItems;
     }
   }
@@ -561,9 +710,9 @@
     state.fallbackItems = items;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    } catch (error) {}
+    } catch {}
   }
-  
+
   function normalizeItem(item) {
     return {
       id: item.id || `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
@@ -579,17 +728,6 @@
     };
   }
 
-  function buildScheduleUrl(item) {
-    const params = new URLSearchParams({
-      title: item.title || '',
-      category: item.category || '기타',
-      subCategory: item.source_category || '기타',
-      url: item.url || '',
-      memo: item.memo || ''
-    });
-    return `schedule_page.html?${params.toString()}`;
-  }
-
   function getPillClass(category) {
     if (category === '장학') return 'scholarship';
     if (category === '학사') return 'academic';
@@ -598,15 +736,14 @@
   }
 
   function matchesKeyword(item, keyword) {
-    const textBlob = [
+    const text = [
       item.title,
       item.department,
       item.memo,
       item.source_category,
       item.university
     ].join(' ').toLowerCase();
-
-    return keyword ? textBlob.includes(keyword) : true;
+    return keyword ? text.includes(keyword) : true;
   }
 
   function matchesCategory(item, category) {
@@ -614,34 +751,30 @@
   }
 
   function matchesSavedMode(item, mode) {
-    const dateObj = parseLocalDate(item.date);
+    const d = parseLocalDate(item.date);
     const today = getTodayStart();
-
     if (mode === 'all') return true;
-    if (mode === 'with-date') return Boolean(dateObj);
-    if (mode === 'urgent') return Boolean(dateObj && dateObj >= today);
-    if (mode === 'expired') return Boolean(dateObj && dateObj < today);
+    if (mode === 'with-date') return !!d;
+    if (mode === 'urgent') return !!(d && d >= today);
+    if (mode === 'expired') return !!(d && d < today);
     return true;
   }
 
-  function sortItems(items, sortType) {
+  function sortItems(items, type) {
     return [...items].sort((a, b) => {
-      if (sortType === 'saved-asc') {
+      if (type === 'saved-asc') {
         return new Date(a.savedAt) - new Date(b.savedAt);
       }
-
-      if (sortType === 'date-asc') {
-        const aDate = parseLocalDate(a.date)?.getTime() ?? Number.MAX_SAFE_INTEGER;
-        const bDate = parseLocalDate(b.date)?.getTime() ?? Number.MAX_SAFE_INTEGER;
-        return aDate - bDate;
+      if (type === 'date-asc') {
+        const ad = parseLocalDate(a.date)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+        const bd = parseLocalDate(b.date)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+        return ad - bd;
       }
-
-      if (sortType === 'date-desc') {
-        const aDate = parseLocalDate(a.date)?.getTime() ?? 0;
-        const bDate = parseLocalDate(b.date)?.getTime() ?? 0;
-        return bDate - aDate;
+      if (type === 'date-desc') {
+        const ad = parseLocalDate(a.date)?.getTime() ?? 0;
+        const bd = parseLocalDate(b.date)?.getTime() ?? 0;
+        return bd - ad;
       }
-
       return new Date(b.savedAt) - new Date(a.savedAt);
     });
   }
@@ -652,41 +785,37 @@
 
   function getFilteredItems() {
     const keyword = els.keywordInput.value.trim().toLowerCase();
-    const category = els.categoryFilter.value;
+    const cat = els.categoryFilter.value;
     const mode = els.savedOnlyFilter.value;
-    const sortType = els.sortFilter.value;
+    const sort = els.sortFilter.value;
 
     const filtered = getAllItems()
-      .filter((item) => matchesKeyword(item, keyword))
-      .filter((item) => matchesCategory(item, category))
-      .filter((item) => matchesSavedMode(item, mode));
+      .filter(i => matchesKeyword(i, keyword))
+      .filter(i => matchesCategory(i, cat))
+      .filter(i => matchesSavedMode(i, mode));
 
-    return sortItems(filtered, sortType);
+    return sortItems(filtered, sort);
   }
-  
-  // =========================
-  // 6. 렌더링
-  // =========================
+
+  // 렌더링
   function renderSummary(items) {
     const today = getTodayStart();
-
-    const scholarshipCount = items.filter((item) => item.category === '장학').length;
-    const withDateCount = items.filter((item) => parseLocalDate(item.date)).length;
-    const upcomingCount = items.filter((item) => {
-      const dateObj = parseLocalDate(item.date);
-      return dateObj && dateObj >= today;
+    const scholar = items.filter(i => i.category === '장학').length;
+    const withDate = items.filter(i => parseLocalDate(i.date)).length;
+    const upcoming = items.filter(i => {
+      const d = parseLocalDate(i.date);
+      return d && d >= today;
     }).length;
-
-    const expiredCount = items.filter((item) => {
-      const dateObj = parseLocalDate(item.date);
-      return dateObj && dateObj < today;
+    const expired = items.filter(i => {
+      const d = parseLocalDate(i.date);
+      return d && d < today;
     }).length;
 
     els.summaryTotal.textContent = String(items.length);
-    els.summaryScholarship.textContent = String(scholarshipCount);
-    els.summaryWithDate.textContent = String(withDateCount);
-    els.summaryUpcoming.textContent = String(upcomingCount);
-    els.summaryExpired.textContent = String(expiredCount);
+    els.summaryScholarship.textContent = String(scholar);
+    els.summaryWithDate.textContent = String(withDate);
+    els.summaryUpcoming.textContent = String(upcoming);
+    els.summaryExpired.textContent = String(expired);
   }
 
   function renderSavedList(items) {
@@ -694,8 +823,7 @@
       els.savedList.innerHTML = `<div class="empty-text">저장된 공지가 없습니다.</div>`;
       return;
     }
-
-    els.savedList.innerHTML = items.map((item) => `
+    els.savedList.innerHTML = items.map(item => `
       <div class="event-item">
         <div class="event-main">
           <div class="event-type-pill ${getPillClass(item.category)}">${escapeHtml(item.category)}</div>
@@ -713,8 +841,7 @@
       els.noticeGrid.innerHTML = `<div class="empty-text">조건에 맞는 공지가 없습니다.</div>`;
       return;
     }
-
-    els.noticeGrid.innerHTML = items.map((item) => `
+    els.noticeGrid.innerHTML = items.map(item => `
       <div class="notice-card">
         <div class="notice-top">
           <div class="pill-row">
@@ -724,19 +851,16 @@
           </div>
           <span class="status-text">${escapeHtml(item.university || '')}</span>
         </div>
-
         <div class="notice-title">
           <a href="${escapeAttribute(item.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.title)}</a>
         </div>
-
         <div class="event-meta">세부항목: ${escapeHtml(item.source_category || '없음')} · 부서: ${escapeHtml(item.department || '없음')}</div>
-
-        <div class="notice-memo">${escapeHtml(item.memo || '메모가 없습니다. 저장 이유를 남겨두면 나중에 다시 확인하기 쉽습니다.')}</div>
-
+        <div class="notice-memo">${escapeHtml(
+          item.memo || '메모가 없습니다. 저장 이유를 남겨두면 나중에 다시 확인하기 쉽습니다.'
+        )}</div>
         <div class="notice-actions">
           <a class="btn-primary" href="${escapeAttribute(item.url)}" target="_blank" rel="noopener noreferrer">원문 보기</a>
-          <button type="button"
-          class="btn-secondary" data-add-schedule-id="${escapeAttribute(item.id)}"> 달력에 가져가기</button>
+          <button type="button" class="btn-secondary" data-add-schedule-id="${escapeAttribute(item.id)}">달력에 가져가기</button>
           <button type="button" class="btn-danger" data-remove-id="${escapeAttribute(item.id)}">보관함에서 제거</button>
         </div>
       </div>
@@ -745,82 +869,82 @@
 
   function renderStatus(allItems, filteredItems) {
     if (!allItems.length) {
-      els.status.textContent = '아직 저장된 공지가 없습니다. 샘플을 추가하거나 공지 검색 페이지에서 저장하세요.';
+      els.status.textContent = '아직 저장된 공지가 없습니다. 공지 검색 페이지에서 저장해 보세요.';
       els.resultText.textContent = '보관함이 비어 있습니다.';
       return;
     }
-
     els.status.textContent = `필터 결과 ${filteredItems.length}건을 표시 중입니다.`;
     els.resultText.textContent = `전체 ${allItems.length}건 중 현재 조건에 맞는 공지 ${filteredItems.length}건`;
   }
 
   function bindRemoveButtons() {
-    document.querySelectorAll('[data-remove-id]').forEach((button) => {
-      button.addEventListener('click', () => handleRemoveItem(button.dataset.removeId));
+    document.querySelectorAll('[data-remove-id]').forEach(btn => {
+      btn.addEventListener('click', () => handleRemoveItem(btn.dataset.removeId));
     });
   }
- 
- function bindAddScheduleButtons() {
-    document.querySelectorAll('[data-add-schedule-id]').forEach((button) => {
-      button.addEventListener('click', () => {
-        const id = button.dataset.addScheduleId;
+
+  function bindAddScheduleButtons() {
+    document.querySelectorAll('[data-add-schedule-id]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.addScheduleId;
         handleAddScheduleFromArchive(id);
       });
     });
   }
 
   function renderArchive() {
-    const allItems = getAllItems();
-    const filteredItems = getFilteredItems();
-
-    renderSummary(allItems);
-    renderSavedList(allItems);
-    renderNoticeGrid(filteredItems);
-    renderStatus(allItems, filteredItems);
+    const all = getAllItems();
+    const filtered = getFilteredItems();
+    renderSummary(all);
+    renderSavedList(all);
+    renderNoticeGrid(filtered);
+    renderStatus(all, filtered);
     bindRemoveButtons();
     bindAddScheduleButtons();
   }
 
-  // =========================
-  // 8. 핸들러
-  // =========================
-
+  // 보관함 핸들러
   function handleRemoveItem(id) {
-    const nextItems = getStoredItems().filter((item) => item.id !== id);
-    setStoredItems(nextItems);
+    const next = getStoredItems().filter(i => i.id !== id);
+    setStoredItems(next);
     els.status.textContent = '선택한 공지를 삭제했습니다.';
     renderArchive();
   }
 
-// 새 버전: 스케줄러 페이지로 정보만 넘기고 이동
-function handleAddScheduleFromArchive(id) {
-  const items = getAllItems();
-  const item = items.find((x) => x.id === id);
-  if (!item) {
-    alert("해당 공지를 찾을 수 없습니다.");
-    return;
+  function handleAddScheduleFromArchive(id) {
+    const items = getAllItems();
+    const item = items.find(x => x.id === id);
+    if (!item) {
+      alert("해당 공지를 찾을 수 없습니다.");
+      return;
+    }
+
+    const mainCategory = item.category || "기타";
+    const subCategory = item.source_category || "기타";
+    const title = item.title || "제목 없음";
+
+    const memoLines = [];
+    if (item.memo) memoLines.push(item.memo);
+    if (item.url) memoLines.push(`원문 링크: ${item.url}`);
+    if (item.university) memoLines.push(`학교: ${item.university}`);
+    if (item.department) memoLines.push(`부서: ${item.department}`);
+    const memo = memoLines.join("\n") || "";
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const dateStr = item.date || todayStr;
+
+    const params = new URLSearchParams({
+      title,
+      category: mainCategory,
+      subCategory,
+      url: item.url || "",
+      memo,
+      date: dateStr
+    });
+
+    window.location.href = `schedule_page.html?${params.toString()}`;
   }
 
-  // 스케줄 페이지에 넘길 정보만 추려서 URL 쿼리로 구성
-  const params = new URLSearchParams({
-    title: item.title || '',
-    category: item.category || '기타',
-    subCategory: item.source_category || '기타',
-    url: item.url || '',
-    memo: (function () {
-      const memoLines = [];
-      if (item.memo) memoLines.push(item.memo);
-      if (item.url) memoLines.push(`원문 링크: ${item.url}`);
-      if (item.university) memoLines.push(`학교: ${item.university}`);
-      if (item.department) memoLines.push(`부서: ${item.department}`);
-      return memoLines.join('\n');
-    })(),
-    date: item.date || ''   // 필요하면 날짜도 같이 넘기기
-  });
-
-  // 스케줄러 페이지로 이동
-  location.href = `schedule_page.html?${params.toString()}`;
-}
   function handleClearArchive() {
     if (!confirm('보관함을 모두 비울까요?')) return;
     setStoredItems([]);
@@ -836,15 +960,118 @@ function handleAddScheduleFromArchive(id) {
     renderArchive();
   }
 
-  function handleStorageSync(event) {
-    if (event.key !== STORAGE_KEY) return;
+  function handleStorageSync(e) {
+    if (e.key !== STORAGE_KEY) return;
     els.status.textContent = '다른 페이지에서 보관함이 변경되어 목록을 다시 불러왔습니다.';
     renderArchive();
   }
 
-  // =========================
-  // 9. 이벤트
-  // =========================
+  // 사용자 세션 / 프로필
+  function loadUserSession() {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  function fillUserChip(user) {
+    if (!user) {
+      els.userChipName.textContent = "게스트 님";
+      return;
+    }
+    els.userChipName.textContent = `${user.name || "사용자"} 님`;
+  }
+
+  function fillProfileCard(user) {
+    if (!user) return;
+    els.profileName.textContent = user.name || "사용자";
+    els.profileSchool.textContent = user.school || "학교 정보 없음";
+    els.profileMajor.textContent = user.major || "학과 정보 없음";
+
+    const yearMap = {
+      "1": "1학년",
+      "2": "2학년",
+      "3": "3학년",
+      "4": "4학년 이상",
+    };
+    els.profileYear.textContent = user.year ? yearMap[user.year] || "" : "";
+
+    const interests = Array.isArray(user.interests) ? user.interests : [];
+    els.profileTags.innerHTML = "";
+    if (!interests.length) {
+      const span = document.createElement("span");
+      span.className = "profile-text";
+      span.textContent = "관심 분야 없음";
+      els.profileTags.appendChild(span);
+    } else {
+      interests.forEach(label => {
+        const tag = document.createElement("span");
+        tag.className = "profile-tag-pill";
+        tag.textContent = label;
+        els.profileTags.appendChild(tag);
+      });
+    }
+  }
+
+  function openProfileModal() {
+    const user = loadUserSession();
+    fillProfileCard(user);
+    els.profileModal.style.display = "block";
+  }
+
+  function closeProfileModal() {
+    els.profileModal.style.display = "none";
+  }
+
+  // ★ 단일 삭제 엔드포인트로 서버 스케줄 전체 삭제
+  async function deleteAllSchedulesViaSingleEndpoint() {
+    try {
+      // 1) 모든 스케줄 목록 조회
+      const listRes = await fetch("http://127.0.0.1:8000/schedules?skip=0&limit=1000");
+      if (!listRes.ok) {
+        console.error("스케줄 목록 조회 실패:", listRes.status);
+        return;
+      }
+
+      const schedules = await listRes.json(); // [{id, ...}, ...]
+      const ids = schedules.map((s) => s.id);
+
+      // 2) 각 id에 대해 DELETE /schedules/{id}
+      await Promise.all(
+        ids.map((id) =>
+          fetch(`http://127.0.0.1:8000/schedules/${id}`, {
+            method: "DELETE",
+          }).catch((e) => console.error("스케줄 삭제 실패:", id, e))
+        )
+      );
+    } catch (e) {
+      console.error("스케줄 일괄 삭제 중 오류:", e);
+    }
+  }
+
+  // 로그아웃
+  async function handleLogout() {
+    if (!confirm("로그아웃하고 저장된 정보(공지 보관함 & 스케줄러)를 모두 삭제할까요?")) return;
+
+    // 1) 서버 스케줄 전체 삭제 (단일 엔드포인트 반복 호출)
+    await deleteAllSchedulesViaSingleEndpoint();
+
+    // 2) 브라우저 저장소 정리
+    localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SCHEDULE_KEY);  // 스케줄 캐시 쓰고 있다면
+
+    alert("로그아웃이 완료되었습니다. 공지 보관함과 스케줄러 내용이 모두 초기화되었습니다.");
+
+    renderArchive();
+    closeProfileModal();
+    window.location.href = "login.html"; // 실제 로그인 파일 이름에 맞게
+  }
+
+  // 이벤트
   function bindEvents() {
     els.keywordInput.addEventListener('input', renderArchive);
     els.categoryFilter.addEventListener('change', renderArchive);
@@ -855,18 +1082,45 @@ function handleAddScheduleFromArchive(id) {
     els.clearBtn.addEventListener('click', handleClearArchive);
 
     window.addEventListener('storage', handleStorageSync);
+
+    // 사용자 칩 버튼: 토글
+    els.userChipBtn.addEventListener("click", () => {
+      const isOpen = els.profileModal.style.display === "block";
+      if (isOpen) closeProfileModal();
+      else openProfileModal();
+    });
+
+    els.logoutBtn.addEventListener("click", handleLogout);
   }
 
-  // =========================
-  // 10. 초기화
-  // =========================
+  document.addEventListener("click", (event) => {
+  const target = event.target;
+
+  // 이미 닫혀 있으면 아무 것도 하지 않음
+  if (els.profileModal.style.display !== "block") return;
+
+  // 사용자 칩이나 팝오버 안을 클릭한 경우에는 유지
+  if (
+    target === els.userChipBtn ||
+    els.userChipBtn.contains(target) ||
+    els.profileModal.contains(target)
+  ) {
+    return;
+  }
+
+  // 그 외 어디든 클릭하면 프로필 닫기
+  closeProfileModal();
+});
+
+  // 초기화
   function init() {
+    const user = loadUserSession();
+    fillUserChip(user);
     bindEvents();
     renderArchive();
   }
 
   init();
-
   </script>
 </body>
 </html>
