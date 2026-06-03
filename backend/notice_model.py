@@ -1,5 +1,5 @@
 from typing import List, Optional
-from urllib.parse import urljoin, urlencode, urlparse, parse_qs, urlunparse, quote
+from urllib.parse import urljoin, urlencode, urlparse, parse_qs, urlunparse, quote, unquote
 from datetime import date
 import re
 import json
@@ -186,6 +186,10 @@ def _extract_date_from_row(row) -> Optional[date]:
 def _build_page_url(base_url: str, page_param: str, page: int,
                     enc_inner_path: Optional[str] = None,
                     enc_query_template: Optional[str] = None) -> str:
+    # enc 파라미터가 base_url에 포함된 경우 제거
+    if enc_inner_path and "enc=" in base_url:
+        base_url = base_url.split("?")[0]
+
     if enc_inner_path:
         if enc_query_template is None:
             logger.warning(
@@ -194,7 +198,7 @@ def _build_page_url(base_url: str, page_param: str, page: int,
             )
         query = enc_query_template.format(page=page) if enc_query_template else f"page={page}"
         inner = f"{enc_inner_path}?{query}"
-        enc_value = base64.b64encode(("fnct1|@@|" + quote(inner)).encode()).decode()
+        enc_value = base64.b64encode(("fnct1|@@|" + quote(inner, safe="")).encode()).decode()
         return f"{base_url}?enc={enc_value}"
 
     parsed = urlparse(base_url)
@@ -282,7 +286,28 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
         raw_href = link_tag["href"].strip()
         if not raw_href:
             continue
-        url = urljoin(board.list_url, raw_href)
+
+        # jf_view('artclNo',...) 패턴 처리 (고려대 등 포털 시스템)
+        if raw_href.startswith('#') and board.enc_inner_path:
+            onclick = link_tag.get('onclick', '') or ''
+            jf_match = re.search(r"jf_view\('([^']+)'", onclick)
+            if jf_match:
+                artcl_no = jf_match.group(1)
+                view_path = re.sub(r'[Ll]ist\.do$', 'View.do', board.enc_inner_path)
+                static_params = ''.join(
+                    f'{k}={v}&'
+                    for part in (board.enc_query_template or '').split('&')
+                    if '=' in part and '{page}' not in part
+                    for k, v in [part.split('=', 1)]
+                    if k and v
+                )
+                view_inner = f'{view_path}?{static_params}artclNo={artcl_no}&'
+                enc_val = base64.b64encode(('fnct1|@@|' + quote(view_inner, safe='')).encode()).decode()
+                url = f'{board.list_url}?enc={enc_val}'
+            else:
+                continue
+        else:
+            url = urljoin(board.list_url, raw_href)
 
         notice_date = _extract_date_from_row(row)
 
@@ -506,8 +531,8 @@ def analyze_page_urls(url1: str, url2: Optional[str] = None) -> dict:
                     decoded = decoded.split("|@@|", 1)[1]
                 return decoded
 
-            inner1 = decode_enc(params1["enc"][0])
-            inner2 = decode_enc(params2["enc"][0])
+            inner1 = unquote(decode_enc(params1["enc"][0]))
+            inner2 = unquote(decode_enc(params2["enc"][0]))
 
             parsed_inner1 = urlparse(inner1)
             parsed_inner2 = urlparse(inner2)
@@ -581,4 +606,5 @@ def add_board_source(
     save_sources_to_json(sources)
     global UNIVERSITY_SOURCES
     UNIVERSITY_SOURCES = sources
+
 
