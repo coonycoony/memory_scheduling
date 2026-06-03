@@ -192,7 +192,11 @@
       margin-top: 14px;
       max-height: 260px;
       overflow-y: auto;
+      overflow-x: hidden;
       padding-right: 4px;
+      width: 100%;           
+      max-width: 100%;       
+      box-sizing: border-box;
     }
 
     .event-item {
@@ -877,6 +881,7 @@
             ${ev.mainCategory}
           </div>
           <div class="event-title">${ev.title}</div>
+js
           <div class="event-time">
             ${ev.subCategory ? `세부항목: ${ev.subCategory}` : ""}
             ${ev.startDate ? ` · 시작: ${ev.startDate}` : ""}
