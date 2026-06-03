@@ -98,15 +98,19 @@
       margin-bottom: 4px;
   }
 
+  .form-control {
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 13px;
+    background: #fff;
+  }
+
   select,
   input[type="text"],
   textarea {
       width: 100%;
-      padding: 8px 10px;
-      border-radius: 8px;
-      border: 1px solid #d1d5db;
-      font-size: 13px;
-      background: #fff;
+      box-sizing: border-box;
   }
 
   textarea {
@@ -412,12 +416,12 @@
 
         <div class="form-group">
           <label class="form-label" for="keywordInput">검색어</label>
-          <input type="text" id="keywordInput" placeholder="제목, 메모, 부서" />
+          <input type="text" id="keywordInput" class="form-control" placeholder="제목, 메모, 부서" />
         </div>
 
         <div class="form-group">
           <label class="form-label" for="categoryFilter">종류</label>
-          <select id="categoryFilter">
+          <select id="categoryFilter" class="form-control">
             <option value="전체">전체</option>
             <option value="장학">장학</option>
             <option value="학사">학사</option>
@@ -430,7 +434,7 @@
 
         <div class="form-group">
           <label class="form-label" for="savedOnlyFilter">상태</label>
-          <select id="savedOnlyFilter">
+          <select id="savedOnlyFilter" class="form-control">
             <option value="all">전체</option>
             <option value="with-date">날짜 있는 공지</option>
             <option value="urgent">오늘 이후 공지</option>
@@ -440,7 +444,7 @@
 
         <div class="form-group">
           <label class="form-label" for="sortFilter">정렬</label>
-          <select id="sortFilter">
+          <select id="sortFilter" class="form-control">
             <option value="saved-desc">최근 저장순</option>
             <option value="saved-asc">오래된 저장순</option>
             <option value="date-asc">날짜 빠른순</option>
