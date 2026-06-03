@@ -507,5 +507,47 @@
         "selector": "table tbody tr"
       }
     ]
+  },
+  "부경대학교": {
+    "name": "부경대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.pknu.ac.kr/main/163?bbsId=2&searchCondition=title&searchKeyword=&cd=",
+        "page_param": "pageIndex",
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "경기대학교": {
+    "name": "경기대학교",
+    "boards": [
+      {
+        "board_name": "대학교 전체 공지",
+        "list_url": "https://www.kyonggi.ac.kr/www/selectBbsNttList.do?key=7520&bbsNo=1073&pageUnit=10&searchCnd=all",
+        "page_param": "pageIndex",
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
+  },
+  "단국대학교": {
+    "name": "단국대학교",
+    "boards": [
+      {
+        "board_name": "일반공지",
+        "list_url": "https://www.dankook.ac.kr/web/kor/-390?p_p_id=dku_bbs_web_BbsPortlet&p_p_lifecycle=0&p_p_state=normal&p_p_mode=view&_dku_bbs_web_BbsPortlet_sKeyType=title&_dku_bbs_web_BbsPortlet_action=view&_dku_bbs_web_BbsPortlet_orderBy=createDate",
+        "page_param": "_dku_bbs_web_BbsPortlet_cur",
+        "max_pages": 50,
+        "enc_inner_path": null,
+        "enc_query_template": null,
+        "selector": "table tbody tr"
+      }
+    ]
   }
 }
