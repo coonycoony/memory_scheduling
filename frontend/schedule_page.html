@@ -16,6 +16,7 @@
       padding: 40px 20px;
       background: #f5f7fb;
       color: #222;
+      overflow: hidden;
     }
 
     .schedule-container {
@@ -38,11 +39,20 @@
     }
 
     .left-panel {
-      display: grid;
+      display: flex;
+      flex-direction: column;
       gap: 15px;
-      max-height: 100vh;
+      height: calc(100vh - 80px);
       overflow-y: auto;
       overflow-x: hidden;
+      width: 340px;
+      max-width: 340px;
+    }
+    
+    .left-panel .card:nth-child(2) {
+      flex: 1 1 auto;    /* 남은 세로 공간을 채움 */
+      display: flex;
+      flex-direction: column;
     }
 
     .right-panel { 
@@ -190,7 +200,7 @@
 
     .event-list {
       margin-top: 14px;
-      max-height: 260px;
+      flex: 1 1 auto;
       overflow-y: auto;
       overflow-x: hidden;
       padding-right: 4px;
@@ -200,8 +210,8 @@
     }
 
     .event-item {
-      padding: 8px 10px;
-      border-radius: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
       background: #f9fafb;
       border: 1px solid #e5e7eb;
       margin-bottom: 6px;
@@ -211,11 +221,16 @@
       justify-content: space-between;
       gap: 8px;
       width: 100%;
+      max-width: 100%;
       box-sizing: border-box;
     }   
 
     .event-main {
       flex: 1;
+      min-width: 0;
+      width: 250px; 
+      max-width: 250px;
+      box-sizing: border-box;
     }
 
     .event-type-pill {
@@ -243,12 +258,18 @@
     .event-title {
       font-weight: 700;
       margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .event-time {
       font-size: 11px;
       color: #6b7280;
       margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }   
 
     .event-memo {
@@ -256,7 +277,7 @@
       color: #4b5563;
       line-height: 1.5;
       display: -webkit-box;
-      -webkit-line-clamp: 3;    
+      -webkit-line-clamp: 2;    
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
