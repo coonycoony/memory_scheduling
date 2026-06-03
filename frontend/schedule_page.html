@@ -30,6 +30,7 @@
       grid-template-columns: 340px minmax(0, 1fr);
       gap: 15px;
       align-items: start;
+      position: relative; /* 사용자 칩/팝오버 위치 기준 */
     }
 
     @media (max-width: 600px) {
@@ -50,7 +51,7 @@
     }
     
     .left-panel .card:nth-child(2) {
-      flex: 1 1 auto;    /* 남은 세로 공간을 채움 */
+      flex: 1 1 auto;
       display: flex;
       flex-direction: column;
     }
@@ -204,8 +205,8 @@
       overflow-y: auto;
       overflow-x: hidden;
       padding-right: 4px;
-      width: 100%;           
-      max-width: 100%;       
+      width: 100%;
+      max-width: 100%;
       box-sizing: border-box;
     }
 
@@ -277,7 +278,7 @@
       color: #4b5563;
       line-height: 1.5;
       display: -webkit-box;
-      -webkit-line-clamp: 2;    
+      -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
@@ -400,7 +401,7 @@
       display: flex;
       flex-direction: column;
       gap: 4px;
-      max-height: 90px;     
+      max-height: 90px;
       overflow: hidden;
     }
     
@@ -472,20 +473,164 @@
     .calendar-event-badge.cat-etc {
       background: #6b7280;
     }
+
+    /* 오른쪽 상단 사용자 버튼 */
+    .user-chip {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: #ffffff;
+      border: 2px solid #111827;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+    }
+
+    .user-chip-emoji {
+      font-size: 18px;
+    }
+
+    .user-chip-name {
+      font-weight: 600;
+    }
+
+    /* 사용자 팝오버 */
+    .profile-modal {
+      position: absolute;
+      top: 60px;
+      right: 0;
+      display: none;
+      z-index: 50;
+    }
+
+    .profile-card {
+      background: #ffffff;
+      border-radius: 24px;
+      padding: 24px 26px;
+      width: 260px;
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+      text-align: center;
+    }
+
+    .profile-logo {
+      width: 60px;
+      height: 60px;
+      border-radius: 20px;
+      background: #eff6ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin: 0 auto 14px;
+    }
+
+    .profile-name {
+      font-size: 18px;
+      font-weight: 800;
+      color: #111827;
+      margin-bottom: 8px;
+    }
+
+    .profile-line-small {
+      width: 80%;
+      height: 1px;
+      background: transparent;
+      margin: 0 auto 4px;
+    }
+
+    .profile-text {
+      font-size: 13px;
+      color: #4b5563;
+      line-height: 1.5;
+    }
+
+    .profile-separator {
+      width: 80%;
+      height: 1px;
+      background: #e5e7eb;
+      margin: 14px auto 10px;
+    }
+
+    .profile-tags {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .profile-tag-pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .profile-logout {
+      margin-top: 4px;
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: none;
+      background: #fee2e2;
+      color: #b91c1c;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .profile-logout:hover {
+      background: #fecaca;
+    }
     </style>
 </head>
 
 <body>
     <div class="schedule-container">
+      <!-- 오른쪽 상단 사용자 버튼 -->
+      <button type="button" class="user-chip" id="userChipBtn">
+        <span class="user-chip-emoji">🎓</span>
+        <span class="user-chip-name" id="userChipName">사용자 님</span>
+      </button>
+
+      <!-- 사용자 팝오버 -->
+      <div class="profile-modal" id="profileModal">
+        <div class="profile-card">
+          <div class="profile-logo">🎓</div>
+
+          <div class="profile-name" id="profileName">사용자명</div>
+          <div class="profile-line-small"></div>
+
+          <div class="profile-text" id="profileSchool">학교명</div>
+          <div class="profile-text" id="profileMajor">학과명</div>
+          <div class="profile-text" id="profileYear">학년</div>
+
+          <div class="profile-separator"></div>
+
+          <div class="profile-tags" id="profileTags"></div>
+
+          <button type="button" class="profile-logout" id="logoutBtn">
+            로그아웃 (정보 초기화)
+          </button>
+        </div>
+      </div>
+
       <div class="left-panel">
         <div class="card header">
           <div class="header-top">
             <h1>공지 · 장학 스케줄러</h1>
-		    <button type="button" onclick="location.href='frontend.html'" class="btn-primary back-to-search-btn">
-   	          🔍 공지 검색하러 가기
-  	        </button>
+            <button type="button" onclick="location.href='frontend.html'" class="btn-primary back-to-search-btn">
+              🔍 공지 검색하러 가기
+            </button>
             <button type="button" onclick="location.href='my_notice_archive.html'" class="btn-primary back-to-search-btn">
-               공지 보관함으로 가기
+              공지 보관함으로 가기
             </button>
           </div>
         </div>
@@ -528,8 +673,8 @@
 
             <div class="button-row">
               <div class="badge">시작 날짜와 종료 날짜를 선택하면 해당 범위 전체에 스케줄을 추가할 수 있어요</div>
-                <button type="submit" class="btn-primary">선택한 날짜 범위에 스케줄 추가</button>
-                <button type="button" class="btn-secondary" id="deleteAllBtn">선택한 날짜 범위 전체 삭제</button>
+              <button type="submit" class="btn-primary">선택한 날짜 범위에 스케줄 추가</button>
+              <button type="button" class="btn-secondary" id="deleteAllBtn">선택한 날짜 범위 전체 삭제</button>
             </div>
 
             <div class="status-text" id="statusText"></div>
@@ -567,6 +712,10 @@
   // 1. 상태(State)
   // =========================
   const API_BASE = "http://127.0.0.1:8000";
+  const STORAGE_KEY  = 'noticeArchiveItems';   // 보관함
+  const SESSION_KEY  = 'userSession';         // 로그인 정보
+  const SCHEDULE_KEY = 'scheduleEvents';      // 로컬 스케줄 캐시(사용 중이면)
+
   let selectedDate;
   let currentMonth = new Date();
   const events = {};
@@ -610,7 +759,17 @@
     calendarTitle: $("calendarTitle"),
     prevMonthBtn: $("prevMonthBtn"),
     nextMonthBtn: $("nextMonthBtn"),
-    statusText: $("statusText")
+    statusText: $("statusText"),
+
+    userChipBtn: $("userChipBtn"),
+    userChipName: $("userChipName"),
+    profileModal: $("profileModal"),
+    profileName: $("profileName"),
+    profileSchool: $("profileSchool"),
+    profileMajor: $("profileMajor"),
+    profileYear: $("profileYear"),
+    profileTags: $("profileTags"),
+    logoutBtn: $("logoutBtn"),
   };
 
   // =========================
@@ -756,7 +915,7 @@
           const rawDate = item.date;
           if (!rawDate) return;
 
-          const dateKey = String(rawDate).slice(0, 10);  
+          const dateKey = String(rawDate).slice(0, 10);
 
           if (!events[dateKey]) events[dateKey] = [];
           events[dateKey].push({
@@ -790,54 +949,45 @@
       });
     }
 
-    async function deleteSchedulesOnServer(startDate, endDate) {
-      return await fetchJson(
-        `${API_BASE}/schedules?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`,
-        {
-          method: "DELETE"
-        }
-      );
-    }
-
   async function deleteScheduleOnServer(id) {
       return await fetchJson(`${API_BASE}/schedules/${id}`, {
         method: "DELETE",
       });
-  } 
+  }
 
   async function deleteRangeUsingSingleDelete(startIso, endIso) {
-  const { start, end } = normalizeRange(startIso, endIso);
-  const dates = getDatesInRange(start, end);
+    const { start, end } = normalizeRange(startIso, endIso);
+    const dates = getDatesInRange(start, end);
 
-  const targets = [];
-  dates.forEach((iso) => {
-    (events[iso] || []).forEach((ev) => targets.push({ iso, ev }));
-  });
+    const targets = [];
+    dates.forEach((iso) => {
+      (events[iso] || []).forEach((ev) => targets.push({ iso, ev }));
+    });
 
-  if (!targets.length) {
-    setStatus("선택한 범위에 삭제할 스케줄이 없습니다.");
-    return;
-  }
-
-  for (const { iso, ev } of targets) {
-    try {
-      await deleteScheduleOnServer(ev.id);
-      const list = events[iso];
-      const idx = list.findIndex((x) => x.id === ev.id);
-      if (idx !== -1) {
-        list.splice(idx, 1);
-        if (!list.length) {
-          delete events[iso];
-        }
-      }
-    } catch (error) {
-      console.error("범위 삭제 중 에러:", error);
+    if (!targets.length) {
+      setStatus("선택한 범위에 삭제할 스케줄이 없습니다.");
+      return;
     }
-  }
 
-  renderEventList();
-  renderCalendar();
-}
+    for (const { iso, ev } of targets) {
+      try {
+        await deleteScheduleOnServer(ev.id);
+        const list = events[iso];
+        const idx = list.findIndex((x) => x.id === ev.id);
+        if (idx !== -1) {
+          list.splice(idx, 1);
+          if (!list.length) {
+            delete events[iso];
+          }
+        }
+      } catch (error) {
+        console.error("범위 삭제 중 에러:", error);
+      }
+    }
+
+    renderEventList();
+    renderCalendar();
+  }
 
   // =========================
   // 7. 카테고리 렌더링
@@ -950,15 +1100,14 @@
       deleteBtn.textContent = "삭제";
 
       deleteBtn.addEventListener("click", async () => {
-        const ev = list[index];  // 현재 이벤트 객체 (id 포함)
+        const ev = list[index];
 
         if (!confirm("이 스케줄을 삭제할까요?")) return;
 
         try {
           setStatus("스케줄을 삭제하는 중입니다...");
-          await deleteScheduleOnServer(ev.id);   // 1) 서버에서 삭제
+          await deleteScheduleOnServer(ev.id);
 
-          // 2) 로컬 상태 반영
           events[selectedDate].splice(index, 1);
           if (!events[selectedDate].length) {
             delete events[selectedDate];
@@ -1046,8 +1195,7 @@
     dayEvents.slice(0, 3).forEach((ev) => {
       const badge = document.createElement("div");
       badge.className = `calendar-event-badge ${getBadgeClass(ev.mainCategory)}`;
-      badge.textContent = ev.title;   
-
+      badge.textContent = ev.title;
       eventsContainer.appendChild(badge);
     });
 
@@ -1132,26 +1280,26 @@
      
     const targetDates = getCurrentTargetDates();
 
-      if (!targetDates.length) {
-        alert("먼저 시작 날짜 또는 종료 날짜를 선택해 주세요.");
-        return;
-      }
+    if (!targetDates.length) {
+      alert("먼저 시작 날짜 또는 종료 날짜를 선택해 주세요.");
+      return;
+    }
     
     try {
-        setStatus("스케줄을 저장하는 중입니다...");
+      setStatus("스케줄을 저장하는 중입니다...");
 
-        for (const dateIso of targetDates) {
-          await createScheduleOnServer({
-            date: dateIso,
-            main_category: mainCategory,
-            sub_category: subCategory,
-            title: title,
-            start_date: rangeStart,
-            end_date: rangeEnd,
-            memo: memo,
-            url: initialUrlFromQuery || null
-          });
-        }
+      for (const dateIso of targetDates) {
+        await createScheduleOnServer({
+          date: dateIso,
+          main_category: mainCategory,
+          sub_category: subCategory,
+          title: title,
+          start_date: rangeStart,
+          end_date: rangeEnd,
+          memo: memo,
+          url: initialUrlFromQuery || null
+        });
+      }
 
       els.eventTitle.value = "";
       els.eventMemo.value = "";
@@ -1169,7 +1317,7 @@
     const targetDates = getCurrentTargetDates();
     const hasAnyEvent = targetDates.some((dateIso) => events[dateIso]?.length);
     
-     if (!targetDates.length) {
+    if (!targetDates.length) {
       alert("먼저 삭제할 날짜(또는 날짜 범위)를 선택해 주세요.");
       return;
     }
@@ -1186,7 +1334,7 @@
 
     try {
       setStatus("스케줄을 삭제하는 중입니다...");
-      await deleteRangeUsingSingleDelete(start, end);  // ★ 편법 사용
+      await deleteRangeUsingSingleDelete(start, end);
       setStatus("선택 범위의 스케줄이 삭제되었습니다.", "success");
     } catch (error) {
       console.error(error);
@@ -1213,7 +1361,109 @@
   }
 
   // =========================
-  // 11. 이벤트 바인딩
+  // 11. 사용자 세션 / 로그아웃
+  // =========================
+  function loadUserSession() {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  function fillUserChip(user) {
+    if (!user) {
+      els.userChipName.textContent = "게스트 님";
+      return;
+    }
+    els.userChipName.textContent = `${user.name || "사용자"} 님`;
+  }
+
+  function fillProfileCard(user) {
+    if (!user) return;
+    els.profileName.textContent = user.name || "사용자";
+    els.profileSchool.textContent = user.school || "학교 정보 없음";
+    els.profileMajor.textContent = user.major || "학과 정보 없음";
+
+    const yearMap = {
+      "1": "1학년",
+      "2": "2학년",
+      "3": "3학년",
+      "4": "4학년 이상",
+    };
+    els.profileYear.textContent = user.year ? yearMap[user.year] || "" : "";
+
+    const interests = Array.isArray(user.interests) ? user.interests : [];
+    els.profileTags.innerHTML = "";
+    if (!interests.length) {
+      const span = document.createElement("span");
+      span.className = "profile-text";
+      span.textContent = "관심 분야 없음";
+      els.profileTags.appendChild(span);
+    } else {
+      interests.forEach(label => {
+        const tag = document.createElement("span");
+        tag.className = "profile-tag-pill";
+        tag.textContent = label;
+        els.profileTags.appendChild(tag);
+      });
+    }
+  }
+
+  function openProfileModal() {
+    const user = loadUserSession();
+    fillProfileCard(user);
+    els.profileModal.style.display = "block";
+  }
+
+  function closeProfileModal() {
+    els.profileModal.style.display = "none";
+  }
+
+  // 서버 단일 삭제 엔드포인트로 모든 스케줄 삭제
+  async function deleteAllSchedulesOnServer() {
+    try {
+      const listRes = await fetch(`${API_BASE}/schedules?skip=0&limit=1000`);
+      if (!listRes.ok) {
+        console.error("스케줄 목록 조회 실패:", listRes.status);
+        return;
+      }
+      const schedules = await listRes.json();
+      const ids = schedules.map((s) => s.id);
+
+      await Promise.all(
+        ids.map((id) =>
+          fetch(`${API_BASE}/schedules/${id}`, {
+            method: "DELETE",
+          }).catch((e) => console.error("스케줄 삭제 실패:", id, e))
+        )
+      );
+    } catch (e) {
+      console.error("서버 스케줄 전체 삭제 중 오류:", e);
+    }
+  }
+
+  async function handleLogout() {
+    if (!confirm("로그아웃하고 저장된 정보(공지 보관함 & 스케줄러)를 모두 삭제할까요?")) return;
+
+    // 1) 서버 스케줄 전체 삭제
+    await deleteAllSchedulesOnServer();
+
+    // 2) 로컬 저장소 정리
+    localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SCHEDULE_KEY);
+
+    alert("로그아웃이 완료되었습니다. 공지 보관함과 스케줄러 내용이 모두 초기화되었습니다.");
+
+    closeProfileModal();
+    window.location.href = "login.html";  // 로그인 페이지 파일명에 맞게 수정
+  }
+
+  // =========================
+  // 12. 이벤트 바인딩
   // =========================
   els.mainCategory.addEventListener("change", handleMainCategoryChange);
   els.eventForm.addEventListener("submit", handleEventSubmit);
@@ -1223,10 +1473,21 @@
   els.startDate.addEventListener("change", syncRangeFromInputs);
   els.endDate.addEventListener("change", syncRangeFromInputs);
 
+  els.userChipBtn.addEventListener("click", () => {
+    const isOpen = els.profileModal.style.display === "block";
+    if (isOpen) closeProfileModal();
+    else openProfileModal();
+  });
+
+  els.logoutBtn.addEventListener("click", handleLogout);
+
   // =========================
-  // 12. 초기화
+  // 13. 초기화
   // =========================
   async function init() {
+    const user = loadUserSession();
+    fillUserChip(user);
+
     selectedDate = todayIso();
     currentMonth = new Date();
     rangeStart = null;
@@ -1241,7 +1502,6 @@
   }
 
   init();
-</script>
+  </script>
 </body>
-</html> 
-
+</html>
