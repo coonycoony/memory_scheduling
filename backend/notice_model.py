@@ -208,6 +208,23 @@ def _build_page_url(base_url: str, page_param: str, page: int,
     return urlunparse(parsed._replace(query=new_query))
 
 
+SSO_PATTERNS = [
+    "ssologin", "sso/login", "failureCause", "redirectPostForm",
+    "login.do", "loginForm", "Please login",
+]
+
+def check_sso_required(url: str) -> bool:
+    try:
+        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+        if len(response.text) < 2000:
+            text = response.text.lower()
+            if any(p.lower() in text for p in SSO_PATTERNS):
+                return True
+    except Exception:
+        pass
+    return False
+
+
 def fetch_board_html(list_url: str) -> str:
     session = requests.Session()
     session.headers.update({
