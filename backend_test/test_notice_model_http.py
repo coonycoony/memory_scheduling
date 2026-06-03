@@ -550,3 +550,17 @@ class TestAnalyzePageUrls:
         url2 = "http://example.com/board?enc=ALSO_NOT_VALID!!!"
         with pytest.raises(ValueError):
             analyze_page_urls(url1, url2)
+
+    def test_enc_url_unexpected_exception_raises_value_error(self):
+        def _encode(inner_path, query):
+            inner = f"{inner_path}?{query}"
+            return base64.b64encode(("fnct1|@@|" + inner).encode()).decode()
+
+        enc1 = _encode("/inner/path", "pageIndex=1&size=10")
+        enc2 = _encode("/inner/path", "pageIndex=2&size=10")
+        url1 = f"http://example.com/board?enc={enc1}"
+        url2 = f"http://example.com/board?enc={enc2}"
+
+        with patch("notice_model.base64.b64decode", side_effect=OSError("io error")):
+            with pytest.raises(ValueError, match="enc URL 분석에 실패했습니다"):
+                analyze_page_urls(url1, url2)
