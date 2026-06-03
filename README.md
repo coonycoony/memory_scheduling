@@ -37,21 +37,21 @@ cd memory_scheduling
 # 2. 필수 패키지 일괄 설치
 pip install -r requirements.txt
 
-✏️ 실행 방법
+# 3. ✏️ 실행 방법
 터미널에서 python -m uvicorn connect:app --reload 입력하여 백엔드 서버를 구동합니다.
 
 웹 브라우저에서 login.html 파일을 열어 프론트엔드 환경에 접속합니다.
 
 로그인 후 사이트를 실행 및 테스트합니다.
 
-🎬 실행 화면
+# 4. 🎬 실행 화면
 시작(로그인) 및 맞춤 설정 화면
 
 공지사항 통합 검색 및 맞춤 추천 결과
 
 내 스케줄러(캘린더) 연동 화면
 
-📋 LICENSE
+# 5. 📋 LICENSE
 
 MIT License
 
