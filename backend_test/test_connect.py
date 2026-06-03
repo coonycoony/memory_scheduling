@@ -149,14 +149,16 @@ class TestGetNotices:
 class TestAddSource:
     def test_add_source_success(self, client):
         with patch("connect.analyze_page_urls", return_value={"page_param": "page", "enc_inner_path": None, "enc_query_template": None}):
-            with patch("connect.add_board_source"):
-                resp = client.post("/sources/url", json={
-                    "university": "테스트대학교",
-                    "board_name": "공지사항",
-                    "url1": "http://example.com/board?page=1",
-                    "url2": "http://example.com/board?page=2",
-                    "max_pages": 10,
-                })
+            with patch("connect.check_js_pagination", return_value=False):
+                with patch("connect.check_sso_required", return_value=False):
+                    with patch("connect.add_board_source"):
+                        resp = client.post("/sources/url", json={
+                            "university": "테스트대학교",
+                            "board_name": "공지사항",
+                            "url1": "http://example.com/board?page=1",
+                            "url2": "http://example.com/board?page=2",
+                            "max_pages": 10,
+                        })
         assert resp.status_code == 200
         assert "추가 완료" in resp.json()["message"]
 
@@ -169,6 +171,73 @@ class TestAddSource:
                 "url2": "http://b.com/2",
             })
         assert resp.status_code == 400
+
+    def test_add_source_js_pagination_returns_400(self, client):
+        with patch("connect.analyze_page_urls", return_value={"page_param": "page", "enc_inner_path": None, "enc_query_template": None}):
+            with patch("connect.check_js_pagination", return_value=True):
+                resp = client.post("/sources/url", json={
+                    "university": "테스트대학교",
+                    "board_name": "공지사항",
+                    "url1": "http://example.com/board#page1",
+                })
+        assert resp.status_code == 400
+
+    def test_add_source_sso_required_returns_403(self, client):
+        with patch("connect.analyze_page_urls", return_value={"page_param": "page", "enc_inner_path": None, "enc_query_template": None}):
+            with patch("connect.check_js_pagination", return_value=False):
+                with patch("connect.check_sso_required", return_value=True):
+                    resp = client.post("/sources/url", json={
+                        "university": "테스트대학교",
+                        "board_name": "공지사항",
+                        "url1": "http://example.com/sso/board",
+                    })
+        assert resp.status_code == 403
+
+
+# ─── /sources (DELETE) ────────────────────────────────────────────────────────
+
+class TestDeleteSource:
+    def test_delete_source_success(self, client):
+        from notice_model import UniversitySource, NoticeBoard
+        board = NoticeBoard(board_name="공지사항", list_url="http://example.com/board")
+        mock_sources = {"테스트대학교": UniversitySource(name="테스트대학교", boards=[board])}
+        with patch("connect.UNIVERSITY_SOURCES", mock_sources):
+            with patch("connect.save_sources_to_json"):
+                resp = client.delete("/sources", params={"university": "테스트대학교", "board_name": "공지사항"})
+        assert resp.status_code == 200
+        assert "성공적으로 삭제" in resp.json()["message"]
+
+    def test_delete_source_unknown_university_returns_404(self, client):
+        with patch("connect.UNIVERSITY_SOURCES", {}):
+            resp = client.delete("/sources", params={"university": "없는대학교", "board_name": "공지사항"})
+        assert resp.status_code == 404
+
+    def test_delete_source_unknown_board_returns_404(self, client):
+        from notice_model import UniversitySource, NoticeBoard
+        board = NoticeBoard(board_name="공지사항", list_url="http://example.com/board")
+        mock_sources = {"테스트대학교": UniversitySource(name="테스트대학교", boards=[board])}
+        with patch("connect.UNIVERSITY_SOURCES", mock_sources):
+            resp = client.delete("/sources", params={"university": "테스트대학교", "board_name": "없는게시판"})
+        assert resp.status_code == 404
+
+    def test_delete_source_save_error_returns_500(self, client):
+        from notice_model import UniversitySource, NoticeBoard
+        board = NoticeBoard(board_name="공지사항", list_url="http://example.com/board")
+        mock_sources = {"테스트대학교": UniversitySource(name="테스트대학교", boards=[board])}
+        with patch("connect.UNIVERSITY_SOURCES", mock_sources):
+            with patch("connect.save_sources_to_json", side_effect=Exception("저장 오류")):
+                resp = client.delete("/sources", params={"university": "테스트대학교", "board_name": "공지사항"})
+        assert resp.status_code == 500
+
+    def test_delete_last_board_removes_university(self, client):
+        from notice_model import UniversitySource, NoticeBoard
+        board = NoticeBoard(board_name="공지사항", list_url="http://example.com/board")
+        mock_sources = {"테스트대학교": UniversitySource(name="테스트대학교", boards=[board])}
+        with patch("connect.UNIVERSITY_SOURCES", mock_sources):
+            with patch("connect.save_sources_to_json"):
+                resp = client.delete("/sources", params={"university": "테스트대학교", "board_name": "공지사항"})
+        assert resp.status_code == 200
+        assert "테스트대학교" not in mock_sources
 
 
 # ─── /schedules ───────────────────────────────────────────────────────────────
