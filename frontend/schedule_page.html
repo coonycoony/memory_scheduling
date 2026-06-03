@@ -630,7 +630,7 @@
               🔍 공지 검색하러 가기
             </button>
             <button type="button" onclick="location.href='my_notice_archive.html'" class="btn-primary back-to-search-btn">
-              공지 보관함으로 가기
+              🗂️ 공지 보관함으로 가기
             </button>
           </div>
         </div>
@@ -989,6 +989,10 @@
     renderCalendar();
   }
 
+  function isDuplicateEventOnDate(dateIso, title) {
+  const list = events[dateIso] || [];
+  return list.some(ev => ev.title === title);
+}
   // =========================
   // 7. 카테고리 렌더링
   // =========================
@@ -1269,49 +1273,62 @@
   }
 
   async function handleEventSubmit(e) {
-    e.preventDefault();
+  e.preventDefault();
 
-    const mainCategory = els.mainCategory.value;
-    const subCategory = els.subCategory.value;
-    const title = els.eventTitle.value.trim();
-    const memo = els.eventMemo.value.trim();
+  const mainCategory = els.mainCategory.value;
+  const subCategory = els.subCategory.value;
+  const title = els.eventTitle.value.trim();
+  const memo = els.eventMemo.value.trim();
+  const url = initialUrlFromQuery || null;
 
-    if (!title) return;
-     
-    const targetDates = getCurrentTargetDates();
+  if (!title) return;
 
-    if (!targetDates.length) {
-      alert("먼저 시작 날짜 또는 종료 날짜를 선택해 주세요.");
-      return;
-    }
-    
-    try {
-      setStatus("스케줄을 저장하는 중입니다...");
+  const targetDates = getCurrentTargetDates();
 
-      for (const dateIso of targetDates) {
-        await createScheduleOnServer({
-          date: dateIso,
-          main_category: mainCategory,
-          sub_category: subCategory,
-          title: title,
-          start_date: rangeStart,
-          end_date: rangeEnd,
-          memo: memo,
-          url: initialUrlFromQuery || null
-        });
-      }
-
-      els.eventTitle.value = "";
-      els.eventMemo.value = "";
-      initialUrlFromQuery = null;
-
-      await loadSchedulesFromServer();
-      setStatus("스케줄이 저장되었습니다.", "success");
-    } catch (error) {
-      console.error(error);
-      setStatus("스케줄 저장 중 오류가 발생했습니다.", "error");
-    }
+  if (!targetDates.length) {
+    alert("먼저 시작 날짜 또는 종료 날짜를 선택해 주세요.");
+    return;
   }
+
+  // 1) 날짜별로 이미 같은 제목이 있는지 확인해서, 없는 날짜만 골라냄
+  const uniqueDates = targetDates.filter(dateIso => {
+    const isDup = isDuplicateEventOnDate(dateIso, title);
+    return !isDup;
+  });
+
+  if (!uniqueDates.length) {
+    alert("선택한 날짜 범위에는 이미 같은 제목의 스케줄이 모두 등록되어 있습니다.");
+    return;
+  }
+
+  try {
+    setStatus("스케줄을 저장하는 중입니다...");
+
+    // 2) 중복 아닌 날짜에 대해서만 서버에 저장
+    for (const dateIso of uniqueDates) {
+      await createScheduleOnServer({
+        date: dateIso,
+        main_category: mainCategory,
+        sub_category: subCategory,
+        title: title,
+        start_date: rangeStart,
+        end_date: rangeEnd,
+        memo: memo,
+        url: url
+      });
+    }
+
+    els.eventTitle.value = "";
+    els.eventMemo.value = "";
+    initialUrlFromQuery = null;
+
+    await loadSchedulesFromServer();
+    setStatus("스케줄이 저장되었습니다.", "success");
+  } catch (error) {
+    console.error(error);
+    setStatus("스케줄 저장 중 오류가 발생했습니다.", "error");
+  }
+}
 
   async function handleDeleteAll() {
     const targetDates = getCurrentTargetDates();
@@ -1480,7 +1497,25 @@
   });
 
   els.logoutBtn.addEventListener("click", handleLogout);
+  
+document.addEventListener("click", (event) => {
+    const target = event.target;
 
+    // 이미 닫혀 있으면 신경 안 씀
+    if (els.profileModal.style.display !== "block") return;
+
+    // 사용자 칩이나 팝오버 안을 클릭한 경우는 유지
+    if (
+      target === els.userChipBtn ||
+      els.userChipBtn.contains(target) ||
+      els.profileModal.contains(target)
+    ) {
+      return;
+    }
+
+    // 그 외 어디든 클릭하면 닫기
+    closeProfileModal();
+  });
   // =========================
   // 13. 초기화
   // =========================
