@@ -672,12 +672,61 @@
     let currentPage = 1;
     let currentSort = 'desc';
 
+    function saveSearchState() {
+      if (!hasSearched) return;
+      const state = {
+        university: document.getElementById("universitySelect").value,
+        board: document.getElementById("boardSelect").value,
+        searchDays: document.getElementById("searchDays").value,
+        category: currentCategory,
+        sort: currentSort,
+        page: currentPage,
+        allNotices: allNotices,
+        hasSearched: hasSearched
+      };
+      sessionStorage.setItem('lastSearchState', JSON.stringify(state));
+    }
+
     window.onload = async function() {
       loadProfileData(); 
       await loadUniversities();
       
       const savedSession = sessionStorage.getItem("userSession");
-      if (savedSession) {
+      const savedSearch = sessionStorage.getItem("lastSearchState");
+
+      if (savedSearch) {
+        try {
+          const state = JSON.parse(savedSearch);
+          const univSelect = document.getElementById("universitySelect");
+          const boardSelect = document.getElementById("boardSelect");
+          
+          univSelect.value = state.university;
+          await handleUniversityChange();
+          
+          if (state.board) {
+            boardSelect.value = state.board;
+          }
+          
+          document.getElementById("searchDays").value = state.searchDays || "30";
+          document.getElementById("sortSelect").value = state.sort || "desc";
+
+          allNotices = state.allNotices || [];
+          hasSearched = state.hasSearched;
+          currentSort = state.sort || "desc";
+          currentPage = state.page || 1;
+
+          if (hasSearched && allNotices.length > 0) {
+            renderRecommendations();
+            applyFilter(state.category || '전체', true);
+          } else if (hasSearched) {
+            const status = document.getElementById("status");
+            status.textContent = `${state.university} 공지사항이 없습니다.`;
+            document.getElementById("noticeList").innerHTML = `<div class="empty">검색 결과가 없습니다.<br />선택한 학교 또는 게시판에 데이터가 있는지 확인해주세요.</div>`;
+          }
+        } catch (e) {
+          console.error("검색 상태 복원 중 오류:", e);
+        }
+      } else if (savedSession) {
         try {
           const user = JSON.parse(savedSession);
           const univSelect = document.getElementById("universitySelect");
@@ -762,6 +811,7 @@
     function handleLogout() {
       if(confirm('로그아웃 시 입력하신 사용자 정보가 초기화됩니다.\n계속하시겠습니까?')) {
         sessionStorage.removeItem('userSession');
+        sessionStorage.removeItem('lastSearchState');
         location.href = 'login.html'; 
       }
     }
@@ -950,6 +1000,7 @@
               선택한 학교 또는 게시판에 데이터가 있는지 확인해주세요.
             </div>
           `;
+          saveSearchState();
           return;
         }
 
@@ -969,9 +1020,11 @@
       }
     }
 
-    function applyFilter(category) {
+    function applyFilter(category, skipPageReset = false) {
       currentCategory = category;
-      currentPage = 1;
+      if (!skipPageReset) {
+        currentPage = 1;
+      }
 
       const buttons = document.querySelectorAll('.filter-btn');
       buttons.forEach(btn => {
@@ -1005,6 +1058,8 @@
 
       renderNotices(paginatedNotices);
       renderPagination(currentFilteredNotices.length);
+
+      saveSearchState();
     }
 
     function changePage(pageNumber) {
@@ -1286,7 +1341,6 @@
     function saveToArchive(btnElement) {
       try {
         const notice = JSON.parse(btnElement.getAttribute('data-notice'));
-        
         const STORAGE_KEY = 'noticeArchiveItems';
         let items = [];
         
