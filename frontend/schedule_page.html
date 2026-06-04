@@ -18,7 +18,7 @@
       color: #222;
       overflow: hidden;
     }
-
+	
     .schedule-container {
       max-width: 100%;
       margin: 0 auto;
@@ -44,7 +44,7 @@
       flex-direction: column;
       gap: 15px;
       height: calc(100vh - 80px);
-      overflow-y: auto;
+      overflow-y: hidden;
       overflow-x: hidden;
       width: 340px;
       max-width: 340px;
@@ -201,6 +201,7 @@
 
     .event-list {
       margin-top: 14px;
+      height: 35px;
       flex: 1 1 auto;
       overflow-y: auto;
       overflow-x: hidden;
@@ -333,20 +334,17 @@
     }
 
     .calendar-weekdays {
-      margin-bottom: 8px;
-    }
-
-    .calendar-weekdays div {
+     margin-bottom: 8px;
       text-align: center;
-      font-size: 12px;
+      font-size: 16px;
       font-weight: 700;
       color: #6b7280;
       padding: 6px 0;
     }
 
     .calendar-day {
-      min-height: 120px;
-      max-height: 120px;
+      min-height: 177.4px;
+      max-height: 177.4px;
       border: 1px solid #e5e7eb;
       border-radius: 12px;
       background: #fff;
@@ -401,7 +399,7 @@
       display: flex;
       flex-direction: column;
       gap: 4px;
-      max-height: 90px;
+      max-height: 148.3px;
       overflow: hidden;
     }
     
@@ -1196,17 +1194,17 @@
 
     const eventsContainer = cell.querySelector(".calendar-day-events");
 
-    dayEvents.slice(0, 3).forEach((ev) => {
+    dayEvents.slice(0, 6).forEach((ev) => {
       const badge = document.createElement("div");
       badge.className = `calendar-event-badge ${getBadgeClass(ev.mainCategory)}`;
       badge.textContent = ev.title;
       eventsContainer.appendChild(badge);
     });
 
-    if (dayEvents.length > 3) {
+    if (dayEvents.length > 6) {
       const more = document.createElement("div");
       more.className = "calendar-event-more";
-      more.textContent = `+${dayEvents.length - 3}`;
+      more.textContent = `+${dayEvents.length - 6}`;
       eventsContainer.appendChild(more);
     }
 
