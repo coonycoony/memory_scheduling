@@ -203,7 +203,8 @@
 
   .event-list {
       margin-top: 14px;
-      max-height: 660px;
+      min-height: 250px;
+      max-height: 250px;
       overflow-y: auto;
       padding-right: 4px;
       display: grid;
@@ -283,7 +284,8 @@
 
   .archive-board {
       padding: 16px;
-      max-height: calc(100vh - 160px);
+      min-height: 1362.2px;
+      max-height: 1362.2px;
       overflow-y: scroll;
   }
 
@@ -1111,7 +1113,6 @@
   // 그 외 어디든 클릭하면 프로필 닫기
   closeProfileModal();
 });
-
   // 초기화
   function init() {
     const user = loadUserSession();
