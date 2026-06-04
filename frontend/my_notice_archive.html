@@ -203,7 +203,8 @@
 
   .event-list {
       margin-top: 14px;
-      max-height: 660px;
+      min-height: 560.5px;
+      max-height: 560.5px;
       overflow-y: auto;
       padding-right: 4px;
       display: grid;
@@ -283,7 +284,8 @@
 
   .archive-board {
       padding: 16px;
-      max-height: calc(100vh - 160px);
+      min-height: 1672.7px;
+      max-height: 1672.7px;
       overflow-y: scroll;
   }
 
@@ -1093,6 +1095,24 @@
     els.logoutBtn.addEventListener("click", handleLogout);
   }
 
+  document.addEventListener("click", (event) => {
+  const target = event.target;
+
+  // 이미 닫혀 있으면 아무 것도 하지 않음
+  if (els.profileModal.style.display !== "block") return;
+
+  // 사용자 칩이나 팝오버 안을 클릭한 경우에는 유지
+  if (
+    target === els.userChipBtn ||
+    els.userChipBtn.contains(target) ||
+    els.profileModal.contains(target)
+  ) {
+    return;
+  }
+
+  // 그 외 어디든 클릭하면 프로필 닫기
+  closeProfileModal();
+});
   // 초기화
   function init() {
     const user = loadUserSession();
