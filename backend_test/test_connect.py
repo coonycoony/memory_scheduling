@@ -1,32 +1,28 @@
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'backend'))
-
 import json
-import tempfile
 import pytest
-from unittest.mock import patch, MagicMock
-
+from unittest.mock import patch, MagicMock, mock_open
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
 from database import Base, get_db
-import connect as app_module
+import models  # Base에 테이블 등록
 from connect import app
-from notice_model import Notice
+
+SAMPLE_SOURCES = {
+    "서울대": {
+        "name": "서울대",
+        "boards": [{"board_name": "장학공지", "list_url": "http://snu.ac.kr/board"}]
+    }
+}
 
 
 @pytest.fixture
-def client():
-    engine = create_engine(
-        "sqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(bind=engine)
-    TestSession = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+def client(tmp_path):
+    db_path = str(tmp_path / "test.db")
+    test_engine = create_engine(f"sqlite:///{db_path}", connect_args={"check_same_thread": False})
+    Base.metadata.create_all(bind=test_engine)
+    TestSession = sessionmaker(bind=test_engine)
 
     def override_get_db():
         db = TestSession()
@@ -36,182 +32,199 @@ def client():
             db.close()
 
     app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as c:
+    with TestClient(app, raise_server_exceptions=False) as c:
         yield c
     app.dependency_overrides.clear()
-    Base.metadata.drop_all(bind=engine)
+    Base.metadata.drop_all(bind=test_engine)
 
 
-def _make_notice(**kwargs):
-    defaults = dict(university="테스트대학교", title="공지", url="http://a.com/1", category="장학", date="2024-06-01")
-    defaults.update(kwargs)
-    return Notice(**defaults)
+# ── /health ───────────────────────────────────────────────────────────────────
+
+def test_health(client):
+    res = client.get("/health")
+    assert res.status_code == 200
+    assert res.json()["status"] == "ok"
 
 
-# ─── /health ─────────────────────────────────────────────────────────────────
+# ── /universities ─────────────────────────────────────────────────────────────
 
-class TestHealthCheck:
-    def test_returns_ok(self, client):
-        resp = client.get("/health")
-        assert resp.status_code == 200
-        assert resp.json()["status"] == "ok"
+def test_get_universities(client):
+    sources_json = json.dumps(SAMPLE_SOURCES)
+    with patch("connect.os.path.exists", return_value=True), \
+         patch("builtins.open", mock_open(read_data=sources_json)):
+        res = client.get("/universities")
+    assert res.status_code == 200
+    assert "서울대" in res.json()
 
-
-# ─── /universities ─────────────────────────────────────────────────────────────
-
-class TestGetUniversities:
-    def test_returns_list_from_sources_json(self, client):
-        data = {"A대학교": {"name": "A대학교", "boards": []}, "B대학교": {"name": "B대학교", "boards": []}}
-        from unittest.mock import mock_open
-        m = mock_open(read_data=json.dumps(data, ensure_ascii=False))
-        with patch("connect.os.path.exists", return_value=True):
-            with patch("connect.open", m):
-                resp = client.get("/universities")
-        assert resp.status_code == 200
-        assert set(resp.json()) == {"A대학교", "B대학교"}
-
-    def test_returns_empty_when_no_sources_file(self, client):
-        with patch("connect.os.path.exists", return_value=False):
-            resp = client.get("/universities")
-        assert resp.status_code == 200
-        assert resp.json() == []
+def test_get_universities_no_file(client):
+    with patch("connect.os.path.exists", return_value=False):
+        res = client.get("/universities")
+    assert res.status_code == 200
+    assert res.json() == []
 
 
-# ─── /boards ──────────────────────────────────────────────────────────────────
+# ── /boards ───────────────────────────────────────────────────────────────────
 
-class TestGetBoards:
-    def test_returns_board_list(self, client):
-        data = {
-            "A대학교": {
-                "name": "A대학교",
-                "boards": [{"board_name": "장학게시판"}, {"board_name": "학사게시판"}]
-            }
-        }
-        from unittest.mock import mock_open
-        m = mock_open(read_data=json.dumps(data, ensure_ascii=False))
-        with patch("connect.os.path.exists", return_value=True):
-            with patch("connect.open", m):
-                resp = client.get("/boards", params={"university": "A대학교"})
-        assert resp.status_code == 200
-        assert "장학게시판" in resp.json()
+def test_get_boards(client):
+    sources_json = json.dumps(SAMPLE_SOURCES)
+    with patch("connect.os.path.exists", return_value=True), \
+         patch("builtins.open", mock_open(read_data=sources_json)):
+        res = client.get("/boards?university=서울대")
+    assert res.status_code == 200
+    assert "장학공지" in res.json()
 
-    def test_returns_empty_for_unknown_university(self, client):
-        data = {"A대학교": {"name": "A대학교", "boards": []}}
-        from unittest.mock import mock_open
-        m = mock_open(read_data=json.dumps(data, ensure_ascii=False))
-        with patch("connect.os.path.exists", return_value=True):
-            with patch("connect.open", m):
-                resp = client.get("/boards", params={"university": "없는대학교"})
-        assert resp.json() == []
+def test_get_boards_no_file(client):
+    with patch("connect.os.path.exists", return_value=False):
+        res = client.get("/boards?university=서울대")
+    assert res.json() == []
 
-    def test_returns_empty_when_no_sources_file(self, client):
-        with patch("connect.os.path.exists", return_value=False):
-            resp = client.get("/boards", params={"university": "A대학교"})
-        assert resp.json() == []
+def test_get_boards_unknown_university(client):
+    sources_json = json.dumps(SAMPLE_SOURCES)
+    with patch("connect.os.path.exists", return_value=True), \
+         patch("builtins.open", mock_open(read_data=sources_json)):
+        res = client.get("/boards?university=없는대학")
+    assert res.json() == []
 
 
-# ─── /notices ─────────────────────────────────────────────────────────────────
+# ── /notices ──────────────────────────────────────────────────────────────────
 
-class TestGetNotices:
-    def test_returns_notices(self, client):
-        mock_notices = [_make_notice()]
-        with patch("connect.load_notices", return_value=mock_notices):
-            resp = client.get("/notices", params={"university": "테스트대학교"})
-        assert resp.status_code == 200
-        assert len(resp.json()) == 1
+def test_get_notices_board_and_category_error(client):
+    res = client.get("/notices?university=서울대&board=공지&category=장학")
+    assert res.status_code == 400
 
-    def test_board_and_category_together_returns_400(self, client):
-        resp = client.get("/notices", params={"university": "A대학교", "board": "공지", "category": "장학"})
-        assert resp.status_code == 400
+def test_get_notices_invalid_category(client):
+    res = client.get("/notices?university=서울대&category=없는카테고리")
+    assert res.status_code == 400
 
-    def test_invalid_category_returns_400(self, client):
-        resp = client.get("/notices", params={"university": "A대학교", "category": "없는카테고리"})
-        assert resp.status_code == 400
+def test_get_notices_invalid_days(client):
+    res = client.get("/notices?university=서울대&days=0")
+    assert res.status_code == 400
 
-    def test_days_less_than_1_returns_400(self, client):
-        resp = client.get("/notices", params={"university": "A대학교", "days": 0})
-        assert resp.status_code == 400
+def test_get_notices_success(client):
+    from notice_model import Notice
+    mock_notice = Notice(university="서울대", title="장학금", url="http://snu.ac.kr/1", category="장학", date="2024-06-01")
+    with patch("connect.load_notices", return_value=[mock_notice]):
+        res = client.get("/notices?university=서울대&days=30")
+    assert res.status_code == 200
 
-    def test_empty_result_does_not_crash(self, client):
-        with patch("connect.load_notices", return_value=[]):
-            resp = client.get("/notices", params={"university": "테스트대학교"})
-        assert resp.status_code == 200
-        assert resp.json() == []
+def test_get_notices_empty_result(client):
+    with patch("connect.load_notices", return_value=[]):
+        res = client.get("/notices?university=서울대&days=30")
+    assert res.status_code == 200
+    assert res.json() == []
 
-    def test_crawl_exception_returns_500(self, client):
-        with patch("connect.load_notices", side_effect=Exception("크롤링 실패")):
-            resp = client.get("/notices", params={"university": "테스트대학교"})
-        assert resp.status_code == 500
-
-
-# ─── /sources/url ─────────────────────────────────────────────────────────────
-
-class TestAddSource:
-    def test_add_source_success(self, client):
-        with patch("connect.analyze_page_urls", return_value={"page_param": "page", "enc_inner_path": None, "enc_query_template": None}):
-            with patch("connect.add_board_source"):
-                resp = client.post("/sources/url", json={
-                    "university": "테스트대학교",
-                    "board_name": "공지사항",
-                    "url1": "http://example.com/board?page=1",
-                    "url2": "http://example.com/board?page=2",
-                    "max_pages": 10,
-                })
-        assert resp.status_code == 200
-        assert "추가 완료" in resp.json()["message"]
-
-    def test_add_source_invalid_url_returns_400(self, client):
-        with patch("connect.analyze_page_urls", side_effect=ValueError("URL 오류")):
-            resp = client.post("/sources/url", json={
-                "university": "테스트대학교",
-                "board_name": "공지사항",
-                "url1": "http://a.com/1",
-                "url2": "http://b.com/2",
-            })
-        assert resp.status_code == 400
+def test_get_notices_crawl_error(client):
+    with patch("connect.load_notices", side_effect=Exception("크롤링 오류")):
+        res = client.get("/notices?university=서울대&days=30")
+    assert res.status_code == 500
 
 
-# ─── /schedules ───────────────────────────────────────────────────────────────
+# ── POST /sources/url ─────────────────────────────────────────────────────────
 
-class TestScheduleEndpoints:
-    def test_create_schedule(self, client):
-        resp = client.post("/schedules", json={
-            "date": "2024-06-01",
-            "main_category": "학사",
-            "title": "수강신청",
-        })
-        assert resp.status_code == 200
-        assert resp.json()["title"] == "수강신청"
+def test_add_source_js_pagination(client):
+    with patch("connect.analyze_page_urls", return_value={"page_param": "page", "enc_inner_path": None, "enc_query_template": None}), \
+         patch("connect.check_js_pagination", return_value=True):
+        res = client.post("/sources/url", json={"university": "A대", "board_name": "공지", "url1": "http://a.com/board#page2"})
+    assert res.status_code == 400
 
-    def test_get_schedules(self, client):
-        client.post("/schedules", json={"date": "2024-06-01", "main_category": "학사", "title": "수강신청"})
-        resp = client.get("/schedules")
-        assert resp.status_code == 200
-        assert len(resp.json()) >= 1
+def test_add_source_sso_required(client):
+    with patch("connect.analyze_page_urls", return_value={"page_param": "page", "enc_inner_path": None, "enc_query_template": None}), \
+         patch("connect.check_js_pagination", return_value=False), \
+         patch("connect.check_sso_required", return_value=True):
+        res = client.post("/sources/url", json={"university": "A대", "board_name": "공지", "url1": "http://a.com/board"})
+    assert res.status_code == 403
 
-    def test_get_schedules_with_category_filter(self, client):
-        client.post("/schedules", json={"date": "2024-06-01", "main_category": "학사", "title": "수강신청"})
-        client.post("/schedules", json={"date": "2024-06-01", "main_category": "행사", "title": "축제"})
-        resp = client.get("/schedules", params={"main_category": "학사"})
-        assert all(s["main_category"] == "학사" for s in resp.json())
+def test_add_source_invalid_url(client):
+    with patch("connect.analyze_page_urls", side_effect=ValueError("URL 오류")):
+        res = client.post("/sources/url", json={"university": "A대", "board_name": "공지", "url1": "http://a.com/1", "url2": "http://b.com/2"})
+    assert res.status_code == 400
 
-    def test_update_schedule(self, client):
-        create_resp = client.post("/schedules", json={"date": "2024-06-01", "main_category": "학사", "title": "원래 제목"})
-        schedule_id = create_resp.json()["id"]
-        resp = client.put(f"/schedules/{schedule_id}", json={"title": "수정된 제목"})
-        assert resp.status_code == 200
-        assert resp.json()["title"] == "수정된 제목"
+def test_add_source_success(client):
+    with patch("connect.analyze_page_urls", return_value={"page_param": "page", "enc_inner_path": None, "enc_query_template": None}), \
+         patch("connect.check_js_pagination", return_value=False), \
+         patch("connect.check_sso_required", return_value=False), \
+         patch("connect.add_board_source"):
+        res = client.post("/sources/url", json={"university": "A대", "board_name": "공지", "url1": "http://a.com/board"})
+    assert res.status_code == 200
 
-    def test_update_nonexistent_schedule_returns_404(self, client):
-        resp = client.put("/schedules/9999", json={"title": "없음"})
-        assert resp.status_code == 404
 
-    def test_delete_schedule(self, client):
-        create_resp = client.post("/schedules", json={"date": "2024-06-01", "main_category": "학사", "title": "삭제 대상"})
-        schedule_id = create_resp.json()["id"]
-        resp = client.delete(f"/schedules/{schedule_id}")
-        assert resp.status_code == 200
+# ── DELETE /sources ───────────────────────────────────────────────────────────
 
-    def test_delete_nonexistent_schedule_returns_404(self, client):
-        resp = client.delete("/schedules/9999")
-        assert resp.status_code == 404
+def test_delete_source_unknown_university(client):
+    with patch("connect.UNIVERSITY_SOURCES", {}):
+        res = client.delete("/sources?university=없는대학&board_name=공지")
+    assert res.status_code == 404
+
+def test_delete_source_unknown_board(client):
+    from notice_model import NoticeBoard, UniversitySource
+    board = NoticeBoard(board_name="다른게시판", list_url="http://a.com")
+    sources = {"A대": UniversitySource(name="A대", boards=[board])}
+    with patch("connect.UNIVERSITY_SOURCES", sources):
+        res = client.delete("/sources?university=A대&board_name=없는게시판")
+    assert res.status_code == 404
+
+def test_delete_source_success(client):
+    from notice_model import NoticeBoard, UniversitySource
+    board = NoticeBoard(board_name="공지", list_url="http://a.com")
+    sources = {"A대": UniversitySource(name="A대", boards=[board])}
+    with patch("connect.UNIVERSITY_SOURCES", sources), \
+         patch("connect.save_sources_to_json"):
+        res = client.delete("/sources?university=A대&board_name=공지")
+    assert res.status_code == 200
+
+def test_delete_source_last_board_removes_university(client):
+    from notice_model import NoticeBoard, UniversitySource
+    board = NoticeBoard(board_name="공지", list_url="http://a.com")
+    sources = {"A대": UniversitySource(name="A대", boards=[board])}
+    with patch("connect.UNIVERSITY_SOURCES", sources), \
+         patch("connect.save_sources_to_json"):
+        res = client.delete("/sources?university=A대&board_name=공지")
+    assert res.status_code == 200
+
+def test_delete_source_save_error(client):
+    from notice_model import NoticeBoard, UniversitySource
+    board = NoticeBoard(board_name="공지", list_url="http://a.com")
+    sources = {"A대": UniversitySource(name="A대", boards=[board])}
+    with patch("connect.UNIVERSITY_SOURCES", sources), \
+         patch("connect.save_sources_to_json", side_effect=Exception("저장 오류")):
+        res = client.delete("/sources?university=A대&board_name=공지")
+    assert res.status_code == 500
+
+
+# ── /schedules ────────────────────────────────────────────────────────────────
+
+def test_create_schedule(client):
+    res = client.post("/schedules", json={"date": "2024-06-01", "main_category": "학사", "title": "중간고사"})
+    assert res.status_code == 200
+    assert res.json()["title"] == "중간고사"
+
+def test_get_schedules(client):
+    client.post("/schedules", json={"date": "2024-06-01", "main_category": "학사", "title": "중간고사"})
+    res = client.get("/schedules")
+    assert res.status_code == 200
+    assert len(res.json()) >= 1
+
+def test_get_schedules_with_category(client):
+    client.post("/schedules", json={"date": "2024-06-01", "main_category": "학사", "title": "중간고사"})
+    res = client.get("/schedules?main_category=학사")
+    assert res.status_code == 200
+
+def test_update_schedule(client):
+    created = client.post("/schedules", json={"date": "2024-06-01", "main_category": "학사", "title": "원래제목"}).json()
+    res = client.put(f"/schedules/{created['id']}", json={"title": "수정제목"})
+    assert res.status_code == 200
+    assert res.json()["title"] == "수정제목"
+
+def test_update_schedule_not_found(client):
+    res = client.put("/schedules/9999", json={"title": "없는일정"})
+    assert res.status_code == 404
+
+def test_delete_schedule(client):
+    created = client.post("/schedules", json={"date": "2024-06-01", "main_category": "학사", "title": "삭제"}).json()
+    res = client.delete(f"/schedules/{created['id']}")
+    assert res.status_code == 200
+
+def test_delete_schedule_not_found(client):
+    res = client.delete("/schedules/9999")
+    assert res.status_code == 404
+

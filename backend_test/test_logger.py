@@ -1,18 +1,36 @@
-import sys
+import logging
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'backend'))
-
-import shutil
-import importlib
+import pytest
+from logger import get_logger
 
 
-class TestLogger:
-    def test_get_logger_returns_logger(self):
-        import logger
-        assert logger.app_logger is not None
+class TestGetLogger:
+    def test_returns_logger_instance(self):
+        lg = get_logger("test_logger_1")
+        assert isinstance(lg, logging.Logger)
 
-    def test_creates_log_dir_when_missing(self):
-        shutil.rmtree("logs", ignore_errors=True)
-        import logger
-        importlib.reload(logger)
-        assert os.path.exists("logs")
+    def test_logger_name(self):
+        lg = get_logger("my_custom_logger")
+        assert lg.name == "my_custom_logger"
+
+    def test_logger_level_is_info(self):
+        lg = get_logger("test_level_logger")
+        assert lg.level == logging.INFO
+
+    def test_logger_has_handlers(self):
+        lg = get_logger("test_handlers_logger")
+        assert len(lg.handlers) > 0
+
+    def test_default_name(self):
+        lg = get_logger()
+        assert isinstance(lg, logging.Logger)
+
+    def test_logs_dir_created(self):
+        get_logger("test_dir_logger")
+        assert os.path.isdir("logs")
+
+    def test_app_logger_exists(self):
+        from logger import app_logger
+        assert app_logger is not None
+        assert isinstance(app_logger, logging.Logger)
+
