@@ -4,134 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>대학 공지 스케줄러 - 로그인</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-    }
-    body {
-      background: #f5f7fb;
-      color: #222;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 20px;
-    }
-    .login-container {
-      max-width: 420px;
-      width: 100%;
-      background: white;
-      padding: 40px 30px;
-      border-radius: 24px;
-      box-shadow: 0 10px 30px rgba(37, 99, 235, 0.06), 0 4px 12px rgba(0, 0, 0, 0.03);
-    }
-    .login-header {
-      text-align: center;
-      margin-bottom: 32px;
-    }
-    .login-header .logo {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 56px;
-      height: 56px;
-      background: #eff6ff;
-      color: #2563eb;
-      border-radius: 16px;
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 16px;
-    }
-    .login-header h1 {
-      font-size: 24px;
-      font-weight: 800;
-      color: #111827;
-      margin-bottom: 8px;
-    }
-    .login-header p {
-      font-size: 14px;
-      color: #6b7280;
-    }
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      margin-bottom: 20px;
-    }
-    .form-group label {
-      font-size: 14px;
-      font-weight: 700;
-      color: #374151;
-      margin-bottom: 8px;
-    }
-    .form-group input {
-      width: 100%;
-      padding: 14px 16px;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      font-size: 15px;
-      color: #111827;
-      background-color: #fff;
-      outline: none;
-      transition: all 0.2s ease;
-    }
-    .form-group input:focus {
-      border-color: #2563eb;
-      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
-    }
-    .form-group input::placeholder {
-      color: #9ca3af;
-      font-size: 14px;
-    }
-    .btn-login {
-      width: 100%;
-      padding: 15px;
-      background: #2563eb;
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 10px;
-      transition: background 0.2s ease;
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
-    }
-    .btn-login:hover {
-      background: #1d4ed8;
-    }
-    .login-footer {
-      text-align: center;
-      margin-top: 24px;
-      font-size: 12px;
-      color: #9ca3af;
-      line-height: 1.5;
-    }
-    .checkbox-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 5px;
-    }
-    .checkbox-group label {
-      font-weight: 400;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      cursor: pointer;
-      background: #f9fafb;
-      padding: 8px 12px;
-      border-radius: 8px;
-      border: 1px solid #e5e7eb;
-    }
-    .checkbox-group input[type="checkbox"] {
-      width: auto;
-      margin: 0;
-    }
-  </style>
+  <link rel="stylesheet" href="login.css" />
 </head>
 <body>
   <div class="login-container">
@@ -170,7 +43,6 @@
           <label><input type="checkbox" value="취업/채용"> 💼 취업/인턴</label>
           <label><input type="checkbox" value="공모전/대회"> 🏆 공모전/대회</label>
           <label><input type="checkbox" value="학사"> 📚 학사/졸업</label>
-          <!-- 새롭게 추가된 관심 분야 2종 -->
           <label><input type="checkbox" value="모집/봉사"> 🙋 대외활동/봉사</label>
           <label><input type="checkbox" value="시설/행정"> 🏢 시설/기숙사</label>
         </div>
@@ -182,43 +54,6 @@
       대학교 맞춤형 공지사항 추천에만 활용됩니다.
     </div>
   </div>
-  <script>
-    function handleLogin(event) {
-      event.preventDefault();
-      const name = document.getElementById("userName").value.trim();
-      const school = document.getElementById("userSchool").value.trim();
-      const major = document.getElementById("userMajor").value.trim();
-      const year = document.getElementById("userYear").value;
-      
-      const checkboxes = document.querySelectorAll('#interestGroup input:checked');
-      const interests = Array.from(checkboxes).map(cb => cb.value);
-
-      if (!name || !school || !major || !year) {
-        alert("모든 정보를 올바르게 입력해주세요.");
-        return;
-      }
-
-      const userInfo = {
-        name: name,
-        school: school,
-        major: major,
-        year: year,
-        interests: interests,
-        loginAt: new Date().toISOString()
-      };
-      
-      sessionStorage.setItem("userSession", JSON.stringify(userInfo));
-      alert(`${name}님 환영합니다! 맞춤형 공지사항을 준비해 드릴게요.`);
-      window.location.href = "frontend.html";
-    }
-
-    window.onload = function() {
-      const savedSession = sessionStorage.getItem("userSession");
-      if (savedSession) {
-        const user = JSON.parse(savedSession);
-        console.log(`${user.name}님의 세션이 이미 존재합니다.`);
-      }
-    }
-  </script>
+  <script src="login.js"></script>
 </body>
 </html>
