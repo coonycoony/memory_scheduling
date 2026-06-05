@@ -37,12 +37,21 @@ cd memory_scheduling
 # 2. 필수 패키지 일괄 설치
 pip install -r requirements.txt
 
-# 3. ✏️ 실행 방법
+# 3. ✏️ 실행 방법 및 Unit Test
 터미널에서 python -m uvicorn connect:app --reload 입력하여 백엔드 서버를 구동합니다.
 
 웹 브라우저에서 login.html 파일을 열어 프론트엔드 환경에 접속합니다.
 
 로그인 후 사이트를 실행 및 테스트합니다.
+
+Unit Test 및 Coverage 측정 방법
+본 프로젝트는 시스템 안정성 검증을 위해 단위 테스트를 제공합니다. Clone 받은 레포지토리에서 아래 명령어를 순서대로 실행하여 테스트 결과와 코드 커버리지(Coverage)를 확인할 수 있습니다.
+
+프로젝트 폴더로 이동
+cd memory_scheduling
+
+단위 테스트 및 커버리지 측정 실행 (backend 폴더 대상)
+python -m pytest ./backend_test/ --cov=backend --cov-report=term-missing
 
 # 4. 🎬 실행 화면
 시작(로그인) 및 맞춤 설정 화면
