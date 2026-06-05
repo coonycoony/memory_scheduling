@@ -155,7 +155,7 @@ describe('Notice Archive - 전체 함수 및 브라우저 흐름 검증 테스�
     const clearBtn = document.getElementById('clearBtn');
     clearBtn.click();
 
-    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('전체 삭제'));
+    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('보관함을 모두 비울까요?'));
     const stored = JSON.parse(window.localStorage.getItem('noticeArchiveItems'));
     expect(stored.length).toBe(0);
   });

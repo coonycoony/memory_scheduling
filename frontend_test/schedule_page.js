@@ -835,7 +835,64 @@ if (typeof module !== 'undefined' && module.exports) {
     getDatesInRange
   };
 }
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    // 1. 상수
+    categoryMap,
 
-if (typeof module !== 'undefined') {
-  module.exports = { categoryMap, getDatesInRange, normalizeRange };
+    // 2. DOM 유틸 및 상태 메시지
+    $, 
+    setStatus,
+
+    // 3. 날짜 유틸 함수
+    parseLocalDate,
+    getIso,
+    todayIso,
+    formatDateKorean,
+    formatMonthKorean,
+    normalizeRange,
+    getDatesInRange,
+    isDateInSelectedRange,
+    getCurrentTargetDates,
+    syncDateInputsFromRange,
+    syncRangeFromInputs,
+
+    // 4. 서버 연동
+    fetchJson,
+    loadSchedulesFromServer,
+    createScheduleOnServer,
+    deleteScheduleOnServer,
+    deleteRangeUsingSingleDelete,
+    isDuplicateEventOnDate,
+
+    // 5. 카테고리 렌더링
+    renderMainCategories,
+    renderSubCategories,
+    applyQueryToForm,
+
+    // 6. 렌더링 (일정 목록 및 달력)
+    renderEventList,
+    updateSelectedDateUI,
+    getBadgeClass,
+    createDayCell,
+    renderCalendar,
+
+    // 7. 이벤트 핸들러
+    handleMainCategoryChange,
+    handleEventSubmit,
+    handleDeleteAll,
+    handleNextMonth,
+    handlePrevMonth,
+
+    // 8. 사용자 세션 / 로그아웃 / 초기화
+    loadUserSession,
+    fillUserChip,
+    fillProfileCard,
+    openProfileModal,
+    closeProfileModal,
+    deleteAllSchedulesOnServer,
+    handleLogout,
+    init
+
+  };
 }
