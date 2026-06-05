@@ -170,6 +170,9 @@
           <label><input type="checkbox" value="취업/채용"> 💼 취업/인턴</label>
           <label><input type="checkbox" value="공모전/대회"> 🏆 공모전/대회</label>
           <label><input type="checkbox" value="학사"> 📚 학사/졸업</label>
+          <!-- 새롭게 추가된 관심 분야 2종 -->
+          <label><input type="checkbox" value="모집/봉사"> 🙋 대외활동/봉사</label>
+          <label><input type="checkbox" value="시설/행정"> 🏢 시설/기숙사</label>
         </div>
       </div>
       <button type="submit" class="btn-login">시작하기</button>
@@ -204,13 +207,13 @@
         loginAt: new Date().toISOString()
       };
       
-      localStorage.setItem("userSession", JSON.stringify(userInfo));
+      sessionStorage.setItem("userSession", JSON.stringify(userInfo));
       alert(`${name}님 환영합니다! 맞춤형 공지사항을 준비해 드릴게요.`);
       window.location.href = "frontend.html";
     }
 
     window.onload = function() {
-      const savedSession = localStorage.getItem("userSession");
+      const savedSession = sessionStorage.getItem("userSession");
       if (savedSession) {
         const user = JSON.parse(savedSession);
         console.log(`${user.name}님의 세션이 이미 존재합니다.`);
@@ -219,4 +222,3 @@
   </script>
 </body>
 </html>
-

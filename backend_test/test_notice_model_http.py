@@ -27,7 +27,10 @@ from notice_model import (
     get_board_list,
     save_sources_to_json,
     add_board_source,
+    delete_board_source,
     analyze_page_urls,
+    check_js_pagination,
+    check_sso_required,
     _build_page_url,
     _extract_date_from_row,
     _load_university_sources,
@@ -100,6 +103,8 @@ class TestFetchBoardHtml:
         mock_resp = MagicMock()
         mock_resp.text = "내용"
         mock_resp.apparent_encoding = "euc-kr"
+        # EUC-KR 바이트열은 UTF-8로 디코딩 시 UnicodeDecodeError 발생
+        mock_resp.content = "내용".encode("euc-kr")
         with patch("notice_model.requests.Session") as MockSession:
             instance = MockSession.return_value
             instance.get.return_value = mock_resp
@@ -143,6 +148,19 @@ class TestBuildPageUrl:
             enc_query_template=None,
         )
         assert "enc=" in url
+
+    def test_enc_mode_strips_existing_enc_from_base_url(self):
+        # base_url에 이미 enc= 파라미터가 있으면 제거 후 새로 빌드해야 함
+        url = _build_page_url(
+            "http://example.com/board?enc=oldvalue",
+            "pageIndex",
+            2,
+            enc_inner_path="/inner/path",
+            enc_query_template="pageIndex={page}",
+        )
+        assert "enc=" in url
+        assert "oldvalue" not in url
+        assert url.startswith("http://example.com/board?enc=")
 
 
 # ─── _extract_date_from_row ───────────────────────────────────────────────────
@@ -235,6 +253,39 @@ class TestParseNoticeRows:
         </body></html>
         """
         board = _make_board()
+        results, _ = parse_notice_rows(html, "테스트대학교", board)
+        assert results == []
+
+    def test_jf_view_onclick_pattern_builds_enc_url(self):
+        html = """
+        <html><body>
+        <table><tbody>
+          <tr><td><a href="#" onclick="jf_view('12345', 'etc')">고려대 공지사항 제목입니다</a></td><td>2024.06.01</td></tr>
+        </tbody></table>
+        </body></html>
+        """
+        board = _make_board(
+            list_url="http://example.com/board",
+            enc_inner_path="/cms/FR_CON/List.do",
+            enc_query_template="menuId=1&pageIndex={page}",
+        )
+        results, _ = parse_notice_rows(html, "테스트대학교", board)
+        assert len(results) == 1
+        assert "enc=" in results[0].url
+        assert "12345" in base64.b64decode(results[0].url.split("enc=")[1]).decode()
+
+    def test_jf_view_onclick_missing_skips_row(self):
+        html = """
+        <html><body>
+        <table><tbody>
+          <tr><td><a href="#" onclick="other_func()">공지사항 제목입니다 긴제목</a></td></tr>
+        </tbody></table>
+        </body></html>
+        """
+        board = _make_board(
+            enc_inner_path="/cms/FR_CON/List.do",
+            enc_query_template="menuId=1&pageIndex={page}",
+        )
         results, _ = parse_notice_rows(html, "테스트대학교", board)
         assert results == []
 
@@ -564,3 +615,107 @@ class TestAnalyzePageUrls:
         with patch("notice_model.base64.b64decode", side_effect=OSError("io error")):
             with pytest.raises(ValueError, match="enc URL 분석에 실패했습니다"):
                 analyze_page_urls(url1, url2)
+
+
+# ─── check_js_pagination ──────────────────────────────────────────────────────
+
+class TestCheckJsPagination:
+    def test_returns_true_for_fragment_page_pattern(self):
+        assert check_js_pagination("http://example.com/board#page1") is True
+
+    def test_returns_false_for_normal_url(self):
+        assert check_js_pagination("http://example.com/board?pageIndex=1") is False
+
+    def test_returns_false_for_fragment_not_matching_page_pattern(self):
+        assert check_js_pagination("http://example.com/board#section") is False
+
+    def test_returns_false_when_no_fragment(self):
+        assert check_js_pagination("http://example.com/board") is False
+
+
+# ─── check_sso_required ───────────────────────────────────────────────────────
+
+class TestCheckSsoRequired:
+    def test_returns_true_when_sso_pattern_in_response(self):
+        mock_resp = MagicMock()
+        mock_resp.text = "<html>Please login to continue</html>"
+        with patch("notice_model.requests.get", return_value=mock_resp):
+            assert check_sso_required("http://example.com/secure") is True
+
+    def test_returns_false_for_normal_page(self):
+        mock_resp = MagicMock()
+        mock_resp.text = "<html><body>공지사항 목록입니다.</body></html>"
+        with patch("notice_model.requests.get", return_value=mock_resp):
+            assert check_sso_required("http://example.com/board") is False
+
+    def test_returns_false_on_request_exception(self):
+        import requests as req_lib
+        with patch("notice_model.requests.get", side_effect=req_lib.RequestException("연결 실패")):
+            assert check_sso_required("http://example.com/board") is False
+
+    def test_returns_false_for_large_response(self):
+        mock_resp = MagicMock()
+        mock_resp.text = "Please login " + "x" * 3000
+        with patch("notice_model.requests.get", return_value=mock_resp):
+            assert check_sso_required("http://example.com/board") is False
+
+
+# ─── delete_board_source ─────────────────────────────────────────────────────
+
+class TestDeleteBoardSource:
+    def test_deletes_existing_board(self):
+        existing = {
+            "테스트대학교": UniversitySource(
+                name="테스트대학교",
+                boards=[_make_board(board_name="공지사항"), _make_board(board_name="장학게시판")]
+            )
+        }
+        saved = {}
+
+        def fake_save(sources, path=None):
+            saved.update({k: v for k, v in sources.items()})
+
+        with patch("notice_model._load_university_sources", return_value=existing):
+            with patch("notice_model.save_sources_to_json", side_effect=fake_save):
+                result = delete_board_source("테스트대학교", "공지사항")
+
+        assert result is True
+        board_names = [b.board_name for b in saved["테스트대학교"].boards]
+        assert "공지사항" not in board_names
+        assert "장학게시판" in board_names
+
+    def test_returns_false_for_unknown_university(self):
+        with patch("notice_model._load_university_sources", return_value={}):
+            result = delete_board_source("없는대학교", "공지사항")
+        assert result is False
+
+    def test_returns_false_for_unknown_board(self):
+        existing = {
+            "테스트대학교": UniversitySource(
+                name="테스트대학교",
+                boards=[_make_board(board_name="공지사항")]
+            )
+        }
+        with patch("notice_model._load_university_sources", return_value=existing):
+            with patch("notice_model.save_sources_to_json"):
+                result = delete_board_source("테스트대학교", "없는게시판")
+        assert result is False
+
+    def test_deletes_university_when_last_board_removed(self):
+        existing = {
+            "테스트대학교": UniversitySource(
+                name="테스트대학교",
+                boards=[_make_board(board_name="공지사항")]
+            )
+        }
+        saved = {}
+
+        def fake_save(sources, path=None):
+            saved.update({k: v for k, v in sources.items()})
+
+        with patch("notice_model._load_university_sources", return_value=existing):
+            with patch("notice_model.save_sources_to_json", side_effect=fake_save):
+                result = delete_board_source("테스트대학교", "공지사항")
+
+        assert result is True
+        assert "테스트대학교" not in saved

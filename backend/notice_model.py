@@ -211,6 +211,13 @@ def _build_page_url(base_url: str, page_param: str, page: int,
     return urlunparse(parsed._replace(query=new_query))
 
 
+def check_js_pagination(url: str) -> bool:
+    parsed = urlparse(url)
+    if parsed.fragment and re.match(r'page\d+', parsed.fragment):
+        return True
+    return False
+
+
 SSO_PATTERNS = [
     "ssologin", "sso/login", "failureCause", "redirectPostForm",
     "login.do", "loginForm", "Please login",
@@ -239,10 +246,14 @@ def fetch_board_html(list_url: str) -> str:
         "Accept-Language": "ko-KR,ko;q=0.9",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     })
-    response = session.get(list_url, timeout=20)
+    response = session.get(list_url, timeout=20, verify=False)
     response.raise_for_status()
-    if response.apparent_encoding:
-        response.encoding = response.apparent_encoding
+    try:
+        response.content.decode('utf-8')
+        response.encoding = 'utf-8'
+    except UnicodeDecodeError:
+        if response.apparent_encoding:
+            response.encoding = response.apparent_encoding
     return response.text
 
 
@@ -280,7 +291,7 @@ def parse_notice_rows(html: str, university: str, board: NoticeBoard,
         for a in links:
             href = a.get('href', '').lower()
             text = a.get_text(strip=True)
-            if len(text) > 5 and ('board' in href or 'read' in href or 'article' in href or 'document_srl' in href):
+            if len(text) > 5 and ('board' in href or 'read' in href or 'article' in href or 'document_srl' in href or 'task=view' in href or 'view' in href):
                 parent_row = a.find_parent(['tr', 'li', 'div'])
                 if parent_row and parent_row not in valid_rows:
                     valid_rows.append(parent_row)
@@ -627,4 +638,26 @@ def add_board_source(
     global UNIVERSITY_SOURCES
     UNIVERSITY_SOURCES = sources
 
+
+def delete_board_source(university: str, board_name: str) -> bool:
+    sources = _load_university_sources()
+
+    if university not in sources:
+        return False
+
+    original_count = len(sources[university].boards)
+    sources[university].boards = [
+        b for b in sources[university].boards if b.board_name != board_name
+    ]
+
+    if len(sources[university].boards) == original_count:
+        return False
+
+    if len(sources[university].boards) == 0:
+        del sources[university]
+
+    save_sources_to_json(sources)
+    global UNIVERSITY_SOURCES
+    UNIVERSITY_SOURCES = sources
+    return True
 

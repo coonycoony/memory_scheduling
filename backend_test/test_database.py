@@ -2,7 +2,15 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'backend'))
 
+import pytest
 from database import get_db, SessionLocal
+import database
+
+
+@pytest.fixture(autouse=True)
+def dispose_engine():
+    yield
+    database.engine.dispose()
 
 
 class TestGetDb:
