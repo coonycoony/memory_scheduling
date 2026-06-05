@@ -36,3 +36,25 @@ cd memory_scheduling
 
 # 단위 테스트 및 커버리지 측정 실행 (backend 폴더 대상)
 python -m pytest ./backend_test/ --cov=backend --cov-report=term-missing
+
+## 📋 LICENSE
+
+MIT License
+
+Copyright (c) 2026 Team memory
+
+[프로젝트 기여자 / Contributors]
+* @04kwon / 권세광
+* @coonycoony / 김성수
+* @kimsu012 / 김현수
+* @greentea5713 / 박준수
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
