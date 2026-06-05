@@ -13,10 +13,11 @@
     }
 
     body {
-      padding: 40px 20px;
+      padding: 60px 20px  20px 20px;
       background: #f5f7fb;
       color: #222;
-      overflow: hidden;
+      overflow-y: auto;
+      overflow-x: hidden;
     }
 	
     .schedule-container {
@@ -591,8 +592,7 @@
 </head>
 
 <body>
-    <div class="schedule-container">
-      <!-- 오른쪽 상단 사용자 버튼 -->
+    <!-- 오른쪽 상단 사용자 버튼 -->
       <button type="button" class="user-chip" id="userChipBtn">
         <span class="user-chip-emoji">🎓</span>
         <span class="user-chip-name" id="userChipName">사용자 님</span>
@@ -620,6 +620,7 @@
         </div>
       </div>
 
+    <div class="schedule-container">
       <div class="left-panel">
         <div class="card header">
           <div class="header-top">
