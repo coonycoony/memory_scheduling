@@ -34,6 +34,7 @@ window.onload = function() {
     console.log(`${user.name}님의 세션이 이미 존재합니다.`);
   }
 }
+/* istanbul ignore next */
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     handleLogin
