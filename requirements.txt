@@ -4,3 +4,6 @@ requests
 beautifulsoup4
 pydantic
 sqlalchemy
+pytest
+pytest-cov
+httpx

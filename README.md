@@ -25,7 +25,9 @@
   * pydantic == 2.3.0
   * beautifulsoup4 == 4.12.2
   * requests == 2.31.0
+  * httpx == 0.24.1 (FastAPI TestClient 구동용 비동기 HTTP 클라이언트)
   * pytest == 7.4.0 (단위 테스트용)
+  * pytest-cov == 4.1.0 (테스트 커버리지 측정 플러그인)
 
 
 ## 설치 방법 (Installation)
@@ -34,33 +36,51 @@
 # 1. 레포지토리 클론
 git clone [https://github.com/coonycoony/memory_scheduling.git](https://github.com/coonycoony/memory_scheduling.git)
 cd memory_scheduling
-# 2. 필수 패키지 일괄 설치
+
+# 2. 백엔드 필수 패키지 일괄 설치
 pip install -r requirements.txt
 
-# 3. ✏️ 실행 방법 및 Unit Test
-터미널에서 python -m uvicorn connect:app --reload 입력하여 백엔드 서버를 구동합니다.
+# ✏️ 실행 방법 및 Unit Test
+터미널에서 cd backend 입력으로 이동 후  python -m uvicorn connect:app --reload 를  입력하여 백엔드 서버를 구동합니다.
 
-웹 브라우저에서 login.html 파일을 열어 프론트엔드 환경에 접속합니다.
+frontend 디렉토리 안에 있는  login.html 파일을 웹브라우저로 열어 프론트엔드 환경에 접속합니다.
 
 로그인 후 사이트를 실행 및 테스트합니다.
 
 Unit Test 및 Coverage 측정 방법
 본 프로젝트는 시스템 안정성 검증을 위해 단위 테스트를 제공합니다. Clone 받은 레포지토리에서 아래 명령어를 순서대로 실행하여 테스트 결과와 코드 커버리지(Coverage)를 확인할 수 있습니다.
 
-프로젝트 폴더로 이동
-cd memory_scheduling
+1. 백엔드 단위 테스트 및 커버리지 측정 (Python)
+프로젝트 루트(최상위) 폴더에서 아래 명령어를 순서대로 실행하여 테스트를 진행하고 코드 커버리지(Coverage)를 확인할 수 있습니다.
 
-단위 테스트 및 커버리지 측정 실행 (backend 폴더 대상)
-python -m pytest ./backend_test/ --cov=backend --cov-report=term-missing
+Bash
+# 1. 백엔드 테스트 실행 및 커버리지 데이터 수집
+python -m coverage run --source=backend -m pytest backend_test/
 
-# 4. 🎬 실행 화면
+# 2. 수집된 커버리지 결과(리포트) 터미널 출력
+python -m coverage report
+2. 프론트엔드 단위 테스트 (JavaScript)
+프론트엔드 테스트를 실행하려면 로컬 환경에 Node.js가 설치되어 있어야 합니다. (설치 후 터미널 재시작 필요)
+
+Bash
+# 1. 프론트엔드 테스트 폴더로 이동
+cd frontend_test
+
+# 2. 테스트에 필요한 패키지 설치 (최초 1회 필수)
+npm install
+
+# 3. 프론트엔드 단위 테스트 실행
+npm test
+
+
+# 🎬 실행 화면
 시작(로그인) 및 맞춤 설정 화면
 
 공지사항 통합 검색 및 맞춤 추천 결과
 
 내 스케줄러(캘린더) 연동 화면
 
-# 5. 📋 LICENSE
+# 📋 LICENSE
 
 MIT License
 

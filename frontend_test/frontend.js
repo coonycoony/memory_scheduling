@@ -716,6 +716,7 @@ function saveToArchive(btnElement) {
     alert('저장 중 오류가 발생했습니다.');
   }
 }
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     saveSearchState,

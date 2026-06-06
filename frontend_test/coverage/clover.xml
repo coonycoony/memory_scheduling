@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1780734537363" clover="3.2.0">
-  <project timestamp="1780734537363" name="All files">
+<coverage generated="1780735238053" clover="3.2.0">
+  <project timestamp="1780735238053" name="All files">
     <metrics statements="982" coveredstatements="898" conditionals="605" coveredconditionals="479" methods="164" coveredmethods="155" elements="1751" coveredelements="1532" complexity="0" loc="982" ncloc="982" packages="1" files="4" classes="4"/>
     <file name="frontend.js" path="/home/u1020/memory_scheduling/frontend_test/frontend.js">
       <metrics statements="361" coveredstatements="354" conditionals="234" coveredconditionals="201" methods="49" coveredmethods="48"/>
@@ -363,8 +363,8 @@
       <line num="713" count="1" type="stmt"/>
       <line num="715" count="1" type="stmt"/>
       <line num="716" count="1" type="stmt"/>
-      <line num="719" count="1" type="cond" truecount="3" falsecount="1"/>
-      <line num="720" count="1" type="stmt"/>
+      <line num="720" count="1" type="cond" truecount="3" falsecount="1"/>
+      <line num="721" count="1" type="stmt"/>
     </file>
     <file name="login.js" path="/home/u1020/memory_scheduling/frontend_test/login.js">
       <metrics statements="21" coveredstatements="21" conditionals="12" coveredconditionals="11" methods="3" coveredmethods="3"/>

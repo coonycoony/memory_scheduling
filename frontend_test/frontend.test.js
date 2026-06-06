@@ -1,7 +1,7 @@
 const frontend = require('./frontend.js');
 
 describe('frontend.js 100% 통합 및 개별 함수 테스트', () => {
-  
+
   // =========================================================================
   // 1. 테스트 환경 셋업 (가짜 HTML + 가짜 내장 함수)
   // =========================================================================
@@ -15,16 +15,16 @@ describe('frontend.js 100% 통합 및 개별 함수 테스트', () => {
       <div id="profileMajor"></div>
       <div id="profileYear"></div>
       <div id="profileInterests"></div>
-      
+
       <select id="universitySelect"><option value="한국대학교">한국대학교</option></select>
       <select id="boardSelect"><option value="일반공지">일반공지</option></select>
       <select id="searchDays"><option value="15">15</option></select>
       <select id="sortSelect"><option value="desc">desc</option><option value="asc">asc</option></select>
-      
+
       <div id="status"></div>
       <div id="noticeList"></div>
       <div id="pagination"></div>
-      
+
       <div id="filterContainer">
         <button class="filter-btn active">전체</button>
         <button class="filter-btn">장학</button>
@@ -33,7 +33,7 @@ describe('frontend.js 100% 통합 및 개별 함수 테스트', () => {
       <div id="recommendSection" style="display: none;"></div>
       <div id="recommendTitle"></div>
       <div id="recommendList"></div>
-      
+
       <div id="manageModal" class=""></div>
       <form id="registerForm">
         <button type="submit">등록</button>
@@ -43,7 +43,7 @@ describe('frontend.js 100% 통합 및 개별 함수 테스트', () => {
         <option value="한국대학교">한국대학교</option>
       </select>
       <div id="manageBoardList"></div>
-      
+
       <input id="regUniv" value="테스트대학" />
       <input id="regBoard" value="테스트게시판" />
       <input id="regUrl1" value="http://test.com/2" />
@@ -102,7 +102,7 @@ describe('frontend.js 100% 통합 및 개별 함수 테스트', () => {
     test('toggleProfile & 모달 열기/닫기', async () => {
       frontend.toggleProfile();
       expect(document.getElementById('profileDropdown').classList.contains('show')).toBe(true);
-      await frontend.openManageModal(); 
+      await frontend.openManageModal();
       expect(document.getElementById('manageModal').classList.contains('show')).toBe(true);
       frontend.closeManageModal();
       expect(document.getElementById('manageModal').classList.contains('show')).toBe(false);
@@ -128,7 +128,7 @@ describe('frontend.js 100% 통합 및 개별 함수 테스트', () => {
     test('handleRegisterSource: 폼 입력값 전송', async () => {
       const mockEvent = { preventDefault: jest.fn(), target: { querySelector: () => ({ textContent: '', style: {} }) } };
       global.fetch.mockResolvedValueOnce({ ok: true });
-      await frontend.handleRegisterSource(mockEvent); 
+      await frontend.handleRegisterSource(mockEvent);
       expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('성공적으로 등록되었습니다'));
     });
     test('loadManageBoards: 게시판 목록 로드', async () => {
@@ -140,7 +140,7 @@ describe('frontend.js 100% 통합 및 개별 함수 테스트', () => {
     test('deleteSource: 게시판 삭제 호출', async () => {
       window.confirm.mockReturnValue(true);
       global.fetch.mockResolvedValueOnce({ ok: true });
-      await frontend.deleteSource('한국대학교', '일반공지'); 
+      await frontend.deleteSource('한국대학교', '일반공지');
       expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('성공적으로 삭제되었습니다'));
     });
   });
@@ -158,7 +158,7 @@ describe('frontend.js 100% 통합 및 개별 함수 테스트', () => {
     });
     test('searchNotices -> applyFilter', async () => {
       global.fetch.mockResolvedValueOnce({ ok: true, json: async () => mockNotices });
-      await frontend.searchNotices(); 
+      await frontend.searchNotices();
       let listHtml = document.getElementById('noticeList').innerHTML;
       expect(listHtml).toContain('장학금 안내');
       frontend.applyFilter('장학');
@@ -168,21 +168,21 @@ describe('frontend.js 100% 통합 및 개별 함수 테스트', () => {
       global.fetch.mockResolvedValueOnce({ ok: true, json: async () => mockNotices });
       await frontend.searchNotices();
       document.getElementById('sortSelect').value = 'asc';
-      frontend.handleSortChange(); 
-      expect(document.getElementById('status').textContent).toContain('찾았습니다'); 
+      frontend.handleSortChange();
+      expect(document.getElementById('status').textContent).toContain('찾았습니다');
     });
     test('changePage: 페이징 작동 확인', async () => {
       const manyNotices = Array.from({ length: 40 }, (_, i) => ({ title: `공지 ${i}` }));
       global.fetch.mockResolvedValueOnce({ ok: true, json: async () => manyNotices });
       await frontend.searchNotices();
-      frontend.changePage(2); 
+      frontend.changePage(2);
       expect(sessionStorage.setItem).toHaveBeenCalledWith('lastSearchState', expect.any(String));
     });
     test('renderRecommendations: 관심사 맞춤 추천', async () => {
       const mockUser = { name: '김테스트', year: '4', interests: ['장학'] };
       sessionStorage.getItem.mockReturnValue(JSON.stringify(mockUser));
       global.fetch.mockResolvedValueOnce({ ok: true, json: async () => mockNotices });
-      await frontend.searchNotices(); 
+      await frontend.searchNotices();
       expect(document.getElementById('recommendSection').style.display).toBe('block');
     });
   });
@@ -231,14 +231,14 @@ describe('frontend.js 100% 통합 및 개별 함수 테스트', () => {
     test('renderPage & sortNotices: 내부 상태 렌더링 검증', async () => {
       global.fetch.mockResolvedValueOnce({ ok: true, json: async () => [{ title: '정렬된공지' }] });
       await frontend.searchNotices();
-      
-      frontend.sortNotices(); 
+
+      frontend.sortNotices();
       frontend.renderPage();
       expect(document.getElementById('noticeList').innerHTML).toContain('정렬된공지');
     });
     test('saveSearchState: 현재 검색된 상태를 세션스토리지에 단독 저장', async () => {
       global.fetch.mockResolvedValueOnce({ ok: true, json: async () => [{ title: '저장테스트공지' }] });
-      await frontend.searchNotices(); 
+      await frontend.searchNotices();
       frontend.saveSearchState();
       expect(sessionStorage.setItem).toHaveBeenCalledWith('lastSearchState', expect.any(String));
     });
@@ -248,7 +248,7 @@ describe('frontend.js 100% 통합 및 개별 함수 테스트', () => {
   // 9. 🚨 [100% 커버리지를 위한 엣지 케이스 및 Catch 블록 검증 추가]
   // =========================================================================
   describe('100% 커버리지를 위한 예외 및 분기 (Edge Cases & Catch Blocks)', () => {
-    
+
     // window.onload 전체 분기 커버리지
     test('window.onload: 저장된 검색 기록 복구 로직', async () => {
       // 1. 검색 기록이 있고 공지사항 데이터가 존재할 때 (hasSearched: true)
@@ -258,7 +258,7 @@ describe('frontend.js 100% 통합 및 개별 함수 테스트', () => {
       });
       global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ['일반'] }); // handleUniversityChange 용
       await window.onload();
-      
+
       // 2. 검색 기록은 있지만 빈 배열일 때
       sessionStorage.getItem.mockImplementation(key => {
         if (key === 'lastSearchState') return JSON.stringify({ university: '한국대학교', hasSearched: true, allNotices: [] });
@@ -287,7 +287,7 @@ describe('frontend.js 100% 통합 및 개별 함수 테스트', () => {
     test('window click 이벤트: 프로필 드롭다운 외부 클릭 및 모달 닫기', () => {
       document.getElementById('profileDropdown').classList.add('show');
       document.getElementById('manageModal').classList.add('show');
-      
+
       // 모달 클릭
       const modal = document.getElementById('manageModal');
       const clickEvent1 = new MouseEvent('click', { bubbles: true });
@@ -389,7 +389,7 @@ describe('frontend.js 100% 통합 및 개별 함수 테스트', () => {
 
     test('applyFilter: hasSearched가 false일 때 조기 리턴 및 기타 분기', () => {
       frontend.saveSearchState(); // hasSearched false일때 조기 리턴 확인용
-      frontend.applyFilter('장학'); 
+      frontend.applyFilter('장학');
     });
 
     test('renderRecommendations: 1학년 추천 분기 및 세션/목록 부재 방어 로직', async () => {
@@ -411,7 +411,7 @@ describe('frontend.js 100% 통합 및 개별 함수 테스트', () => {
 
     test('handleRegisterSource: 누락 필드 알림 및 API 등록 에러', async () => {
       const mockEvent = { preventDefault: jest.fn(), target: { querySelector: () => document.createElement('button') } };
-      
+
       // 누락 필드 검사
       document.getElementById('regUniv').value = '';
       await frontend.handleRegisterSource(mockEvent);
@@ -426,7 +426,7 @@ describe('frontend.js 100% 통합 및 개별 함수 테스트', () => {
 
     test('sendToSchedule & saveToArchive: catch 블록 및 중복 방지', () => {
       const btn = document.createElement('button');
-      
+
       // invalid JSON으로 파싱 에러 유발
       btn.setAttribute('data-notice', 'invalid json data');
       frontend.sendToSchedule(btn);
@@ -449,7 +449,7 @@ describe('frontend.js 100% 통합 및 개별 함수 테스트', () => {
       expect(frontend.safeMeta('테스트', 'none')).toBe('');
       expect(frontend.safeMeta('테스트', '전체')).toBe('');
     });
-    
+
     test('renderPagination: totalPages <= 1 일때 조기 리턴', () => {
       frontend.renderPagination(10); // ITEMS_PER_PAGE가 30이므로 10은 1페이지
       expect(document.getElementById('pagination').innerHTML).toBe('');
