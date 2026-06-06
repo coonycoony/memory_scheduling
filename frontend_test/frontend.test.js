@@ -52,8 +52,8 @@ describe('frontend.js 100% 통합 및 개별 함수 테스트', () => {
 
     window.alert = jest.fn();
     window.confirm = jest.fn();
-    delete window.location;
-    window.location = { href: '' };
+    window.location.href = '';
+    frontend.navigateTo = jest.fn();
     window.HTMLElement.prototype.scrollIntoView = jest.fn();
 
     global.fetch = jest.fn(() =>
@@ -114,7 +114,7 @@ describe('frontend.js 100% 통합 및 개별 함수 테스트', () => {
       window.confirm.mockReturnValue(true);
       frontend.handleLogout();
       expect(sessionStorage.removeItem).toHaveBeenCalledWith('userSession');
-      expect(window.location.href).toBe('login.html');
+      expect(frontend.navigateTo).toHaveBeenCalledWith('login.html');
     });
     test('loadProfileData: 세션 데이터를 화면에 로드', () => {
       const mockUser = { name: '김테스트', school: '한국대학교', year: '4', interests: ['장학'] };
@@ -192,7 +192,7 @@ describe('frontend.js 100% 통합 및 개별 함수 테스트', () => {
       const btn = document.createElement('button');
       btn.setAttribute('data-notice', JSON.stringify({ title: "스케줄", category: "학사", url: "http://sch.com" }));
       frontend.sendToSchedule(btn);
-      expect(window.location.href).toContain('schedule_page.html?');
+      expect(frontend.navigateTo).toHaveBeenCalledWith(expect.stringContaining('schedule_page.html?'));
     });
     test('saveToArchive: 로컬스토리지 저장', () => {
       const btn = document.createElement('button');
@@ -454,6 +454,55 @@ describe('frontend.js 100% 통합 및 개별 함수 테스트', () => {
       frontend.renderPagination(10); // ITEMS_PER_PAGE가 30이므로 10은 1페이지
       expect(document.getElementById('pagination').innerHTML).toBe('');
     });
+
+
+    // 라인 74-75, 80-82: window.onload - savedSession 학교가 select에 존재할 때 schoolExists=true 분기
+    test('window.onload: savedSession 학교가 select options에 존재할 때 환영 메시지 출력', async () => {
+      sessionStorage.getItem.mockImplementation(key => {
+        if (key === 'lastSearchState') return null;
+        if (key === 'userSession') return JSON.stringify({ name: '홍길동', school: '한국대학교' });
+        return null;
+      });
+      // loadUniversities가 '한국대학교'를 반환해야 select option에 추가되어 schoolExists=true 분기 진입
+      global.fetch
+        .mockResolvedValueOnce({ ok: true, json: async () => ['한국대학교', '서울대학교'] }) // loadUniversities
+        .mockResolvedValue({ ok: true, json: async () => [] }); // handleUniversityChange
+      await window.onload();
+      expect(document.getElementById('status').textContent).toContain('홍길동');
+      expect(document.getElementById('status').textContent).toContain('한국대학교');
+    });
+
+    // 라인 87: window.onload - savedSession JSON 파싱 에러 catch
+    test('window.onload: savedSession이 잘못된 JSON일 때 catch 블록 처리', async () => {
+      console.error = jest.fn();
+      sessionStorage.getItem.mockImplementation(key => {
+        if (key === 'lastSearchState') return null;
+        if (key === 'userSession') return 'invalid_json_session';
+        return null;
+      });
+      await window.onload();
+      expect(console.error).toHaveBeenCalledWith(
+        expect.stringContaining('세션 데이터를 읽는 중 오류가 발생했습니다.'),
+        expect.anything()
+      );
+    });
+
+    // 라인 249: deleteSource 성공 후 mainUnivSelect.value === univ 조건 분기
+    test('deleteSource: 삭제 성공 후 현재 선택된 학교와 같을 때 handleUniversityChange 재호출', async () => {
+      window.confirm.mockReturnValue(true);
+      // universitySelect와 manageUnivSelect 모두 같은 학교로 설정
+      document.getElementById('universitySelect').value = '한국대학교';
+      document.getElementById('manageUnivSelect').value = '한국대학교';
+      global.fetch
+        .mockResolvedValueOnce({ ok: true })                                    // DELETE 성공
+        .mockResolvedValueOnce({ ok: true, json: async () => ['일반공지'] })   // loadManageBoards
+        .mockResolvedValueOnce({ ok: true, json: async () => ['한국대학교'] }) // loadUniversities
+        .mockResolvedValueOnce({ ok: true, json: async () => ['일반공지'] });  // handleUniversityChange
+      await frontend.deleteSource('한국대학교', '일반공지');
+      expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('성공적으로 삭제되었습니다'));
+      // handleUniversityChange가 호출됐음을 fetch 호출 횟수로 검증 (4번째 fetch = handleUniversityChange)
+      expect(global.fetch).toHaveBeenCalledTimes(4);
+    });
 
   });
 });
