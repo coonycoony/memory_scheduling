@@ -718,7 +718,32 @@ function saveToArchive(btnElement) {
 }
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    saveSearchState,
+    toggleProfile,
+    openManageModal,
+    closeManageModal,
+    loadProfileData,
+    handleLogout,
+    loadUniversities,
+    loadManageUniversities,
+    loadManageBoards,
+    deleteSource,
+    handleUniversityChange,
+    searchNotices,
+    applyFilter,
+    renderPage,
+    changePage,
+    renderPagination,
+    safeMeta,
+    renderNotices,
     escapeHtml,
-    isNew
+    escapeAttribute,
+    handleSortChange,
+    sortNotices,
+    isNew,
+    renderRecommendations,
+    handleRegisterSource,
+    sendToSchedule,
+    saveToArchive
   };
 }
