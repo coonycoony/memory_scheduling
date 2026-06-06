@@ -426,7 +426,7 @@ function handleStorageSync(e) {
 // =========================
 
 function loadUserSession() {
-  const raw = localStorage.getItem(SESSION_KEY);
+  const raw = sessionStorage.getItem(SESSION_KEY);  // ★ 변경
   if (!raw) return null;
   try {
     return JSON.parse(raw);
@@ -514,7 +514,7 @@ async function handleLogout() {
 
   await deleteAllSchedulesViaSingleEndpoint();
 
-  localStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(SESSION_KEY);  // ★ 변경
   localStorage.removeItem(STORAGE_KEY);
   localStorage.removeItem(SCHEDULE_KEY);
 
@@ -577,4 +577,3 @@ function init() {
 }
 
 init();
-
