@@ -47,10 +47,10 @@ frontend 디렉토리 안에 있는  login.html 파일을 웹브라우저로 열
 
 로그인 후 사이트를 실행 및 테스트합니다.
 
-# Unit Test 및 Coverage 측정 방법
+## Unit Test 및 Coverage 측정 방법
 본 프로젝트는 시스템 안정성 검증을 위해 단위 테스트를 제공합니다. Clone 받은 레포지토리에서 아래 명령어를 순서대로 실행하여 테스트 결과와 코드 커버리지(Coverage)를 확인할 수 있습니다.
 
-# 백엔드 단위 테스트 및 커버리지 측정 (Python)
+## 백엔드 단위 테스트 및 커버리지 측정 (Python)
 프로젝트 루트(최상위) 폴더에서 아래 명령어를 순서대로 실행하여 테스트를 진행하고 코드 커버리지(Coverage)를 확인할 수 있습니다.
 
 1. 백엔드 테스트 실행 및 커버리지 데이터 수집
@@ -59,7 +59,7 @@ python -m coverage run --source=backend -m pytest backend_test/
 2. 수집된 커버리지 결과(리포트) 터미널 출력
 python -m coverage report
 
-# 프론트엔드 단위 테스트 (JavaScript)
+## 프론트엔드 단위 테스트 (JavaScript)
 프론트엔드 테스트를 실행하려면 로컬 환경에 Node.js가 설치되어 있어야 합니다. (설치 후 터미널 재시작 필요)
 
 1. 프론트엔드 테스트 폴더로 이동
