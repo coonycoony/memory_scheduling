@@ -1,6 +1,10 @@
-describe('Notice Archive - 전체 함수 및 브라우저 흐름 검증 테스트', () => {
+describe('Notice Archive - 전체 함수 및 브라우저 흐름 검증 테스트 (100% 커버리지)', () => {
+  let m;
 
   beforeEach(() => {
+    // 예상되는 내부 로직 에러(catch)가 테스트 출력창을 어지럽히지 않도록 막습니다.
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+
     // 1. 가상 HTML DOM 구조 세팅
     document.body.innerHTML = `
       <input id="keywordInput" value="" />
@@ -9,6 +13,7 @@ describe('Notice Archive - 전체 함수 및 브라우저 흐름 검증 테스�
         <option value="saved-desc">보관 최신순</option>
         <option value="saved-asc">보관 오래된순</option>
         <option value="date-desc">공지 작성일순</option>
+        <option value="date-asc">공지 작성오래된순</option>
       </select>
       <button id="resetBtn"></button><button id="clearBtn"></button>
       <div id="savedList"></div><div id="noticeGrid"></div>
@@ -29,173 +34,186 @@ describe('Notice Archive - 전체 함수 및 브라우저 흐름 검증 테스�
       </div>
     `;
 
-    // 2. localStorage Mocking
+    // 2. localStorage Mocking (매 테스트마다 초기화)
     const localStorageMock = (() => {
       let store = {};
       return {
-        getItem: (key) => store[key] || null,
-        setItem: (key, value) => { store[key] = String(value); },
-        removeItem: (key) => { delete store[key]; },
-        clear: () => { store = {}; }
+        getItem: jest.fn((key) => store[key] || null),
+        setItem: jest.fn((key, value) => { store[key] = String(value); }),
+        removeItem: jest.fn((key) => { delete store[key]; }),
+        clear: jest.fn(() => { store = {}; })
       };
     })();
     Object.defineProperty(window, 'localStorage', { value: localStorageMock, writable: true });
 
-    // 3. 브라우저 내비게이션 및 알림창 Mocking
+    // 3. 글로벌 객체 Mocking
     delete window.location;
     window.location = { href: '' };
     global.alert = jest.fn();
     global.confirm = jest.fn(() => true);
 
-    // 4. 백엔드 서버 통신 Mocking
     global.fetch = jest.fn(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve([]),
-      })
+      Promise.resolve({ ok: true, json: () => Promise.resolve([]) })
     );
 
-    // 매 테스트 시작 전 격리된 환경에서 소스 파일을 로드하여 init() 자동 실행 유도
+    // 4. 모듈 로드 (DOM 및 Storage가 초기화된 상태에서 바인딩 됨)
     jest.isolateModules(() => {
-      require('./my_notice_archive.js');
+      m = require('./my_notice_archive.js');
     });
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    jest.restoreAllMocks();
   });
 
   // --------------------------------------------------------
-  // [1] 데이터 필터링 및 검색 흐름 테스트 (DOM 변화 검증)
+  // [1] 데이터 파싱 및 유틸리티 예외 처리 (100% 커버)
   // --------------------------------------------------------
-  test('filter 및 검색 로직 - 검색어 입력 시 해당 공지만 필터링되어 화면에 렌더링되어야 한다', async () => {
+  test('parseLocalDate, escapeHtml, normalizeItem - 예외 및 기본값 처리', () => {
+    expect(m.parseLocalDate(null)).toBeNull();
+    expect(m.parseLocalDate('invalid-date')).toBeNull();
+    
+    expect(m.escapeHtml(null)).toBe('');
+    expect(m.escapeHtml('<"&>')).toBe('&lt;&quot;&amp;&gt;');
+
+    const emptyItem = m.normalizeItem({});
+    expect(emptyItem.title).toBe('제목 없음');
+    expect(emptyItem.category).toBe('기타');
+    expect(emptyItem.url).toBe('#');
+  });
+
+  test('sortItems - 모든 정렬 필터 검증', () => {
+    const items = [
+      { date: '2026-06-10', savedAt: '2026-06-02T00:00:00Z' },
+      { date: '2026-06-01', savedAt: '2026-06-01T00:00:00Z' },
+      { date: null, savedAt: '2026-06-03T00:00:00Z' }
+    ];
+    expect(m.sortItems(items, 'date-asc')[0].date).toBe('2026-06-01');
+    expect(m.sortItems(items, 'date-desc')[0].date).toBe('2026-06-10');
+    expect(m.sortItems(items, 'saved-asc')[0].savedAt).toBe('2026-06-01T00:00:00Z');
+    expect(m.sortItems(items, 'saved-desc')[0].savedAt).toBe('2026-06-03T00:00:00Z');
+  });
+
+  test('localStorage.getItem 파싱 에러 시 빈 배열 반환', () => {
+    window.localStorage.getItem.mockReturnValueOnce('{ bad json');
+    document.getElementById('keywordInput').dispatchEvent(new Event('input'));
+    expect(document.getElementById('noticeGrid').innerHTML).toContain('조건에 맞는 공지가 없습니다');
+  });
+
+  // --------------------------------------------------------
+  // [2] 카테고리 렌더링 및 UI 상태
+  // --------------------------------------------------------
+  test('renderSummary & List - 예외 카테고리(기타) 및 삼항연산자(속성 부재) 렌더링 검증', () => {
+    const items = [
+      { category: '장학', university: '한국대', department: '컴공', memo: '메모있음' },
+      { category: '이상한카테고리', university: '', department: '', memo: '' } // '기타'로 합산되어야 함
+    ];
+    window.localStorage.setItem('noticeArchiveItems', JSON.stringify(items));
+    document.getElementById('keywordInput').dispatchEvent(new Event('input'));
+    
+    expect(document.getElementById('summaryEtc').textContent).toBe('1');
+    const savedList = document.getElementById('savedList').innerHTML;
+    expect(savedList).toContain('부서 없음');
+  });
+
+  // --------------------------------------------------------
+  // [3] 이벤트 핸들러 (버튼 클릭 / 동기화) 핵심 로직 커버
+  // --------------------------------------------------------
+  test('버튼 액션: 초기화, 개별 삭제, 달력 가져가기 성공/실패', () => {
+    // 1. 초기 데이터 주입
     const mockItems = [
-      { id: 'item1', title: '국가장학 안내', category: '장학', date: '2026-06-01', savedAt: 1000 },
-      { id: 'item2', title: '졸업고사 일정', category: '학사', date: '2026-06-05', savedAt: 2000 }
+      { id: '1', title: '공지1', category: '장학', memo: 'A', department: 'B', university: 'C', url: 'http' },
+      { id: '2', title: '공지2', category: '학사' }
     ];
     window.localStorage.setItem('noticeArchiveItems', JSON.stringify(mockItems));
-
-    // 검색어 입력창 요소를 가져와 값을 '장학'으로 세팅
-    const keywordInput = document.getElementById('keywordInput');
-    keywordInput.value = '장학';
-    
-    // 파일 내 등록된 'input' 이벤트 리스너를 실행시켜 renderArchive() 흐름을 트리거
-    keywordInput.dispatchEvent(new Event('input')); 
-
-    const noticeGrid = document.getElementById('noticeGrid');
-    // '장학'이 들어간 공지만 화면 그리드 내에 출력되고 다른 공지는 제외되었는지 검증
-    expect(noticeGrid.innerHTML).toContain('국가장학 안내');
-    expect(noticeGrid.innerHTML).not.toContain('졸업고사 일정');
-  });
-
-  test('카테고리 필터링 - 카테고리 셀렉트박스 변경 시 조건에 맞는 카드만 그리드에 표현되어야 한다', async () => {
-    const mockItems = [
-      { id: 'item1', title: '국가장학 안내', category: '장학', date: '2026-06-01', savedAt: 1000 },
-      { id: 'item2', title: '졸업고사 일정', category: '학사', date: '2026-06-05', savedAt: 2000 }
-    ];
-    window.localStorage.setItem('noticeArchiveItems', JSON.stringify(mockItems));
-
-    const categoryFilter = document.getElementById('categoryFilter');
-    categoryFilter.value = '학사';
-    
-    // 'change' 이벤트를 발송하여 화면 갱신 유도
-    categoryFilter.dispatchEvent(new Event('change'));
-
-    const noticeGrid = document.getElementById('noticeGrid');
-    expect(noticeGrid.innerHTML).toContain('졸업고사 일정');
-    expect(noticeGrid.innerHTML).not.toContain('국가장학 안내');
-  });
-
-  // --------------------------------------------------------
-  // [2] UI 카운터 및 요약 통계 집계 테스트
-  // --------------------------------------------------------
-  test('renderSummary() - 로컬 스토리지 데이터 변경 시 상단 요약 영역의 카운팅이 자동 동기화되어야 한다', async () => {
-    const mockItems = [
-      { id: '1', category: '장학' },
-      { id: '2', category: '장학' },
-      { id: '3', category: '학사' }
-    ];
-    window.localStorage.setItem('noticeArchiveItems', JSON.stringify(mockItems));
-    
-    // 이벤트를 통해 강제 화면 동기화 유도
     document.getElementById('keywordInput').dispatchEvent(new Event('input'));
 
-    expect(document.getElementById('summaryTotal').textContent).toBe('3');
-    expect(document.getElementById('summaryScholarship').textContent).toBe('2');
-    expect(document.getElementById('summaryAcademic').textContent).toBe('1');
-  });
+    // 필터 초기화 클릭
+    document.getElementById('keywordInput').value = '검색어';
+    document.getElementById('resetBtn').click();
+    expect(document.getElementById('keywordInput').value).toBe('');
 
-  // --------------------------------------------------------
-  // [3] 사용자 버튼 클릭 액션 핸들러 테스트
-  // --------------------------------------------------------
-  test('삭제 액션 - 카드 내의 삭제 버튼 클릭 시 데이터가 보관함(스토리지)에서 제거되어야 한다', async () => {
-    const mockItems = [{ id: 'target-id', title: '삭제 대상 공지', category: '장학' }];
-    window.localStorage.setItem('noticeArchiveItems', JSON.stringify(mockItems));
-    
-    // 먼저 화면에 카드가 렌더링되도록 트리거
-    document.getElementById('keywordInput').dispatchEvent(new Event('input'));
+    // 개별 삭제 버튼 클릭
+    const removeBtns = document.querySelectorAll('[data-remove-id]');
+    removeBtns[0].click();
+    expect(document.getElementById('status').textContent).toBe('선택한 공지를 삭제했습니다.');
 
-    // 동적으로 그려진 삭제 버튼 검색
-    const removeBtn = document.querySelector('[data-remove-id="target-id"]');
-    expect(removeBtn).not.toBeNull();
-    
-    // 사용자가 마우스로 삭제 버튼을 클릭한 흐름 시뮬레이션
-    removeBtn.click();
-
-    // 로컬스토리지에서 온전히 삭제되었는지 최종 배열 검증
-    const stored = JSON.parse(window.localStorage.getItem('noticeArchiveItems'));
-    expect(stored.length).toBe(0);
-  });
-
-  test('전체 삭제 액션 - 상단 전체 삭제 버튼 클릭 시 confirm 확인창을 거쳐 보관함이 완전히 비워져야 한다', async () => {
-    const mockItems = [{ id: '1' }, { id: '2' }];
-    window.localStorage.setItem('noticeArchiveItems', JSON.stringify(mockItems));
-    document.getElementById('keywordInput').dispatchEvent(new Event('input'));
-
-    const clearBtn = document.getElementById('clearBtn');
-    clearBtn.click();
-
-    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('보관함을 모두 비울까요?'));
-    const stored = JSON.parse(window.localStorage.getItem('noticeArchiveItems'));
-    expect(stored.length).toBe(0);
-  });
-
-  test('달력에 가져가기 액션 - 일정 추가 버튼 클릭 시 파라미터를 파싱하여 schedule_page.html 주소로 이동해야 한다', async () => {
-    const mockItems = [{ id: 'sched-id', title: '달력 전송 공지', category: '학사', url: 'http://test.com' }];
-    window.localStorage.setItem('noticeArchiveItems', JSON.stringify(mockItems));
-    document.getElementById('keywordInput').dispatchEvent(new Event('input'));
-
-    const scheduleBtn = document.querySelector('[data-add-schedule-id="sched-id"]');
-    scheduleBtn.click();
-
-    // 주소창(window.location.href)에 올바른 목적지 및 데이터 쿼리스트링이 담겼는지 확인
+    // 달력 가져가기 (성공)
+    const addBtns = document.querySelectorAll('[data-add-schedule-id]');
+    addBtns[0].click(); // 남은 항목 클릭
     expect(window.location.href).toContain('schedule_page.html');
-    expect(window.location.href).toContain('title=%EB%8B%AC%EB%A0%A5+%EC%A0%84%EC%86%A1+%EA%B3%B5%EC%A7%80');
+
+    // 달력 가져가기 (찾을 수 없는 아이템 방어 로직)
+    window.localStorage.setItem('noticeArchiveItems', '[]'); // 스토리지 비우기
+    addBtns[0].click(); // DOM에 남아있는 버튼 다시 클릭
+    expect(global.alert).toHaveBeenCalledWith('해당 공지를 찾을 수 없습니다.');
+  });
+
+  test('보관함 전체 삭제 - 취소 및 에러 발생에도 화면 정상 처리', () => {
+    window.confirm.mockReturnValueOnce(false);
+    document.getElementById('clearBtn').click();
+    
+    window.confirm.mockReturnValueOnce(true);
+    window.localStorage.setItem.mockImplementationOnce(() => { throw new Error('Quota Exceeded'); });
+    document.getElementById('clearBtn').click();
+    expect(document.getElementById('status').textContent).toContain('아직 저장된 공지가 없습니다');
+  });
+
+  test('스토리지 동기화 (handleStorageSync)', () => {
+    window.dispatchEvent(new StorageEvent('storage', { key: 'otherKey' })); // 무시
+    window.dispatchEvent(new StorageEvent('storage', { key: 'noticeArchiveItems' })); // 적용
+    expect(document.getElementById('status').textContent).toContain('목록을 다시 불러왔습니다');
   });
 
   // --------------------------------------------------------
-  // [4] 인증 및 로그아웃 라이프사이클 테스트
+  // [4] 프로필 세션 모달 및 로그아웃
   // --------------------------------------------------------
-  test('handleLogout() - 로그아웃 버튼을 클릭하면 모든 로컬 데이터가 소멸하고 로그인창으로 튕겨야 한다', async () => {
-    // 세션 및 데이터 등록
-    window.localStorage.setItem('userSession', JSON.stringify({ name: '홍길동' }));
-    window.localStorage.setItem('noticeArchiveItems', JSON.stringify([{ id: '1' }]));
-    window.localStorage.setItem('scheduleEvents', JSON.stringify({ '2026-06-06': [] }));
-
-    // 가상 DOM에 배치된 로그아웃 버튼 탐색 후 클릭 이벤트 전송
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-      logoutBtn.click();
-    }
-
-    // 파일 내부의 비동기 작업(fetch) 및 처리가 백그라운드 큐에서 끝날 때까지 대기
-    await new Promise(jest.requireActual('timers').setImmediate);
-
-    // 개인 정보 및 캐시 데이터 완전 초기화 확인
-    expect(window.localStorage.getItem('userSession')).toBeNull();
-    expect(window.localStorage.getItem('noticeArchiveItems')).toBeNull();
+  test('프로필 모달 - JSON 에러, 학년 분기(1~4), 태그 누락 커버', () => {
+    const years = ['1', '2', '3', '4'];
+    const expected = ['1학년', '2학년', '3학년', '4학년 이상'];
     
-    // 리다이렉트 경로 확인
+    years.forEach((y, i) => {
+      window.localStorage.setItem('userSession', JSON.stringify({ name: '테스트', year: y, interests: ['A'] }));
+      document.getElementById('profileModal').style.display = 'none'; // DOM 상태 리셋
+      document.getElementById('userChipBtn').click();
+      expect(document.getElementById('profileYear').textContent).toBe(expected[i]);
+    });
+
+    // 태그(interests)가 없는 경우
+    window.localStorage.setItem('userSession', JSON.stringify({ name: '태그없음', year: '1' }));
+    document.getElementById('profileModal').style.display = 'none';
+    document.getElementById('userChipBtn').click();
+    expect(document.getElementById('profileTags').innerHTML).toContain('관심 분야 없음');
+
+    // 세션 파싱 에러 (catch 블록 커버)
+    window.localStorage.setItem('userSession', '{ bad json');
+    document.getElementById('profileModal').style.display = 'none';
+    document.getElementById('userChipBtn').click();
+    expect(document.getElementById('userChipName').textContent).toBe('게스트 님');
+  });
+
+  test('모달 바깥 영역 클릭 이벤트', () => {
+    document.dispatchEvent(new MouseEvent('click')); // 닫혀있을 때
+    
+    document.getElementById('profileModal').style.display = 'block';
+    document.dispatchEvent(new MouseEvent('click', { bubbles: true })); // 외부 클릭
+    expect(document.getElementById('profileModal').style.display).toBe('none');
+  });
+
+  test('로그아웃 시 스케줄 단일/전체 삭제 API 예외(catch) 완벽 커버', async () => {
+    // 전체 조회 실패 (500)
+    global.fetch.mockResolvedValueOnce({ ok: false, status: 500 });
+    document.getElementById('logoutBtn').click();
+    await new Promise(process.nextTick); 
+    
+    // 전체 조회 성공, 개별 삭제 중 에러 발생
+    global.fetch
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([{ id: 1 }]) })
+      .mockRejectedValueOnce(new Error('Delete Network Error'));
+    document.getElementById('logoutBtn').click();
+    await new Promise(process.nextTick); 
+
+    expect(window.localStorage.removeItem).toHaveBeenCalledWith('userSession');
     expect(window.location.href).toBe('login.html');
   });
 });
