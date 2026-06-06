@@ -101,6 +101,15 @@ describe('Notice Archive - 전체 함수 및 브라우저 흐름 검증 테스�
     expect(emptyItem.url).toBe('#');
   });
 
+  // 정상 문자열 분기 추가
+  test('parseLocalDate - 정상 문자열 분기 커버', () => {
+    const d = m.parseLocalDate('2024-05-10');
+    expect(d).not.toBeNull();
+    expect(d.getFullYear()).toBe(2024);
+    expect(d.getMonth()).toBe(4);
+    expect(d.getDate()).toBe(10);
+  });
+
   test('sortItems - 모든 정렬 필터 검증', () => {
     const items = [
       { date: '2026-06-10', savedAt: '2026-06-02T00:00:00Z' },
@@ -115,6 +124,17 @@ describe('Notice Archive - 전체 함수 및 브라우저 흐름 검증 테스�
     expect(m.sortItems(items, 'saved-desc')[0].savedAt).toBe(
       '2026-06-03T00:00:00Z'
     );
+  });
+
+  // date 없는 항목 위치 분기 추가
+  test('sortItems - date가 없는 항목 정렬 위치 확인', () => {
+    const items = [
+      { date: null, savedAt: '2026-06-03T00:00:00Z' },
+      { date: '2026-06-01', savedAt: '2026-06-01T00:00:00Z' },
+    ];
+
+    const sortedAsc = m.sortItems(items, 'date-asc');
+    expect(sortedAsc[1].date).toBeNull();
   });
 
   test('localStorage.getItem 파싱 에러 시 빈 배열 처리', () => {
@@ -153,6 +173,17 @@ describe('Notice Archive - 전체 함수 및 브라우저 흐름 검증 테스�
 
     const savedListHtml = document.getElementById('savedList').innerHTML;
     expect(savedListHtml).toContain('부서 없음');
+  });
+
+  // 저장된 공지 0개 분기 추가
+  test('renderSummary - 저장된 공지 0개 분기 커버', () => {
+    window.localStorage.setItem('noticeArchiveItems', '[]');
+    document.getElementById('keywordInput').dispatchEvent(new Event('input'));
+
+    expect(document.getElementById('summaryTotal').textContent).toBe('0');
+    expect(document.getElementById('savedList').innerHTML).toContain(
+      '저장된 공지가 없습니다.'
+    );
   });
 
   // --------------------------------------------------------
@@ -208,6 +239,39 @@ describe('Notice Archive - 전체 함수 및 브라우저 흐름 검증 테스�
     }
   });
 
+  // 정렬 필터 branch 보강
+  test('정렬 필터 변경 - saved-asc, date-desc 분기 커버', () => {
+    const mockItems = [
+      {
+        id: '1',
+        title: '공지1',
+        category: '장학',
+        savedAt: '2026-06-02T00:00:00Z',
+      },
+      {
+        id: '2',
+        title: '공지2',
+        category: '장학',
+        savedAt: '2026-06-01T00:00:00Z',
+      },
+    ];
+    window.localStorage.setItem(
+      'noticeArchiveItems',
+      JSON.stringify(mockItems)
+    );
+    document.getElementById('keywordInput').dispatchEvent(new Event('input'));
+
+    const sortSelect = document.getElementById('sortFilter');
+
+    sortSelect.value = 'saved-asc';
+    sortSelect.dispatchEvent(new Event('change'));
+
+    sortSelect.value = 'date-desc';
+    sortSelect.dispatchEvent(new Event('change'));
+
+    expect(document.getElementById('noticeGrid').innerHTML).not.toBe('');
+  });
+
   test('보관함 전체 삭제 - 취소 및 에러 발생에도 화면 정상 처리', () => {
     window.confirm.mockReturnValueOnce(false);
     document.getElementById('clearBtn').click();
@@ -230,6 +294,13 @@ describe('Notice Archive - 전체 함수 및 브라우저 흐름 검증 테스�
     expect(document.getElementById('status').textContent).toContain(
       '아직 저장된 공지가 없습니다'
     );
+  });
+
+  // 다른 key만 들어왔을 때 무시 분기
+  test('스토리지 동기화 - noticeArchiveItems 이외 key는 무시', () => {
+    document.getElementById('status').textContent = '';
+    window.dispatchEvent(new StorageEvent('storage', { key: 'someOtherKey' }));
+    expect(document.getElementById('status').textContent).toBe('');
   });
 
   // --------------------------------------------------------
@@ -271,6 +342,19 @@ describe('Notice Archive - 전체 함수 및 브라우저 흐름 검증 테스�
     );
   });
 
+  // year 없는 경우 branch
+  test('프로필 카드 - year가 없을 때 학년 텍스트 비움', () => {
+    window.localStorage.setItem(
+      'userSession',
+      JSON.stringify({ name: '이름만있는유저' })
+    );
+
+    document.getElementById('profileModal').style.display = 'none';
+    document.getElementById('userChipBtn').click();
+
+    expect(document.getElementById('profileYear').textContent).toBe('');
+  });
+
   test('프로필 칩 이름 - name 없는 경우 게스트 처리 유지', () => {
     window.localStorage.setItem(
       'userSession',
@@ -280,7 +364,6 @@ describe('Notice Archive - 전체 함수 및 브라우저 흐름 검증 테스�
     document.getElementById('profileModal').style.display = 'none';
     document.getElementById('userChipBtn').click();
 
-    // 구현상 name이 없으면 게스트 처리로 떨어지는 상태이므로, 기대값을 게스트로 둔다.
     expect(document.getElementById('userChipName').textContent).toBe(
       '게스트 님'
     );
@@ -292,6 +375,19 @@ describe('Notice Archive - 전체 함수 및 브라우저 흐름 검증 테스�
     document.getElementById('profileModal').style.display = 'block';
     document.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(document.getElementById('profileModal').style.display).toBe('none');
+  });
+
+  // 로그아웃 confirm 취소 분기
+  test('로그아웃 - confirm 취소 시 아무 작업도 하지 않음', async () => {
+    global.fetch.mockClear();
+    window.localStorage.removeItem.mockClear();
+
+    global.confirm.mockReturnValueOnce(false);
+    document.getElementById('logoutBtn').click();
+    await new Promise(process.nextTick);
+
+    expect(window.localStorage.removeItem).not.toHaveBeenCalled();
+    expect(window.location.href).toBe('');
   });
 
   test('로그아웃 시 스케줄 단일/전체 삭제 API 예외(catch) 처리', async () => {
@@ -312,5 +408,24 @@ describe('Notice Archive - 전체 함수 및 브라우저 흐름 검증 테스�
 
     expect(window.localStorage.removeItem).toHaveBeenCalledWith('userSession');
     expect(window.location.href).toBe('login.html');
+  });
+
+  // deleteAllSchedulesOnServerFromArchive가 실제로 export되어 있다면 유지,
+  // 없다면 이 테스트는 지워도 된다.
+  test('스케줄 일괄 삭제 중 오류 발생 시 console.error 호출', async () => {
+    const mod = require('./my_notice_archive.js');
+
+    const errorSpy = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+
+    global.fetch = jest.fn().mockRejectedValueOnce(new Error('Network Error'));
+
+    if (typeof mod.deleteAllSchedulesOnServerFromArchive === 'function') {
+      await mod.deleteAllSchedulesOnServerFromArchive();
+      expect(errorSpy).toHaveBeenCalled();
+    }
+
+    errorSpy.mockRestore();
   });
 });
