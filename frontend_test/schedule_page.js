@@ -573,7 +573,9 @@
 
   if (!title) return;
 
-  const targetDates = getCurrentTargetDates();
+  const targetDates = (typeof module !== 'undefined' && module.exports && module.exports.getCurrentTargetDates)
+    ? module.exports.getCurrentTargetDates()
+    : getCurrentTargetDates();
 
   if (!targetDates.length) {
     alert("먼저 시작 날짜 또는 종료 날짜를 선택해 주세요.");
@@ -621,13 +623,21 @@
 }
 
   async function handleDeleteAll() {
-    const targetDates = getCurrentTargetDates();
-    const hasAnyEvent = targetDates.some((dateIso) => events[dateIso]?.length);
-    
+    const _getCurrentTargetDates = (typeof module !== 'undefined' && module.exports && module.exports.getCurrentTargetDates)
+      ? module.exports.getCurrentTargetDates
+      : getCurrentTargetDates;
+    const _deleteRangeUsingSingleDelete = (typeof module !== 'undefined' && module.exports && module.exports.deleteRangeUsingSingleDelete)
+      ? module.exports.deleteRangeUsingSingleDelete
+      : deleteRangeUsingSingleDelete;
+
+    const targetDates = _getCurrentTargetDates();
+
     if (!targetDates.length) {
       alert("먼저 삭제할 날짜(또는 날짜 범위)를 선택해 주세요.");
       return;
     }
+
+    const hasAnyEvent = targetDates.some((dateIso) => events[dateIso]?.length);
 
     if (!hasAnyEvent) {
       alert("선택한 범위에 저장된 스케줄이 없습니다.");
@@ -641,7 +651,7 @@
 
     try {
       setStatus("스케줄을 삭제하는 중입니다...");
-      await deleteRangeUsingSingleDelete(start, end);
+      await _deleteRangeUsingSingleDelete(start, end);
       setStatus("선택 범위의 스케줄이 삭제되었습니다.", "success");
     } catch (error) {
       console.error(error);
