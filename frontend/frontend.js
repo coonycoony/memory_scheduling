@@ -8,6 +8,15 @@ let hasSearched = false;
 let currentPage = 1;
 let currentSort = 'desc';
 
+function _navigate(url) {
+  /* istanbul ignore next */
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports.navigateTo(url);
+  } else {
+    window.location.href = url;
+  }
+}
+
 function saveSearchState() {
   if (!hasSearched) return;
   const state = {
@@ -148,12 +157,13 @@ function handleLogout() {
   if(confirm('로그아웃 시 입력하신 사용자 정보가 초기화됩니다.\n계속하시겠습니까?')) {
     sessionStorage.removeItem('userSession');
     sessionStorage.removeItem('lastSearchState');
-    location.href = 'login.html'; 
+    _navigate('login.html'); 
   }
 }
 
 async function loadUniversities() {
   const univSelect = document.getElementById("universitySelect");
+  const prevValue = univSelect.value;
   try {
     const response = await fetch(`${API_BASE_URL}/universities`);
     if (response.ok) {
@@ -162,6 +172,7 @@ async function loadUniversities() {
       
       univSelect.innerHTML = `<option value="">학교를 선택하세요</option>` + 
         universities.map(u => `<option value="${escapeAttribute(u)}">${escapeHtml(u)}</option>`).join("");
+      if (prevValue) univSelect.value = prevValue;
     } else {
       throw new Error("API 응답 실패");
     }
@@ -667,7 +678,7 @@ function sendToSchedule(btnElement) {
       memo: memoText.trim()
     });
     
-    location.href = `schedule_page.html?${params.toString()}`;
+    _navigate(`schedule_page.html?${params.toString()}`);
   } catch(e) {
     console.error("스케줄 이동 중 오류:", e);
     alert("오류가 발생했습니다.");
@@ -716,3 +727,39 @@ function saveToArchive(btnElement) {
     alert('저장 중 오류가 발생했습니다.');
   }
 }
+
+/* istanbul ignore next */
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    _navigate,
+    navigateTo: (url) => { window.location.href = url; },
+    saveSearchState,
+    toggleProfile,
+    openManageModal,
+    closeManageModal,
+    loadProfileData,
+    handleLogout,
+    loadUniversities,
+    loadManageUniversities,
+    loadManageBoards,
+    deleteSource,
+    handleUniversityChange,
+    searchNotices,
+    applyFilter,
+    renderPage,
+    changePage,
+    renderPagination,
+    safeMeta,
+    renderNotices,
+    escapeHtml,
+    escapeAttribute,
+    handleSortChange,
+    sortNotices,
+    isNew,
+    renderRecommendations,
+    handleRegisterSource,
+    sendToSchedule,
+    saveToArchive
+  };
+}
+
