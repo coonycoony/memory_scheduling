@@ -579,3 +579,8 @@ textarea:focus {
 .profile-logout:hover {
   background: #fecaca;
 }
+
+.scrollable-form {
+  overflow-y: auto;
+  overflow-x: auto;
+ }
